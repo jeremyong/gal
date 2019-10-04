@@ -20,19 +20,19 @@ struct algebra : public ga::algebra<metric>
 template <typename... I, typename... J>
 [[nodiscard]] constexpr auto operator>>(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
 {
-    return ::gal::impl::product<::gal::ga::module<algebra>::contract>(lhs, rhs);
+    return ::gal::detail::product<::gal::ga::module<algebra>::contract>(lhs, rhs);
 }
 
 template <typename... I, typename... J>
 [[nodiscard]] constexpr auto operator^(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
 {
-    return ::gal::impl::product<::gal::ga::module<algebra>::exterior>(lhs, rhs);
+    return ::gal::detail::product<::gal::ga::module<algebra>::exterior>(lhs, rhs);
 }
 
 template <typename... I, typename... J>
 [[nodiscard]] constexpr auto operator*(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
 {
-    return ::gal::impl::product<::gal::ga::module<algebra>::geometric>(lhs, rhs);
+    return ::gal::detail::product<::gal::ga::module<algebra>::geometric>(lhs, rhs);
 }
 
 template <typename M>

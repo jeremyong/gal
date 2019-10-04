@@ -11,7 +11,7 @@ namespace pga2
 {
 // NOTE: the inner product of e0 can be set to +1 or -1 without any change in the algebra's geometric
 // interpretation. Here, we opt to define e0^2 := 1 by convention
-using metric = ::gal::metric<0, 2, 1>;
+using metric = ::gal::metric<2, 0, 1>;
 
 // The PGA is a graded algebra with 16 basis elements
 struct algebra : public ::gal::ga::algebra<metric>
@@ -23,19 +23,19 @@ struct algebra : public ::gal::ga::algebra<metric>
 template <typename... I, typename... J>
 [[nodiscard]] constexpr auto operator>>(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
 {
-    return ::gal::impl::product<::gal::ga::module<algebra>::contract>(lhs, rhs);
+    return ::gal::detail::product<::gal::ga::module<algebra>::contract>(lhs, rhs);
 }
 
 template <typename... I, typename... J>
 [[nodiscard]] constexpr auto operator^(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
 {
-    return ::gal::impl::product<::gal::ga::module<algebra>::exterior>(lhs, rhs);
+    return ::gal::detail::product<::gal::ga::module<algebra>::exterior>(lhs, rhs);
 }
 
 template <typename... I, typename... J>
 [[nodiscard]] constexpr auto operator*(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
 {
-    return ::gal::impl::product<::gal::ga::module<algebra>::geometric>(lhs, rhs);
+    return ::gal::detail::product<::gal::ga::module<algebra>::geometric>(lhs, rhs);
 }
 
 template <typename M>

@@ -11,7 +11,7 @@ template <typename Algebra>
 struct module
 {
     template <typename... T>
-    using term_t = ::gal::term<T...>;
+    using term_t = term<T...>;
 
     struct contract
     {
@@ -45,14 +45,14 @@ struct module
             constexpr auto wedge = Algebra::template exterior<E1::value, E2::value>();
             if constexpr (wedge.second == 0)
             {
-                return ::gal::multivector<void>{};
+                return multivector<void>{};
             }
             else
             {
                 using element_t = element<wedge.first>;
                 using term_t =
                     decltype(typename scale<wedge.second, term_t<element_t, M1...>>::type{} * term_t<element_t, M2...>{});
-                return ::gal::multivector<void, term_t>{};
+                return multivector<void, term_t>{};
             }
         }
     };
@@ -67,14 +67,14 @@ struct module
             constexpr auto gp = Algebra::template geometric<E1::value, E2::value>();
             if constexpr (gp.second == 0)
             {
-                return ::gal::multivector<void>{};
+                return multivector<void>{};
             }
             else
             {
                 using element_t = element<gp.first>;
                 using term_t =
                     decltype(typename scale<gp.second, term_t<element_t, M1...>>::type{} * term_t<element_t, M2...>{});
-                return ::gal::multivector<void, term_t>{};
+                return multivector<void, term_t>{};
             }
         }
     };
@@ -212,6 +212,54 @@ struct algebra : public gal::algebra<float, Metric>
         }
     }
 };
+
+template <size_t Dim, size_t E>
+[[nodiscard]] constexpr int complement_parity()
+{
+    int swaps = 0;
+    size_t e = E;
+    int i = 0;
+    int grade = count_bits(E);
+    while (e > 0)
+    {
+        if ((e & 1) == 0)
+        {
+            swaps += grade;
+        }
+        else
+        {
+            --grade;
+        }
+        ++i;
+        e = e >> i;
+    }
+    if ((swaps & 1) == 1)
+    {
+        return -1;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+// Helper for dualizing basis elements
+template <size_t Dim, typename E, typename... As>
+[[nodiscard]] constexpr auto term_complement(term<E, As...>)
+{
+    constexpr size_t complement = ((1 << Dim) - 1) ^ E::value;
+    // We require that the concatenation of E and its complement form an even permutation
+    // of the basis element sequence.
+    constexpr int parity = complement_parity<Dim, E::value>();
+    if constexpr (parity == 1)
+    {
+        return term<element<complement>, As...>{};
+    }
+    else
+    {
+        return typename scale<-1, term<element<complement>, As...>>::type{};
+    }
+}
 }
 
 // The geometric algebra also leverages additional operations
@@ -229,7 +277,7 @@ template <typename E>
 
 // Term reversion
 template <typename E, typename... M>
-[[nodiscard]] constexpr auto operator~(::gal::term<E, M...> t) noexcept
+[[nodiscard]] constexpr auto operator~(term<E, M...> t) noexcept
 {
     constexpr auto g = grade<E>();
     constexpr bool flip = (g * (g - 1) / 2) % 2 == 1;
@@ -245,22 +293,36 @@ template <typename E, typename... M>
 
 // General multivector reversion
 template <typename... T>
-[[nodiscard]] constexpr auto operator~(::gal::multivector<void, T...>) noexcept
+[[nodiscard]] constexpr auto operator~(multivector<void, T...>) noexcept
 {
-    return ::gal::multivector<void, decltype(~T{})...>{};
+    return multivector<void, decltype(~T{})...>{};
 }
 
 template <typename Metric>
 struct pseudoscalar
 {
-    constexpr static ::gal::multivector<void, ::gal::term<element<(1 << Metric::dimension) - 1>, monomial<multiplier<1>>>> value{};
+    constexpr static multivector<void, term<element<(1 << Metric::dimension) - 1>, monomial<identity>>> value{};
     constexpr static auto inverse = ~value;
 };
 
 template <typename Metric, typename M>
-[[nodiscard]] constexpr auto dual(M input) noexcept
+[[nodiscard]] constexpr auto polarity_dual(M input) noexcept
 {
     return input >> pseudoscalar<Metric>::inverse;
+}
+
+// Poincaré dual (used mainly because it does not require a non-degenerate metric)
+template <typename Metric, typename... T>
+[[nodiscard]] constexpr auto dual(multivector<void, T...>) noexcept
+{
+    if constexpr (sizeof...(T) == 0)
+    {
+        return multivector<void>{};
+    }
+    else
+    {
+        return ((multivector<void, decltype(ga::term_complement<Metric::dimension>(T{}))>{}) + ...);
+    }
 }
 
 } // namespace gal

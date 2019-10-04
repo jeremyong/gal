@@ -1,7 +1,7 @@
 #pragma once
 
-#include <array>
-#include <cstdint>
+#include "ring_generator.hpp"
+
 #include <type_traits>
 #include <tuple>
 #include <utility>
@@ -13,8 +13,8 @@ namespace gal
 
 // Template parameters encode the [metric signature](https://en.wikipedia.org/wiki/Metric_signature) of
 // the metric tensor underlying the algebra.
-// V: # of basis elements that have negative norm
 // P: # of basis elements with positive norm
+// V: # of basis elements that have negative norm
 // R: # of basis elements that have zero norm
 // Note that degenerate metric tensors are not permitted.
 // The metric tensor encoded by this type is diagonalized and normalized. Computations can always be
@@ -26,26 +26,27 @@ namespace gal
 // metric<3, 0, 1> := 3D Projective (alt. 4D euclidean)
 // metric<3, 1, 0> := Minkowski Spacetime
 // metric<4, 1, 0> := Conformal Space w/o change of basis
-template <size_t V, size_t P, size_t R> struct metric
+template <size_t P, size_t V, size_t R> struct metric
 {
-    constexpr static size_t v = V;
     constexpr static size_t p = P;
+    constexpr static size_t v = V;
     constexpr static size_t r = R;
 
     // The dimension of the metric corresponds to the total number of basis elements represented.
     // Note that the metric can induce a larger dimension in an algebra if the multivector space
     // associated with it is [graded](https://en.wikipedia.org/wiki/Graded_multivector_space) (e.g. Clifford Algebra).
-    constexpr static size_t dimension = V + P + R;
+    constexpr static size_t dimension = P + V + R;
 
+    // In our indexing, 0-norm units come first, followed by 1-norm units, and finally -1-norm units
     [[nodiscard]] constexpr static int element_norm(size_t e) noexcept
     {
-        if (e < v)
-        {
-            return -1;
-        }
-        else if (e >= v + p)
+        if (e < r)
         {
             return 0;
+        }
+        else if (e >= r + p)
+        {
+            return -1;
         }
         else
         {
@@ -54,194 +55,164 @@ template <size_t V, size_t P, size_t R> struct metric
     }
 };
 
-template <int D>
-struct degree
-{
-    constexpr static int value = D;
-};
-
-// Although the multivector space will ultimately be defined over a field, we decompose the field into the
-// product of scalars (essentially factoring out a free module). The free module over the ring of
-// integers has the nice property that we can condense computation by performing arithmetic exactly
-// at compiole time.
-// The free module we factor out is a bimodule (i.e. there is no preference for left or right
-// multiplication by the scalar).
-// A factor encodes the factor weight, the factor degree, as well as its identifier (if available).
-// NOTE: "Degree" here is meant in the sense of a polynimal (e.g. x^2 has degree 2).
-// We permit negative degrees to allow expressing linear combinations of nth-roots as well.
-template <typename Degree = degree<1>, size_t ID = 0> struct factor
-{
-    // The precedence for the partial ordering of the factor is input_id < factor_id < degree
-    constexpr static int degree = Degree::value;
-    constexpr static int id = ID;
-};
-
-template <typename T1, typename T2>
-struct equals
-{
-    constexpr static bool value = false;
-};
-
-// The factors that make up a monomial are weakly ordered based on the source identifiers.
-// If all factors are identified (ID != 0), the ordering becomes a total order.
-// NOTE: the comparison operators here do not consider the actual quantities held by the factors.
-template <typename D1, size_t ID1, typename D2, size_t ID2>
-struct equals<factor<D1, ID1>, factor<D2, ID2>>
-{
-    constexpr static bool value = ID1 != 0 && ID2 != 0 && ID1 == ID2 && D1::value == D2::value;
-};
-
-template <typename T1, typename T2>
-struct less
-{
-    constexpr static bool value = false;
-};
-
-template <typename D1, size_t ID1, typename D2, size_t ID2>
-struct less<factor<D1, ID1>, factor<D2, ID2>>
-{
-    // NOTE: if the factors are untagged (id == 0), it is irrelevant which factor gets ordered first.
-    constexpr static bool value = ID1 < ID2 || D1::value < D2::value;
-};
-
 template <int M>
 struct multiplier
 {
     constexpr static int value = M;
 };
 
+using identity = multiplier<1>;
+using zero = multiplier<0>;
+
 // The coefficient of a term is a linear combination of factors which are kept separate for the purposes of determining
 // an optimal computational strategy. An `monomial` is a product of `factor`s.
 // Invariant: the factors are sorted in order
-template <typename M, typename... Factors> struct monomial
+template <typename M, typename... Generators> struct monomial
 {
-    constexpr static size_t size = sizeof...(Factors) + 1;
+    constexpr static size_t size = sizeof...(Generators) + 1;
     constexpr static int multiplier = M::value;
-    constexpr static int degree = (Factors::degree + ...);
+    constexpr static int degree = (Generators::degree + ...);
+    constexpr static bool is_zero = false;
 };
 
-template <typename... Factors> struct monomial<multiplier<0>, Factors...>
+template <> struct monomial<zero>
 {
     constexpr static size_t size = 0;
     constexpr static int multiplier = 0;
+    constexpr static int degree = 0;
+    constexpr static bool is_zero = true;
 };
 
-template <typename D1, typename D2, size_t ID1, size_t ID2>
-[[nodiscard]] constexpr auto operator*(factor<D1, ID1>, factor<D2, ID2>)
+template <typename M>
+[[nodiscard]] constexpr bool is_monomial_identity() noexcept
 {
-    using lhs_t = factor<D1, ID1>;
-    using rhs_t = factor<D2, ID2>;
-    if constexpr (ID1 == ID2)
+    return std::is_same<M, monomial<identity>>::value;
+}
+
+
+template <typename T, size_t O, typename D1, typename D2>
+[[nodiscard]] constexpr auto operator*(generator<T, D1, O> lhs, generator<T, D2, O> rhs)
+{
+    using lhs_t = decltype(lhs);
+    using rhs_t = decltype(rhs);
+    constexpr auto d = D1::value + D2::value;
+    if constexpr (d == O)
     {
-        return monomial<multiplier<1>, factor<degree<D1::value + D2::value>, ID1>>{};
-    }
-    else if constexpr (less<lhs_t, rhs_t>::value)
-    {
-        return monomial<multiplier<1>, lhs_t, rhs_t>{};
+        return zero_generator{};
     }
     else
     {
-        return monomial<multiplier<1>, rhs_t, lhs_t>{};
+        return generator<T, degree<d>, O>{};
     }
 }
 
-namespace impl
+namespace detail
 {
-template <typename M, typename... I, typename F1, typename... J, typename F2, typename... K>
+template <typename M, typename... I, typename G1, typename... J, typename G2, typename... K>
 [[nodiscard]] constexpr auto
-product(monomial<M, I...> accum, monomial<multiplier<1>, F1, J...> lhs, monomial<multiplier<1>, F2, K...> rhs)
+product(monomial<M, I...> accum, monomial<identity, G1, J...> lhs, monomial<identity, G2, K...> rhs)
 {
-    if constexpr (F1::id == 0 && F2::id == 0)
+    if constexpr (G1::tag_t::untagged && G2::tag_t::untagged)
     {
         // reduce an extra recursion if both factors are untagged
         if constexpr (sizeof...(J) == 0)
         {
-            return monomial<M, I..., F1, F2, K...>{};
+            return monomial<M, I..., G1, G2, K...>{};
         }
         else if constexpr (sizeof...(K) == 0)
         {
-            return monomial<M, I..., F1, F2, J...>{};
+            return monomial<M, I..., G1, G2, J...>{};
         }
         else
         {
-            return product(monomial<M, I..., F1, F2>{}, monomial<multiplier<1>, J...>{}, monomial<multiplier<1>, K...>{});
+            return product(monomial<M, I..., G1, G2>{}, monomial<identity, J...>{}, monomial<identity, K...>{});
         }
     }
-    if constexpr (F1::id == 0 || F1::id < F2::id)
+    else if constexpr (G1::tag_t::untagged || less<typename G1::tag_t, typename G2::tag_t>::value)
     {
         if constexpr (sizeof...(J) == 0)
         {
-            return monomial<M, I..., F1, F2, K...>{};
+            return monomial<M, I..., G1, G2, K...>{};
         }
         else
         {
-            return product(monomial<M, I..., F1>{}, monomial<multiplier<1>, J...>{}, rhs);
+            return product(monomial<M, I..., G1>{}, monomial<identity, J...>{}, rhs);
         }
     }
-    else if constexpr (F2::id == 0 || F2::id < F1::id)
+    else if constexpr (G2::tag_t::untagged || less<typename G2::tag_t, typename G1::tag_t>::value)
     {
         if constexpr (sizeof...(K) == 0)
         {
-            return monomial<M, I..., F2, F1, J...>{};
+            return monomial<M, I..., G2, G1, J...>{};
         }
         else
         {
-            return product(monomial<M, I..., F2>{}, lhs, monomial<multiplier<1>, K...>{});
+            return product(monomial<M, I..., G2>{}, lhs, monomial<identity, K...>{});
         }
     }
     else
     {
-        // Both F1 and F2 are tagged and represent the same factor
-        using next_factor_t = factor<degree<F1::degree + F2::degree>, F1::id>;
-        if constexpr (sizeof...(J) == 0)
+        // Both G1 and G2 are tagged and represent the same factor
+        using g = decltype(G1{} * G2{});
+        if constexpr (sizeof...(J) == 0 || sizeof...(K) == 0)
         {
-            return monomial<M, I..., next_factor_t, K...>{};
-        }
-        else if constexpr (sizeof...(K) == 0)
-        {
-            return monomial<M, I..., next_factor_t, J...>{};
+            if constexpr (g::is_zero)
+            {
+                return monomial<M, I..., J..., K...>{};
+            }
+            else
+            {
+                return monomial<M, I..., g, J..., K...>{};
+            }
         }
         else
         {
-            return product(monomial<M, I..., next_factor_t>{}, monomial<multiplier<1>, J...>{}, monomial<multiplier<1>, K...>{});
+            if constexpr (g::is_zero)
+            {
+                return product(monomial<M, I...>{}, monomial<identity, J...>{}, monomial<identity, K...>{});
+            }
+            else
+            {
+                return product(monomial<M, I..., g>{}, monomial<identity, J...>{}, monomial<identity, K...>{});
+            }
         }
     }
 }
 }
 
 // Order preserving monomial multiplication
-template <typename M1, typename M2, typename... F1, typename... F2>
-[[nodiscard]] constexpr auto operator*(monomial<M1, F1...>, monomial<M2, F2...>)
+template <typename M1, typename M2, typename... G1, typename... G2>
+[[nodiscard]] constexpr auto operator*(monomial<M1, G1...>, monomial<M2, G2...>)
 {
     using m = multiplier<M1::value * M2::value>;
     if constexpr (M1::value == 0 || M2::value == 0)
     {
-        return monomial<multiplier<0>>{};
+        return monomial<zero>{};
     }
-    else if constexpr (sizeof...(F1) == 0)
+    else if constexpr (sizeof...(G1) == 0 || sizeof...(G2) == 0)
     {
-        return monomial<m, F2...>{};
-    }
-    else if constexpr (sizeof...(F2) == 0)
-    {
-        return monomial<m, F1...>{};
+        return monomial<m, G1..., G2...>{};
     }
     else
     {
-        return ::gal::impl::product(monomial<m>{}, monomial<multiplier<1>, F1...>{}, monomial<multiplier<1>, F2...>{});
+        return ::gal::detail::product(monomial<m>{}, monomial<identity, G1...>{}, monomial<identity, G2...>{});
     }
 }
 
-template <typename M, typename...F>
-[[nodiscard]] constexpr auto operator-(monomial<M, F...>)
+template <typename M, typename...G>
+[[nodiscard]] constexpr auto operator-(monomial<M, G...>)
 {
-    return monomial<multiplier<-M::value>, F...>{};
+    return monomial<multiplier<-M::value>, G...>{};
 }
 
-template <typename M1, typename M2, typename... F>
-[[nodiscard]] constexpr auto operator+(monomial<M1, F...> lhs, monomial<M2, F...> rhs) noexcept
+template <typename M1, typename M2, typename... G>
+[[nodiscard]] constexpr auto operator+(monomial<M1, G...> lhs, monomial<M2, G...> rhs) noexcept
 {
-    if constexpr (M1::value == 0)
+    if constexpr (M1::value + M2::value == 0)
+    {
+        return monomial<zero>{};
+    }
+    else if constexpr (M1::value == 0)
     {
         return rhs;
     }
@@ -249,25 +220,26 @@ template <typename M1, typename M2, typename... F>
     {
         return lhs;
     }
+    else
     {
-        return monomial<multiplier<M1::value + M2::value>, F...>{};
+        return monomial<multiplier<M1::value + M2::value>, G...>{};
     }
 };
 
-template <typename M1, typename M2, typename... F>
-[[nodiscard]] constexpr auto operator-(monomial<M1, F...>, monomial<M2, F...>) noexcept
+template <typename M1, typename M2, typename... G>
+[[nodiscard]] constexpr auto operator-(monomial<M1, G...>, monomial<M2, G...>) noexcept
 {
     if constexpr (M1::value == M2::value)
     {
-        return monomial<multiplier<0>>{};
+        return monomial<zero>{};
     }
     else
     {
-        return monomial<multiplier<M1::value - M2::value>, F...>{};
+        return monomial<multiplier<M1::value - M2::value>, G...>{};
     }
 };
 
-namespace impl
+namespace detail
 {
 // Fully generic addition operator for ring or multivector elements
 // C := common template parameter (overloaded to mean different things)
@@ -277,11 +249,11 @@ sum(T<C, I...> accum, T<C, J...> lhs, T<C, K...> rhs) noexcept
 {
     using lhs_t = decltype(lhs);
     using rhs_t = decltype(rhs);
-    if constexpr (lhs.size == 0)
+    if constexpr (lhs.is_zero)
     {
         return T<C, I..., K...>{};
     }
-    else if constexpr (rhs.size == 0)
+    else if constexpr (rhs.is_zero)
     {
         return T<C, I..., J...>{};
     }
@@ -290,7 +262,7 @@ sum(T<C, I...> accum, T<C, J...> lhs, T<C, K...> rhs) noexcept
         if constexpr (equals<typename lhs_t::first_t, typename rhs_t::first_t>::value())
         {
             using next_t = decltype(typename lhs_t::first_t{} + typename rhs_t::first_t{});
-            if constexpr (next_t::size == 0)
+            if constexpr (next_t::is_zero)
             {
                 return sum(accum, typename lhs_t::subsequent_t{}, typename rhs_t::subsequent_t{});
             }
@@ -343,7 +315,7 @@ product(T<C, I...> lhs, T<C, J...> rhs) noexcept
 {
     if constexpr (lhs.size == 0 || rhs.size == 0)
     {
-        // No factors to distribute
+        // No generators to distribute
         return T<C>{};
     }
     else
@@ -364,7 +336,7 @@ product(T<C, I...> lhs, T<C, J...> rhs) noexcept
 }
 }
 
-// Lack of constexpr arguments prevent this from being implementable as an operator
+// Lack of constexpr arguments prevent this from being detailementable as an operator
 template <int S, typename T>
 struct scale
 {
@@ -392,69 +364,75 @@ struct equals<monomial<M1, F1...>, monomial<M2, F2...>>
     }
 };
 
-namespace impl
+namespace detail
 {
 template <typename T1, typename... T1s, typename T2, typename... T2s>
 [[nodiscard]] constexpr bool compare_lex(std::tuple<T1, T1s...>, std::tuple<T2, T2s...>)
 {
-    if constexpr (T1::id < T2::id)
+    if constexpr(equals<T1, T2>::value)
     {
-        return true;
+        if constexpr (T1::degree < T2::degree)
+        {
+            return true;
+        }
+        else if constexpr (T1::degree > T2::degree)
+        {
+            return false;
+        }
+        else
+        {
+            if constexpr (sizeof...(T2s) == 0)
+            {
+                return false;
+            }
+            else if constexpr (sizeof...(T1s) == 0)
+            {
+                return true;
+            }
+            else
+            {
+                return compare_lex(std::tuple<T1s...>{}, std::tuple<T2s...>{});
+            }
+        }
     }
-    else if (T1::id > T2::id)
-    {
-        return false;
-    }
-    else if (T1::id == T2::id && T1::degree < T2::degree)
-    {
-        return true;
-    }
-    else if (T1::id == T2::id && T1::degree > T2::degree)
-    {
-        return false;
-    }
-    else if constexpr (sizeof...(T2s) == 0)
-    {
-        return false;
-    }
-    else if constexpr (sizeof...(T1s) == 0)
+    else if constexpr (less<T1, T2>::value)
     {
         return true;
     }
     else
     {
-        return compare_lex(std::tuple<T1s...>{}, std::tuple<T2s...>{});
+        return false;
     }
 }
-} // namespace impl
+} // namespace detail
 
 // Monomials are compared using the graded lexicographic ordering which is preserved under monomial multiplication
-template <typename M1, typename M2, typename... F1, typename... F2>
-struct less<monomial<M1, F1...>, monomial<M2, F2...>>
+template <typename M1, typename M2, typename... G1, typename... G2>
+struct less<monomial<M1, G1...>, monomial<M2, G2...>>
 {
     [[nodiscard]] constexpr static bool value() noexcept
     {
-        if constexpr (monomial<M1, F1...>::degree < monomial<M2, F2...>::degree)
+        if constexpr (monomial<M1, G1...>::degree < monomial<M2, G2...>::degree)
         {
             return true;
         }
-        else if constexpr (monomial<M1, F1...>::degree > monomial<M2, F2...>::degree)
+        else if constexpr (monomial<M1, G1...>::degree > monomial<M2, G2...>::degree)
         {
             return false;
         }
-        else if constexpr (sizeof...(F1) == 0)
+        else if constexpr (sizeof...(G1) == 0)
         {
             // Both monomials are empty so neither is stricly less than the other
             return false;
         }
-        else if constexpr (sizeof...(F1) == sizeof...(F2))
+        else if constexpr (sizeof...(G1) == sizeof...(G2))
         {
             // Monomial sizes are equal so we can apply lexicographic comparison with a fold
-            return ((F1::id < F2::id) || ...);
+            return (less<G1, G2>::value || ...);
         }
         else
         {
-            return impl::compare_lex(std::tuple<F1...>{}, std::tuple<F2...>{});
+            return detail::compare_lex(std::tuple<G1...>{}, std::tuple<G2...>{});
         }
     }
 };
@@ -465,15 +443,17 @@ struct element
     constexpr static size_t value = E;
 };
 
-// A term encodes all the originating factors that multiplicatively comprise the term.
+// A term encodes a single linearly independent term in a multivector expression.
 // Operations that would contribute or subtract in a manner that cancels out the term
 // will annihilate it during the final reduction.
 // E := the basis element associated with this term
+// As := the variadic addends that comprise the polynomial coefficient of the term.
 // The basis element index is used to impose a partial ordering on terms
 template <typename E, typename... As> struct term
 {
     using first_t = void;
     constexpr static size_t size = 0;
+    constexpr static bool is_zero = true;
 };
 
 template <typename E, typename A, typename... As>
@@ -483,6 +463,7 @@ struct term<E, A, As...>
     using subsequent_t = term<E, As...>;
     constexpr static size_t size = sizeof...(As) + 1;
     constexpr static size_t basis_element = E::value;
+    constexpr static bool is_zero = A::is_zero && sizeof...(As) == 0;
 };
 
 template <int S, typename E, typename... A>
@@ -513,7 +494,7 @@ struct less<term<E1, A1...>, term<E2, A2...>>
 template <typename E, typename... I, typename... J>
 [[nodiscard]] constexpr auto operator+(term<E, I...> lhs, term<E, J...> rhs) noexcept
 {
-    return ::gal::impl::sum(term<E>{}, lhs, rhs);
+    return ::gal::detail::sum(term<E>{}, lhs, rhs);
 }
 
 template <typename E, typename... I>
@@ -525,7 +506,7 @@ template <typename E, typename... I>
 template <typename E, typename... I, typename... J>
 [[nodiscard]] constexpr auto operator-(term<E, I...> lhs, term<E, J...> rhs) noexcept
 {
-    return ::gal::impl::sum(term<E>{}, lhs, -rhs);
+    return ::gal::detail::sum(term<E>{}, lhs, -rhs);
 }
 
 // The ring algebra wraps the traditional product between monomials
@@ -543,7 +524,7 @@ struct ring_algebra
 template <typename E, typename... M1, typename... M2>
 [[nodiscard]] constexpr auto operator*(term<E, M1...> lhs, term<E, M2...> rhs) noexcept
 {
-    return ::gal::impl::product<ring_algebra<E>>(lhs, rhs);
+    return ::gal::detail::product<ring_algebra<E>>(lhs, rhs);
 }
 
 // With respect to the code here, a multivector is the additive union of terms
@@ -554,6 +535,7 @@ template <typename V, typename... Terms> struct multivector
     using first_t = void;
     using subsequent_t = void;
     constexpr static size_t size = 0;
+    constexpr static bool is_zero = true;
 };
 
 template <typename T, typename... Ts> struct multivector<void, T, Ts...>
@@ -561,6 +543,7 @@ template <typename T, typename... Ts> struct multivector<void, T, Ts...>
     using first_t = T;
     using subsequent_t = multivector<void, Ts...>;
     constexpr static size_t size = sizeof...(Ts) + 1;
+    constexpr static bool is_zero = T::is_zero && sizeof...(Ts) == 0;
 };
 
 template <int S, typename... T>
@@ -572,7 +555,7 @@ struct scale<S, multivector<void, T...>>
 template <typename... I, typename... J>
 [[nodiscard]] constexpr auto operator+(multivector<void, I...> lhs, multivector<void, J...> rhs)
 {
-    return ::gal::impl::sum(multivector<void>{}, lhs, rhs);
+    return ::gal::detail::sum(multivector<void>{}, lhs, rhs);
 }
 
 template <typename... I>
@@ -584,7 +567,7 @@ template <typename... I>
 template <typename... I, typename... J>
 [[nodiscard]] constexpr auto operator-(multivector<void, I...> lhs, multivector<void, J...> rhs)
 {
-    return ::gal::impl::sum(multivector<void>{}, lhs, -rhs);
+    return ::gal::detail::sum(multivector<void>{}, lhs, -rhs);
 }
 
 // A vector space is not equipped with any sort of product, however, it is useful to provide a product
@@ -596,7 +579,7 @@ template <typename... I, typename... J>
 template <typename Algebra, typename...I, typename... J>
 [[nodiscard]] constexpr auto operator*(multivector<void, I...> lhs, multivector<void, J...> rhs)
 {
-    return ::gal::impl::product<Algebra>(lhs, rhs);
+    return ::gal::detail::product<Algebra>(lhs, rhs);
 }
 
 // An algebra over a field is a multivector space equipped with a bilinear product.

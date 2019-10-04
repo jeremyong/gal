@@ -39,9 +39,11 @@ namespace fmt
         }
     };
 
-    template <typename Degree, size_t ID>
-    struct formatter<gal::factor<Degree, ID>>
+    template <typename Tag, typename Degree, size_t Order>
+    struct formatter<gal::generator<Tag, Degree, Order>>
     {
+        using type = gal::generator<Tag, Degree, Order>;
+
         template <typename PC>
         constexpr auto parse(PC& ctx)
         {
@@ -49,15 +51,17 @@ namespace fmt
         }
 
         template <typename FC>
-        constexpr auto format(const gal::factor<Degree, ID>& factor, FC& ctx)
+        constexpr auto format(const type&, FC& ctx)
         {
+            // Untagged generators are displayed with a 0
+            constexpr auto id = Tag::value == ~0ull ? 0 : Tag::value;
             if constexpr (Degree::value > 1)
             {
-                return format_to(ctx.out(), "{}^{}", fg(color::orange) * ID, Degree::value);
+                return format_to(ctx.out(), "{}^{}", fg(color::orange) * id, Degree::value);
             }
             else if constexpr (Degree::value == 1)
             {
-                return format_to(ctx.out(), "{}", fg(color::orange) * ID);
+                return format_to(ctx.out(), "{}", fg(color::orange) * id);
             }
             else if constexpr (Degree::value == 0)
             {
@@ -65,13 +69,13 @@ namespace fmt
             }
             else
             {
-                return format_to(ctx.out(), "{}^{{{}}}", fg(color::orange) * ID, Degree::value);
+                return format_to(ctx.out(), "{}^{{{}}}", fg(color::orange) * id, Degree::value);
             }
         }
     };
 
-    template <typename Multiplier, typename... Factors>
-    struct formatter<gal::monomial<Multiplier, Factors...>>
+    template <typename Multiplier, typename... Generators>
+    struct formatter<gal::monomial<Multiplier, Generators...>>
     {
         template <typename PC>
         constexpr auto parse(PC& ctx)
@@ -80,7 +84,7 @@ namespace fmt
         }
 
         template <typename FC>
-        constexpr auto format(const gal::monomial<Multiplier, Factors...>& addend, FC& ctx)
+        constexpr auto format(const gal::monomial<Multiplier, Generators...>& addend, FC& ctx)
         {
             if constexpr (Multiplier::value == 0)
             {
@@ -88,31 +92,49 @@ namespace fmt
             }
             else if constexpr (Multiplier::value == -1)
             {
-                format_to(ctx.out(), "-");
+                if constexpr (sizeof...(Generators) == 0)
+                {
+                    format_to(ctx.out(), "-1");
+                }
+                else
+                {
+                    format_to(ctx.out(), "-");
+                }
             }
             else if constexpr (Multiplier::value != 1)
             {
-                format_to(ctx.out(), "{}*", fg(color::misty_rose) * Multiplier::value);
+                if constexpr (sizeof...(Generators) == 0)
+                {
+                    format_to(ctx.out(), "{}", fg(color::misty_rose) * Multiplier::value);
+                }
+                else
+                {
+                    format_to(ctx.out(), "{}*", fg(color::misty_rose) * Multiplier::value);
+                }
+            }
+            else if constexpr (Multiplier::value == 1 && sizeof...(Generators) == 0)
+            {
+                format_to(ctx.out(), "{}", fg(color::misty_rose) * 1);
             }
 
-            if constexpr (sizeof...(Factors) > 0)
+            if constexpr (sizeof...(Generators) > 0)
             {
-                format_factors(ctx, std::tuple<Factors...>{});
+                format_generators(ctx, std::tuple<Generators...>{});
             }
             return ctx.out();
         }
 
-        template <typename FC, typename F, typename... Fs>
-        constexpr auto format_factors(FC& ctx, std::tuple<F, Fs...>)
+        template <typename FC, typename G, typename... Gs>
+        constexpr auto format_generators(FC& ctx, std::tuple<G, Gs...>)
         {
-            if constexpr (sizeof...(Fs) > 0)
+            if constexpr (sizeof...(Gs) > 0)
             {
-                format_to(ctx.out(), "{}*", F{});
-                format_factors(ctx, std::tuple<Fs...>{});
+                format_to(ctx.out(), "{}*", G{});
+                format_generators(ctx, std::tuple<Gs...>{});
             }
             else
             {
-                format_to(ctx.out(), "{}", F{});
+                format_to(ctx.out(), "{}", G{});
             }
         }
     };
@@ -153,14 +175,19 @@ namespace fmt
     {
         constexpr static text_style bstyle = fg(color::yellow);
         template <typename PC>
-        constexpr auto parse(PC& ctx)
+        constexpr auto parse(PC& ctx) const
         {
             return ctx.begin();
         }
 
         template <typename FC>
-        constexpr auto format(const gal::term<E, Monomials...>& term, FC& ctx)
+        constexpr auto format(const gal::term<E, Monomials...>& term, FC& ctx) const
         {
+            if constexpr (sizeof...(Monomials) == 0)
+            {
+                return ctx.out();
+            }
+
             format_to(ctx.out(), "[");
             if constexpr (sizeof...(Monomials) > 0)
             {
@@ -178,7 +205,7 @@ namespace fmt
         }
 
         template <typename FC, typename M, typename... Ms>
-        constexpr auto format_addends(FC& ctx, std::tuple<M, Ms...>)
+        constexpr auto format_addends(FC& ctx, std::tuple<M, Ms...>) const
         {
             if constexpr (sizeof...(Ms) > 0)
             {
@@ -206,7 +233,7 @@ namespace fmt
         {
             if constexpr (sizeof...(Terms) > 0)
             {
-                format_terms(ctx, std::tuple<Terms...>{});
+                format_terms(ctx, std::tuple<Terms...>{}, true);
             }
             else
             {
@@ -216,16 +243,41 @@ namespace fmt
         }
 
         template <typename FC, typename T, typename... Ts>
-        constexpr auto format_terms(FC& ctx, std::tuple<T, Ts...>)
+        constexpr auto format_terms(FC& ctx, std::tuple<T, Ts...>, bool first)
         {
             if constexpr (sizeof...(Ts) > 0)
             {
-                format_to(ctx.out(), "{} + ", T{});
-                format_terms(ctx, std::tuple<Ts...>{});
+                if constexpr (!T::is_zero)
+                {
+                    if (!first)
+                    {
+                        format_to(ctx.out(), " + {}", T{});
+                    }
+                    else
+                    {
+                        format_to(ctx.out(), "{}", T{});
+                    }
+                    format_terms(ctx, std::tuple<Ts...>{}, false);
+                }
+                else
+                {
+                    format_terms(ctx, std::tuple<Ts...>{}, first);
+                }
+                
             }
             else
             {
-                format_to(ctx.out(), "{}", T{});
+                if constexpr (!T::is_zero)
+                {
+                    if (first)
+                    {
+                        format_to(ctx.out(), "{}", T{});
+                    }
+                    else
+                    {
+                        format_to(ctx.out(), " + {}", T{});
+                    }
+                }
             }
         }
     };

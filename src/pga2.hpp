@@ -56,23 +56,6 @@ namespace pga2
         return !(!lhs ^ !rhs);
     }
 
-    template <size_t ID>
-    using t = term<element<0>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t0 = term<element<0b1>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t1 = term<element<0b10>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t2 = term<element<0b100>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t01 = term<element<0b11>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t02 = term<element<0b101>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t12 = term<element<0b110>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t012 = term<element<0b111>, monomial<one, generator<tag<ID>>>>;
-
     using e    = multivector<void, term<element<0>, monomial<one>>>;
     using e0   = multivector<void, term<element<0b1>, monomial<one>>>;
     using e1   = multivector<void, term<element<0b10>, monomial<one>>>;
@@ -100,8 +83,17 @@ namespace pga2
                                  term<element<0b101>, monomial<minus_one, generator<tag<ID, 0>>>>, // -x
                                  term<element<0b110>, monomial<one>>>;
 
-        T x;
-        T y;
+        union
+        {
+            T x;
+            T u;
+        };
+
+        union
+        {
+            T y;
+            T v;
+        };
 
         [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
         {

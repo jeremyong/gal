@@ -54,25 +54,6 @@ namespace pga
         return !(!lhs ^ !rhs);
     }
 
-    template <size_t ID>
-    using t = term<element<0>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t0 = term<element<0b1>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t1 = term<element<0b10>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t2 = term<element<0b100>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t3 = term<element<0b1000>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t012 = term<element<0b111>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t013 = term<element<0b1011>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t023 = term<element<0b1101>, monomial<one, generator<tag<ID>>>>;
-    template <size_t ID>
-    using t123 = term<element<0b1110>, monomial<one, generator<tag<ID>>>>;
-
     using e    = multivector<void, term<element<0>, monomial<one>>>;
     using e0   = multivector<void, term<element<0b1>, monomial<one>>>;
     using e1   = multivector<void, term<element<0b10>, monomial<one>>>;
@@ -84,48 +65,121 @@ namespace pga
     using e123 = multivector<void, term<element<0b1110>, monomial<one>>>;
     using e0123 = multivector<void, term<element<0b1111>, monomial<one>>>;
 
-    template <size_t ID, typename F = float>
-    struct plane
-    {
-        constexpr static size_t id = ID;
-        using type                 = multivector<void, t0<ID>, t1<ID + 1>, t2<ID + 2>, t3<ID + 3>>;
-        F d;
-        F x;
-        F y;
-        F z;
-    };
-
     template <int D, int X, int Y, int Z>
-    using iplane = multivector<void,
+    using plane_t = multivector<void,
                                term<element<1>, monomial<rational<D>>>,
                                term<element<0b10>, monomial<rational<X>>>,
                                term<element<0b100>, monomial<rational<Y>>>,
                                term<element<0b1000>, monomial<rational<Z>>>>;
 
-    template <size_t ID, typename F = float>
-    struct point
+    template <typename T = float>
+    struct plane
     {
-        constexpr static size_t id = ID;
-        using type = multivector<void, t012<ID>, t013<ID + 1>, t023<ID + 2>, term<element<0b1110>, monomial<one>>>;
-        F x;
-        F y;
-        F z;
+        using value_t = T;
+
+        template <size_t ID>
+        using type = multivector<void,
+                                 term<element<0b1>, monomial<one, generator<tag<ID, 0>>>>,
+                                 term<element<0b10>, monomial<one, generator<tag<ID, 1>>>>,
+                                 term<element<0b100>, monomial<one, generator<tag<ID, 2>>>>,
+                                 term<element<0b1000>, monomial<one, generator<tag<ID, 3>>>>>;
+        T d;
+        T x;
+        T y;
+        T z;
+
+        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
+        {
+            return *(reinterpret_cast<const T*>(this) + index);
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return *(reinterpret_cast<T*>(this) + index);
+        }
+
+        template <typename Engine, typename... I>
+        [[nodiscard]] constexpr static plane<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
+        {
+            auto d_e = extract<0b1>(mv);
+            auto x_e = extract<0b10>(mv);
+            auto y_e = extract<0b100>(mv);
+            auto z_e = extract<0b1000>(mv);
+
+            T d = engine.template evaluate<T>(d_e);
+            T x = engine.template evaluate<T>(x_e);
+            T y = engine.template evaluate<T>(y_e);
+            T z = engine.template evaluate<T>(z_e);
+
+            return {d, x, y, z};
+        }
     };
 
     template <int X, int Y, int Z>
-    using ipoint = multivector<void,
+    using point_t = multivector<void,
                                term<element<0b111>, monomial<rational<-Z>>>,
                                term<element<0b1011>, monomial<rational<Y>>>,
                                term<element<0b1101>, monomial<rational<-X>>>,
                                term<element<0b1110>, monomial<one>>>;
 
-    template <size_t ID, typename F = float>
-    struct direction
+
+    template <typename T = float>
+    struct point
     {
-        using type = multivector<void, t012<ID>, t013<ID + 1>, t023<ID + 2>>;
-        F x;
-        F y;
-        F z;
+        using value_t = T;
+
+        template <size_t ID>
+        using type = multivector<void,
+                                 term<element<0b111>, monomial<minus_one, generator<tag<ID, 2>>>>,  // -z
+                                 term<element<0b1011>, monomial<one, generator<tag<ID, 1>>>>,       // y
+                                 term<element<0b1101>, monomial<minus_one, generator<tag<ID, 0>>>>, // -x
+                                 term<element<0b1110>, monomial<one>>>;
+
+        union
+        {
+            T x;
+            T u;
+        };
+
+        union
+        {
+            T y;
+            T v;
+        };
+
+        union
+        {
+            T z;
+            T w;
+        };
+
+        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
+        {
+            return *(reinterpret_cast<const T*>(this) + index);
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return *(reinterpret_cast<T*>(this) + index);
+        }
+
+        template <typename Engine, typename... I>
+        [[nodiscard]] constexpr static point<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
+        {
+            auto x_e = extract<0b1101>(mv);
+            auto y_e = extract<0b1011>(mv);
+            auto z_e = extract<0b111>(mv);
+            auto c_e = extract<0b1110>(mv);
+
+            T x = -engine.template evaluate<T>(x_e);
+            T y = engine.template evaluate<T>(y_e);
+            T z = -engine.template evaluate<T>(z_e);
+            T c = engine.template evaluate<T>(c_e);
+
+            return {x / c, y / c, z / c};
+        }
     };
+
+    // TODO: directions
 } // namespace pga
 } // namespace gal

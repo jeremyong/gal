@@ -76,10 +76,10 @@ struct zero_generator
     constexpr static bool is_zero = true;
 };
 
-// NOTE: the tag of 0 is RESERVED by the library for the dual unit. This ensures that the
+// NOTE: the tag of ~0 - 1 is RESERVED by the library for the dual unit. This ensures that the
 // dual unit (which has a high chance of extinguishing the monomial it's a factor of) comes
 // first in the factor ordering.
-using dual_generator = generator<tag<0>, degree<1>, 2>;
+using dual_generator = generator<tag<~0ull - 1>, degree<1>, 2>;
 
 // The generators that make up a monomial are weakly ordered based on the source identifiers.
 // If all generators are identified (ID != ~0ull), the ordering becomes a total order.

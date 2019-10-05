@@ -220,7 +220,6 @@ namespace ga
     {
         int swaps = 0;
         size_t e  = E;
-        int i     = 0;
         int grade = count_bits(E);
         while (e > 0)
         {
@@ -232,8 +231,7 @@ namespace ga
             {
                 --grade;
             }
-            ++i;
-            e = e >> i;
+            e = e >> 1;
         }
         if ((swaps & 1) == 1)
         {

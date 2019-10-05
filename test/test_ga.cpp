@@ -169,20 +169,20 @@ TEST_CASE("multivector-contraction")
 
     SUBCASE("polynomial")
     {
-        auto p1 = plane<1>::type{};
-        auto p2 = plane<5>::type{};
+        auto p1 = plane<>::type<1>{};
+        auto p2 = plane<>::type<2>{};
         // Equivalent to the inner vector product
         auto p12 = p1 >> p2;
         static_assert(
-            std::is_same<multivector<void, term<element<0>, monomial<rational<1>, generator<tag<2>, degree<1>>, generator<tag<6>, degree<1>>>,
-                                                monomial<rational<1>, generator<tag<3>, degree<1>>, generator<tag<7>, degree<1>>>,
-                                                monomial<rational<1>, generator<tag<4>, degree<1>>, generator<tag<8>, degree<1>>>>>,
+            std::is_same<multivector<void, term<element<0>, monomial<rational<1>, generator<tag<1, 1>, degree<1>>, generator<tag<2, 1>, degree<1>>>,
+                                                monomial<rational<1>, generator<tag<1, 2>, degree<1>>, generator<tag<2, 2>, degree<1>>>,
+                                                monomial<rational<1>, generator<tag<1, 3>, degree<1>>, generator<tag<2, 3>, degree<1>>>>>,
                          decltype(p12)>::value);
         static_assert(std::is_same<decltype(p2 >> p1), decltype(p1 >> p2)>::value);
         // Vector norm
         static_assert(
-            std::is_same<multivector<void, term<element<0>, monomial<rational<1>, generator<tag<2>, degree<2>>>,
-                                                monomial<rational<1>, generator<tag<3>, degree<2>>>, monomial<rational<1>, generator<tag<4>, degree<2>>>>>,
+            std::is_same<multivector<void, term<element<0>, monomial<rational<1>, generator<tag<1, 1>, degree<2>>>,
+                                                monomial<rational<1>, generator<tag<1, 2>, degree<2>>>, monomial<rational<1>, generator<tag<1, 3>, degree<2>>>>>,
                          decltype(p1 >> p1)>::value);
     }
 }
@@ -269,10 +269,10 @@ TEST_CASE("dual")
         CHECK_EQ(gal::ga::poincare_complement_parity<4, 5>(), -1);
         CHECK_EQ(gal::ga::poincare_complement_parity<4, 6>(), 1);
         CHECK_EQ(gal::ga::poincare_complement_parity<4, 7>(), 1);
-        CHECK_EQ(gal::ga::poincare_complement_parity<4, 8>(), 1);
-        CHECK_EQ(gal::ga::poincare_complement_parity<4, 9>(), -1);
-        CHECK_EQ(gal::ga::poincare_complement_parity<4, 10>(), 1);
-        CHECK_EQ(gal::ga::poincare_complement_parity<4, 11>(), 1);
+        CHECK_EQ(gal::ga::poincare_complement_parity<4, 8>(), -1);
+        CHECK_EQ(gal::ga::poincare_complement_parity<4, 9>(), 1);
+        CHECK_EQ(gal::ga::poincare_complement_parity<4, 10>(), -1);
+        CHECK_EQ(gal::ga::poincare_complement_parity<4, 11>(), -1);
         CHECK_EQ(gal::ga::poincare_complement_parity<4, 12>(), 1);
         CHECK_EQ(gal::ga::poincare_complement_parity<4, 13>(), 1);
         CHECK_EQ(gal::ga::poincare_complement_parity<4, 14>(), -1);

@@ -1,6 +1,8 @@
 #pragma once
 
-#include <ga.hpp>
+#include "ga.hpp"
+
+#include <cmath>
 
 namespace gal
 {

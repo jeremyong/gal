@@ -45,16 +45,15 @@ namespace gal
     return 31 - __builtin_clz(input);
 }
 
-
 #elif defined(_MSC_VER)
 
 // TODO: test MSVC
 
-#include <intrin.h>
-#pragma intrinsic(_BitScanReverse)
-#pragma intrinsic(_BitScanReverse64)
-#pragma intrinsic(_BitScanForward)
-#pragma intrinsic(_BitScanForward64)
+#    include <intrin.h>
+#    pragma intrinsic(_BitScanReverse)
+#    pragma intrinsic(_BitScanReverse64)
+#    pragma intrinsic(_BitScanForward)
+#    pragma intrinsic(_BitScanForward64)
 
 constexpr int count_bits64(uint64_t input) noexcept
 {
@@ -108,4 +107,4 @@ constexpr int count_leading_zeros_complement(uint32_t input) noexcept
 }
 
 #endif
-}
+} // namespace gal

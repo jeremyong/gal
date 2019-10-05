@@ -2,9 +2,8 @@
 
 #include "ring_generator.hpp"
 
-#include <type_traits>
 #include <tuple>
-#include <utility>
+#include <type_traits>
 
 namespace gal
 {
@@ -26,7 +25,8 @@ namespace gal
 // metric<3, 0, 1> := 3D Projective (alt. 4D euclidean)
 // metric<3, 1, 0> := Minkowski Spacetime
 // metric<4, 1, 0> := Conformal Space w/o change of basis
-template <size_t P, size_t V, size_t R> struct metric
+template <size_t P, size_t V, size_t R>
+struct metric
 {
     constexpr static size_t p = P;
     constexpr static size_t v = V;
@@ -55,46 +55,48 @@ template <size_t P, size_t V, size_t R> struct metric
     }
 };
 
-template <int M>
-struct multiplier
-{
-    constexpr static int value = M;
-};
-
-using identity = multiplier<1>;
-using zero = multiplier<0>;
-
 // The coefficient of a term is a linear combination of factors which are kept separate for the purposes of determining
 // an optimal computational strategy. An `monomial` is a product of `factor`s.
 // Invariant: the factors are sorted in order
-template <typename M, typename... Generators> struct monomial
+template <typename Q, typename... Generators>
+struct monomial
 {
-    constexpr static size_t size = sizeof...(Generators) + 1;
-    constexpr static int multiplier = M::value;
-    constexpr static int degree = (Generators::degree + ...);
+    constexpr static size_t size  = sizeof...(Generators) + 1;
+    constexpr static int degree   = (Generators::degree + ...);
     constexpr static bool is_zero = false;
+    using rational_t              = Q;
 };
 
-template <> struct monomial<zero>
+template <typename Q, typename G>
+struct monomial<Q, G>
 {
-    constexpr static size_t size = 0;
-    constexpr static int multiplier = 0;
-    constexpr static int degree = 0;
+    constexpr static size_t size  = 1;
+    constexpr static int degree   = G::degree;
+    constexpr static bool is_zero = false;
+    using tag_t                   = typename G::tag_t;
+    using rational_t              = Q;
+};
+
+template <>
+struct monomial<zero>
+{
+    constexpr static size_t size  = 0;
+    constexpr static int degree   = 0;
     constexpr static bool is_zero = true;
+    using rational_t              = zero;
 };
 
 template <typename M>
 [[nodiscard]] constexpr bool is_monomial_identity() noexcept
 {
-    return std::is_same<M, monomial<identity>>::value;
+    return std::is_same<M, monomial<one>>::value;
 }
-
 
 template <typename T, size_t O, typename D1, typename D2>
 [[nodiscard]] constexpr auto operator*(generator<T, D1, O> lhs, generator<T, D2, O> rhs)
 {
-    using lhs_t = decltype(lhs);
-    using rhs_t = decltype(rhs);
+    using lhs_t      = decltype(lhs);
+    using rhs_t      = decltype(rhs);
     constexpr auto d = D1::value + D2::value;
     if constexpr (d == O)
     {
@@ -108,194 +110,145 @@ template <typename T, size_t O, typename D1, typename D2>
 
 namespace detail
 {
-template <typename M, typename... I, typename G1, typename... J, typename G2, typename... K>
-[[nodiscard]] constexpr auto
-product(monomial<M, I...> accum, monomial<identity, G1, J...> lhs, monomial<identity, G2, K...> rhs)
-{
-    if constexpr (G1::tag_t::untagged && G2::tag_t::untagged)
+    template <typename M, typename... I, typename G1, typename... J, typename G2, typename... K>
+    [[nodiscard]] constexpr auto
+    product(monomial<M, I...> accum, monomial<one, G1, J...> lhs, monomial<one, G2, K...> rhs)
     {
-        // reduce an extra recursion if both factors are untagged
-        if constexpr (sizeof...(J) == 0)
+        if constexpr (G1::tag_t::untagged && G2::tag_t::untagged)
         {
-            return monomial<M, I..., G1, G2, K...>{};
-        }
-        else if constexpr (sizeof...(K) == 0)
-        {
-            return monomial<M, I..., G1, G2, J...>{};
-        }
-        else
-        {
-            return product(monomial<M, I..., G1, G2>{}, monomial<identity, J...>{}, monomial<identity, K...>{});
-        }
-    }
-    else if constexpr (G1::tag_t::untagged || less<typename G1::tag_t, typename G2::tag_t>::value)
-    {
-        if constexpr (sizeof...(J) == 0)
-        {
-            return monomial<M, I..., G1, G2, K...>{};
-        }
-        else
-        {
-            return product(monomial<M, I..., G1>{}, monomial<identity, J...>{}, rhs);
-        }
-    }
-    else if constexpr (G2::tag_t::untagged || less<typename G2::tag_t, typename G1::tag_t>::value)
-    {
-        if constexpr (sizeof...(K) == 0)
-        {
-            return monomial<M, I..., G2, G1, J...>{};
-        }
-        else
-        {
-            return product(monomial<M, I..., G2>{}, lhs, monomial<identity, K...>{});
-        }
-    }
-    else
-    {
-        // Both G1 and G2 are tagged and represent the same factor
-        using g = decltype(G1{} * G2{});
-        if constexpr (sizeof...(J) == 0 || sizeof...(K) == 0)
-        {
-            if constexpr (g::is_zero)
+            // reduce an extra recursion if both factors are untagged
+            if constexpr (sizeof...(J) == 0)
             {
-                return monomial<M, I..., J..., K...>{};
+                return monomial<M, I..., G1, G2, K...>{};
+            }
+            else if constexpr (sizeof...(K) == 0)
+            {
+                return monomial<M, I..., G1, G2, J...>{};
             }
             else
             {
-                return monomial<M, I..., g, J..., K...>{};
+                return product(monomial<M, I..., G1, G2>{}, monomial<one, J...>{}, monomial<one, K...>{});
+            }
+        }
+        else if constexpr (G1::tag_t::untagged || less<typename G1::tag_t, typename G2::tag_t>::value)
+        {
+            if constexpr (sizeof...(J) == 0)
+            {
+                return monomial<M, I..., G1, G2, K...>{};
+            }
+            else
+            {
+                return product(monomial<M, I..., G1>{}, monomial<one, J...>{}, rhs);
+            }
+        }
+        else if constexpr (G2::tag_t::untagged || less<typename G2::tag_t, typename G1::tag_t>::value)
+        {
+            if constexpr (sizeof...(K) == 0)
+            {
+                return monomial<M, I..., G2, G1, J...>{};
+            }
+            else
+            {
+                return product(monomial<M, I..., G2>{}, lhs, monomial<one, K...>{});
             }
         }
         else
         {
-            if constexpr (g::is_zero)
+            // Both G1 and G2 are tagged and represent the same factor
+            using g = decltype(G1{} * G2{});
+            if constexpr (sizeof...(J) == 0 || sizeof...(K) == 0)
             {
-                return product(monomial<M, I...>{}, monomial<identity, J...>{}, monomial<identity, K...>{});
+                if constexpr (g::is_zero)
+                {
+                    return monomial<M, I..., J..., K...>{};
+                }
+                else
+                {
+                    return monomial<M, I..., g, J..., K...>{};
+                }
             }
             else
             {
-                return product(monomial<M, I..., g>{}, monomial<identity, J...>{}, monomial<identity, K...>{});
+                if constexpr (g::is_zero)
+                {
+                    return product(monomial<M, I...>{}, monomial<one, J...>{}, monomial<one, K...>{});
+                }
+                else
+                {
+                    return product(monomial<M, I..., g>{}, monomial<one, J...>{}, monomial<one, K...>{});
+                }
             }
         }
     }
-}
-}
+} // namespace detail
 
 // Order preserving monomial multiplication
-template <typename M1, typename M2, typename... G1, typename... G2>
-[[nodiscard]] constexpr auto operator*(monomial<M1, G1...>, monomial<M2, G2...>)
+template <typename Q1, typename Q2, typename... G1, typename... G2>
+[[nodiscard]] constexpr auto operator*(monomial<Q1, G1...>, monomial<Q2, G2...>)
 {
-    using m = multiplier<M1::value * M2::value>;
-    if constexpr (M1::value == 0 || M2::value == 0)
+    if constexpr (Q1::is_zero || Q2::is_zero)
     {
         return monomial<zero>{};
     }
     else if constexpr (sizeof...(G1) == 0 || sizeof...(G2) == 0)
     {
-        return monomial<m, G1..., G2...>{};
+        using Q = decltype(Q1{} * Q2{});
+        return monomial<Q, G1..., G2...>{};
     }
     else
     {
-        return ::gal::detail::product(monomial<m>{}, monomial<identity, G1...>{}, monomial<identity, G2...>{});
+        using Q = decltype(Q1{} * Q2{});
+        return detail::product(monomial<Q>{}, monomial<one, G1...>{}, monomial<one, G2...>{});
     }
 }
 
-template <typename M, typename...G>
-[[nodiscard]] constexpr auto operator-(monomial<M, G...>)
+template <typename Q, typename... G>
+[[nodiscard]] constexpr auto operator-(monomial<Q, G...>)
 {
-    return monomial<multiplier<-M::value>, G...>{};
+    return monomial<typename Q::neg_t, G...>{};
 }
 
-template <typename M1, typename M2, typename... G>
-[[nodiscard]] constexpr auto operator+(monomial<M1, G...> lhs, monomial<M2, G...> rhs) noexcept
+template <typename Q1, typename Q2, typename... G>
+[[nodiscard]] constexpr auto operator+(monomial<Q1, G...> lhs, monomial<Q2, G...> rhs) noexcept
 {
-    if constexpr (M1::value + M2::value == 0)
+    using Q = decltype(Q1{} + Q2{});
+    if constexpr (Q::is_zero)
     {
         return monomial<zero>{};
     }
-    else if constexpr (M1::value == 0)
+    else if constexpr (Q1::is_zero)
     {
         return rhs;
     }
-    else if constexpr (M2::value == 0)
+    else if constexpr (Q2::is_zero)
     {
         return lhs;
     }
     else
     {
-        return monomial<multiplier<M1::value + M2::value>, G...>{};
+        return monomial<Q, G...>{};
     }
 };
 
-template <typename M1, typename M2, typename... G>
-[[nodiscard]] constexpr auto operator-(monomial<M1, G...>, monomial<M2, G...>) noexcept
+template <typename Q1, typename Q2, typename... G>
+[[nodiscard]] constexpr auto operator-(monomial<Q1, G...>, monomial<Q2, G...>) noexcept
 {
-    if constexpr (M1::value == M2::value)
+    using Q = decltype(Q1{} - Q2{});
+    if constexpr (Q::is_zero)
     {
         return monomial<zero>{};
     }
     else
     {
-        return monomial<multiplier<M1::value - M2::value>, G...>{};
+        return monomial<Q, G...>{};
     }
 };
-
-namespace detail
-{
-// Fully generic addition operator for ring or multivector elements
-// C := common template parameter (overloaded to mean different things)
-template <template <typename, typename...> typename T, typename C, typename...I, typename...J, typename... K>
-[[nodiscard]] constexpr auto
-sum(T<C, I...> accum, T<C, J...> lhs, T<C, K...> rhs) noexcept
-{
-    using lhs_t = decltype(lhs);
-    using rhs_t = decltype(rhs);
-    if constexpr (lhs.is_zero)
-    {
-        return T<C, I..., K...>{};
-    }
-    else if constexpr (rhs.is_zero)
-    {
-        return T<C, I..., J...>{};
-    }
-    else
-    {
-        if constexpr (equals<typename lhs_t::first_t, typename rhs_t::first_t>::value())
-        {
-            using next_t = decltype(typename lhs_t::first_t{} + typename rhs_t::first_t{});
-            if constexpr (next_t::is_zero)
-            {
-                return sum(accum, typename lhs_t::subsequent_t{}, typename rhs_t::subsequent_t{});
-            }
-            else
-            {
-                return sum(T<C, I..., next_t>{}, typename lhs_t::subsequent_t{}, typename rhs_t::subsequent_t{});
-            }
-        }
-        else if constexpr (less<typename lhs_t::first_t, typename rhs_t::first_t>::value())
-        {
-            return sum(T<C, I..., typename lhs_t::first_t>{}, typename lhs_t::subsequent_t{}, rhs);
-        }
-        else
-        {
-            return sum(T<C, I..., typename rhs_t::first_t>{}, lhs, typename rhs_t::subsequent_t{});
-        }
-    }
-}
-
-// Using the product operator defined by Algebra, distributes the term lhs into the monomials of rhs
-template <typename Algebra, template <typename, typename...> typename T, typename C, typename I, typename... J>
-[[nodiscard]] constexpr auto
-distribute(I lhs, T<C, J...> rhs) noexcept
-{
-    return (Algebra::product(lhs, J{}) + ...);
-}
 
 // Unlike other functions in this module, `simplify` does not assume its input is ordered with respect to
 // any monomial ordering. It relies on the addition operator to coalesce like-terms and the output is
 // respect to be well-ordered.
 template <template <typename, typename...> typename T, typename C, typename... I>
-[[nodiscard]] constexpr auto
-simplify(T<C, I...>) noexcept
+[[nodiscard]] constexpr auto simplify(T<C, I...>) noexcept
 {
     if constexpr (sizeof...(I) == 0)
     {
@@ -307,55 +260,108 @@ simplify(T<C, I...>) noexcept
     }
 }
 
-// Fully generic multiplication operator for ring and multivector elements
-// Algebra := algebra which defines the product operator between terms
-template <typename Algebra, template <typename, typename...> typename T, typename C, typename...I, typename... J>
-[[nodiscard]] constexpr auto
-product(T<C, I...> lhs, T<C, J...> rhs) noexcept
+namespace detail
 {
-    if constexpr (lhs.size == 0 || rhs.size == 0)
+    // Fully generic addition operator for ring or multivector elements
+    // C := common template parameter (overloaded to mean different things)
+    template <template <typename, typename...> typename T, typename C, typename... I, typename... J, typename... K>
+    [[nodiscard]] constexpr auto sum(T<C, I...> accum, T<C, J...> lhs, T<C, K...> rhs) noexcept
     {
-        // No generators to distribute
-        return T<C>{};
-    }
-    else
-    {
-        if constexpr (Algebra::has_order_preserving_product)
+        using lhs_t = decltype(lhs);
+        using rhs_t = decltype(rhs);
+        if constexpr (lhs.is_zero)
         {
-            // We have a choice of distributing items on the left to items on the right or vice versa. We'll choose
-            // the former.
-            return (distribute<Algebra>(I{}, rhs) + ...);
+            return T<C, I..., K...>{};
+        }
+        else if constexpr (rhs.is_zero)
+        {
+            return T<C, I..., J...>{};
         }
         else
         {
-            // In the event that the algebraic product is not order preserving, we need an additional pass to group
-            // like elements together.
-            return (simplify(distribute<Algebra>(I{}, rhs)) + ...);
+            if constexpr (equals<typename lhs_t::first_t, typename rhs_t::first_t>::value())
+            {
+                using next_t = decltype(typename lhs_t::first_t{} + typename rhs_t::first_t{});
+                if constexpr (next_t::is_zero)
+                {
+                    return sum(accum, typename lhs_t::subsequent_t{}, typename rhs_t::subsequent_t{});
+                }
+                else
+                {
+                    return sum(T<C, I..., next_t>{}, typename lhs_t::subsequent_t{}, typename rhs_t::subsequent_t{});
+                }
+            }
+            else if constexpr (less<typename lhs_t::first_t, typename rhs_t::first_t>::value())
+            {
+                return sum(T<C, I..., typename lhs_t::first_t>{}, typename lhs_t::subsequent_t{}, rhs);
+            }
+            else
+            {
+                return sum(T<C, I..., typename rhs_t::first_t>{}, lhs, typename rhs_t::subsequent_t{});
+            }
         }
     }
-}
-}
+
+    // Using the product operator defined by Algebra, distributes the term lhs into the monomials of rhs
+    template <typename Algebra, template <typename, typename...> typename T, typename C, typename I, typename... J>
+    [[nodiscard]] constexpr auto distribute(I lhs, T<C, J...> rhs) noexcept
+    {
+        return (Algebra::product(lhs, J{}) + ...);
+    }
+
+    // Fully generic multiplication operator for ring and multivector elements
+    // Algebra := algebra which defines the product operator between terms
+    template <typename Algebra, template <typename, typename...> typename T, typename C, typename... I, typename... J>
+    [[nodiscard]] constexpr auto product(T<C, I...> lhs, T<C, J...> rhs) noexcept
+    {
+        if constexpr (lhs.size == 0 || rhs.size == 0)
+        {
+            // No generators to distribute
+            return T<C>{};
+        }
+        else
+        {
+            if constexpr (Algebra::has_order_preserving_product)
+            {
+                // We have a choice of distributing items on the left to items on the right or vice versa. We'll choose
+                // the former.
+                return (distribute<Algebra>(I{}, rhs) + ...);
+            }
+            else
+            {
+                // In the event that the algebraic product is not order preserving, we need an additional pass to group
+                // like elements together.
+                return (simplify(distribute<Algebra>(I{}, rhs)) + ...);
+            }
+        }
+    }
+} // namespace detail
 
 // Lack of constexpr arguments prevent this from being detailementable as an operator
 template <int S, typename T>
 struct scale
+{};
+
+template <int S, typename Q, typename... G>
+struct scale<S, monomial<Q, G...>>
 {
+    using type = monomial<rational<S * Q::num, Q::den>, G...>;
 };
 
-template <int S, typename M, typename... F>
-struct scale<S, monomial<M, F...>>
+template <typename Q, typename... G>
+struct scale<0, monomial<Q, G...>>
 {
-    using type = monomial<multiplier<S * M::value>, F...>;
+    using type = monomial<zero>;
 };
 
-template <typename M1, typename M2, typename... F1, typename... F2>
-struct equals<monomial<M1, F1...>, monomial<M2, F2...>>
+template <typename Q1, typename Q2, typename... G1, typename... G2>
+struct equals<monomial<Q1, G1...>, monomial<Q2, G2...>>
 {
     [[nodiscard]] constexpr static bool value() noexcept
     {
-        if constexpr (sizeof...(F1) == sizeof...(F2))
+        if constexpr (sizeof...(G1) == sizeof...(G2))
         {
-            return (std::is_same<F1, F2>::value && ...);
+            return (std::is_same<G1, G2>::value && ...);
         }
         else
         {
@@ -366,44 +372,44 @@ struct equals<monomial<M1, F1...>, monomial<M2, F2...>>
 
 namespace detail
 {
-template <typename T1, typename... T1s, typename T2, typename... T2s>
-[[nodiscard]] constexpr bool compare_lex(std::tuple<T1, T1s...>, std::tuple<T2, T2s...>)
-{
-    if constexpr(equals<T1, T2>::value)
+    template <typename T1, typename... T1s, typename T2, typename... T2s>
+    [[nodiscard]] constexpr bool compare_lex(std::tuple<T1, T1s...>, std::tuple<T2, T2s...>)
     {
-        if constexpr (T1::degree < T2::degree)
+        if constexpr (equals<T1, T2>::value)
         {
-            return true;
-        }
-        else if constexpr (T1::degree > T2::degree)
-        {
-            return false;
-        }
-        else
-        {
-            if constexpr (sizeof...(T2s) == 0)
-            {
-                return false;
-            }
-            else if constexpr (sizeof...(T1s) == 0)
+            if constexpr (T1::degree < T2::degree)
             {
                 return true;
             }
+            else if constexpr (T1::degree > T2::degree)
+            {
+                return false;
+            }
             else
             {
-                return compare_lex(std::tuple<T1s...>{}, std::tuple<T2s...>{});
+                if constexpr (sizeof...(T2s) == 0)
+                {
+                    return false;
+                }
+                else if constexpr (sizeof...(T1s) == 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return compare_lex(std::tuple<T1s...>{}, std::tuple<T2s...>{});
+                }
             }
         }
+        else if constexpr (less<T1, T2>::value)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
-    else if constexpr (less<T1, T2>::value)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
 } // namespace detail
 
 // Monomials are compared using the graded lexicographic ordering which is preserved under monomial multiplication
@@ -449,21 +455,24 @@ struct element
 // E := the basis element associated with this term
 // As := the variadic addends that comprise the polynomial coefficient of the term.
 // The basis element index is used to impose a partial ordering on terms
-template <typename E, typename... As> struct term
+template <typename E, typename... As>
+struct term
 {
-    using first_t = void;
-    constexpr static size_t size = 0;
+    using element_t = E;
+    using first_t                 = void;
+    constexpr static size_t size  = 0;
     constexpr static bool is_zero = true;
 };
 
 template <typename E, typename A, typename... As>
 struct term<E, A, As...>
 {
-    using first_t = A;
-    using subsequent_t = term<E, As...>;
-    constexpr static size_t size = sizeof...(As) + 1;
+    using element_t = E;
+    using first_t                         = A;
+    using subsequent_t                    = term<E, As...>;
+    constexpr static size_t size          = sizeof...(As) + 1;
     constexpr static size_t basis_element = E::value;
-    constexpr static bool is_zero = A::is_zero && sizeof...(As) == 0;
+    constexpr static bool is_zero         = A::is_zero && sizeof...(As) == 0;
 };
 
 template <int S, typename E, typename... A>
@@ -530,19 +539,21 @@ template <typename E, typename... M1, typename... M2>
 // With respect to the code here, a multivector is the additive union of terms
 // Vectors are tagged with an identifier used to coalesce annihilating terms during expression evaluation.
 // An tag of 0 indicates the multivector is untagged (common for intermediate multivector results)
-template <typename V, typename... Terms> struct multivector
+template <typename V, typename... Terms>
+struct multivector
 {
-    using first_t = void;
-    using subsequent_t = void;
-    constexpr static size_t size = 0;
+    using first_t                 = void;
+    using subsequent_t            = void;
+    constexpr static size_t size  = 0;
     constexpr static bool is_zero = true;
 };
 
-template <typename T, typename... Ts> struct multivector<void, T, Ts...>
+template <typename T, typename... Ts>
+struct multivector<void, T, Ts...>
 {
-    using first_t = T;
-    using subsequent_t = multivector<void, Ts...>;
-    constexpr static size_t size = sizeof...(Ts) + 1;
+    using first_t                 = T;
+    using subsequent_t            = multivector<void, Ts...>;
+    constexpr static size_t size  = sizeof...(Ts) + 1;
     constexpr static bool is_zero = T::is_zero && sizeof...(Ts) == 0;
 };
 
@@ -576,7 +587,7 @@ template <typename... I, typename... J>
 // If the algebra attached to the vector space below is not a graded algebra, then the multivectors are
 // just normal vectors.
 // Algebra := defines invokable product between basis elements (size_t, size_t) -> size_t
-template <typename Algebra, typename...I, typename... J>
+template <typename Algebra, typename... I, typename... J>
 [[nodiscard]] constexpr auto operator*(multivector<void, I...> lhs, multivector<void, J...> rhs)
 {
     return ::gal::detail::product<Algebra>(lhs, rhs);
@@ -589,11 +600,12 @@ template <typename Algebra, typename...I, typename... J>
 // bilinear products (left/right contraction, exterior, geometric, etc).
 // This library assumes that the algebra is a *finite* algebra (read. not finitely generated or infinite)
 // When the multivector space of the algebra is graded, the gradation is assumed to be the number of basis elements.
-template <typename Field, typename Metric, bool Graded = true, bool HasScalar = true> struct algebra
+template <typename Field, typename Metric, bool Graded = true, bool HasScalar = true>
+struct algebra
 {
-    using field_t = Field;
-    using metric_t = Metric;
-    using graded_t = std::bool_constant<Graded>;
+    using field_t      = Field;
+    using metric_t     = Metric;
+    using graded_t     = std::bool_constant<Graded>;
     using has_scalar_t = std::bool_constant<HasScalar>;
 
     [[nodiscard]] constexpr static bool is_graded() noexcept

@@ -1,9 +1,9 @@
 #include "test_util.hpp"
 
 #include <doctest/doctest.h>
+#include <formatters.hpp>
 #include <pga.hpp>
 #include <ring_generator.hpp>
-#include <formatters.hpp>
 
 using namespace gal::pga;
 
@@ -38,7 +38,7 @@ TEST_CASE("primitives")
             ipoint<0, -1, 0> point3;
             auto plane = point1 | point2 | point3;
 
-            static_assert(std::is_same<decltype(gal::detail::simplify(iplane<0, 0, 0, 2>{})), decltype(plane)>::value);
+            static_assert(std::is_same<decltype(gal::simplify(iplane<0, 0, 0, 2>{})), decltype(plane)>::value);
         }
 
         SUBCASE("translated-from-origin")
@@ -48,7 +48,7 @@ TEST_CASE("primitives")
             ipoint<1, 0, 0> point2;
             ipoint<1, 1, 1> point3;
             auto plane = point1 | point2 | point3;
-            static_assert(std::is_same<decltype(gal::detail::simplify(iplane<-1, 1, 0, 0>{})), decltype(plane)>::value);
+            static_assert(std::is_same<decltype(gal::simplify(iplane<-1, 1, 0, 0>{})), decltype(plane)>::value);
         }
     }
 }

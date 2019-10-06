@@ -18,14 +18,14 @@ TEST_CASE("incidence")
             point_t<1, 1> point2;
 
             // Join them to construct the line y = 1
-            static_assert(std::is_same<decltype(point1 | point2), decltype(simplify(line_t<0, 1, -1>{}))>::value);
+            static_assert(std::is_same<decltype(point1 & point2), decltype(simplify(line_t<0, 1, -1>{}))>::value);
         }
 
         {
             point_t<1, 2> point1;
             point_t<4, 0> point2;
             // The slope of the line constructed here is -2/3
-            constexpr auto line = point1 | point2;
+            constexpr auto line = point1 & point2;
             static_assert(std::is_same<gal::rational<-2, 3>, decltype(line_slope(line))>::value);
         }
 

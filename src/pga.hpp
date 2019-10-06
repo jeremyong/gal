@@ -16,43 +16,7 @@ namespace pga
     // The PGA is a graded algebra with 16 basis elements
     using algebra = ga::algebra<metric>;
 
-    // Left contraction
-    // NOTE: We choose this operator because like the left contraction, >> is right associative
-    template <typename... I, typename... J>
-    [[nodiscard]] constexpr auto operator>>(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept
-    {
-        return detail::product<algebra::contract>(lhs, rhs);
-    }
-
-    template <typename... I, typename... J>
-    [[nodiscard]] constexpr auto operator^(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept
-    {
-        return detail::product<algebra::exterior>(lhs, rhs);
-    }
-
-    template <typename... I, typename... J>
-    [[nodiscard]] constexpr auto operator*(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept
-    {
-        return detail::product<algebra::geometric>(lhs, rhs);
-    }
-
-    template <typename V, typename T>
-    [[nodiscard]] constexpr auto conjugate(V action, T subject) noexcept
-    {
-        return action * subject * ~action;
-    }
-
-    template <typename... I>
-    [[nodiscard]] constexpr auto operator!(multivector<void, I...> input) noexcept
-    {
-        return dual<metric>(input);
-    }
-
-    template <typename M1, typename M2>
-    [[nodiscard]] constexpr auto operator|(M1 lhs, M2 rhs) noexcept
-    {
-        return !(!lhs ^ !rhs);
-    }
+    GAL_OPERATORS(algebra)
 
     using e    = multivector<void, term<element<0>, monomial<one>>>;
     using e0   = multivector<void, term<element<0b1>, monomial<one>>>;
@@ -76,6 +40,7 @@ namespace pga
     struct alignas(16) plane
     {
         using value_t = T;
+        constexpr static size_t size = 4;
 
         template <size_t ID>
         using type = multivector<void,
@@ -124,6 +89,7 @@ namespace pga
     struct alignas(16) point
     {
         using value_t = T;
+        constexpr static size_t size = 3;
 
         template <size_t ID>
         using type = multivector<void,
@@ -174,6 +140,57 @@ namespace pga
         }
     };
 
-    // TODO: directions
+    // Lines in P^3 are defined using Plücker coordinates: https://en.wikipedia.org/wiki/Plücker_coordinates
+    template <typename T>
+    struct line
+    {
+
+    };
+
+    template <typename T>
+    struct alignas(16) direction
+    {
+        using value_t = T;
+        constexpr static size_t size = 3;
+
+        template <size_t ID>
+        using type = multivector<void,
+                                 term<element<0b111>, monomial<minus_one, generator<tag<ID, 2>>>>,   // -z
+                                 term<element<0b1011>, monomial<one, generator<tag<ID, 1>>>>,        // y
+                                 term<element<0b1101>, monomial<minus_one, generator<tag<ID, 0>>>>>; // -x
+
+        T x;
+        T y;
+        T z;
+
+        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
+        {
+            return *(reinterpret_cast<const T*>(this) + index);
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return *(reinterpret_cast<T*>(this) + index);
+        }
+
+        template <typename Engine, typename... I>
+        [[nodiscard]] constexpr static direction<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
+        {
+            auto x_e = -extract<0b1101>(mv);
+            auto y_e = extract<0b1011>(mv);
+            auto z_e = -extract<0b111>(mv);
+
+            auto&& [x, y, z] = engine.template evaluate_terms<T>(x_e, y_e, z_e);
+
+            return {x, y, z};
+        }
+    };
+
+    // Produces a rotor 
+    template <typename T>
+    [[nodiscard]] constexpr auto exp(T theta, T x, T y, T z)
+    {
+
+    }
 } // namespace pga
 } // namespace gal

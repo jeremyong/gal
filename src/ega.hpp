@@ -13,37 +13,7 @@ namespace ega
 
     using algebra = ga::algebra<metric>;
 
-    // Left contraction
-    // NOTE: We choose this operator because like the left contraction, >> is right associative
-    template <typename... I, typename... J>
-    [[nodiscard]] constexpr auto operator>>(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
-    {
-        return detail::product<algebra::contract>(lhs, rhs);
-    }
-
-    template <typename... I, typename... J>
-    [[nodiscard]] constexpr auto operator^(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
-    {
-        return detail::product<algebra::exterior>(lhs, rhs);
-    }
-
-    template <typename... I, typename... J>
-    [[nodiscard]] constexpr auto operator*(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
-    {
-        return detail::product<algebra::geometric>(lhs, rhs);
-    }
-
-    template <typename V, typename T>
-    [[nodiscard]] constexpr auto conjugate(V versor, T value) noexcept
-    {
-        return versor * value * ~versor;
-    }
-
-    template <typename... I>
-    [[nodiscard]] constexpr auto operator!(multivector<void, I...> input) noexcept
-    {
-        return dual<metric>(input);
-    }
+    GAL_OPERATORS(algebra)
 
     template <size_t ID>
     using t = term<element<0>, monomial<one, generator<tag<ID>>>>;
@@ -83,5 +53,7 @@ namespace ega
         F y;
         F z;
     };
+    // TODO: this file isn't as standardized as the other geometries due to the restrictions in R3
+    // and lack of use
 } // namespace ega
 } // namespace gal

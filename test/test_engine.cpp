@@ -22,7 +22,7 @@ TEST_CASE("basic-computation")
         gal::engine engine{p1, p2};
         auto l = engine.compute<line<>>([](auto p1, auto p2)
         {
-            return p1 | p2;
+            return p1 & p2;
         });
 
         CHECK_EQ(p1.x * l.a + p1.y * l.b + l.c, epsilon);
@@ -39,7 +39,7 @@ TEST_CASE("basic-computation")
         gal::engine engine{p1, p2, p3};
         auto p = engine.compute<plane<>>([](auto p1, auto p2, auto p3)
         {
-            return p3 | p1 | p2;
+            return p3 & p1 & p2;
         });
 
         CHECK_EQ(p1.x * p.x + p1.y * p.y + p1.z * p.z + p.d, epsilon);

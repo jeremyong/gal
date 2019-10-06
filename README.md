@@ -67,6 +67,9 @@ float construct_plane(point<float> p)
     return engine.compute<scalar<float>>([](auto p)
     {
         // Contract a cga point back onto itself
+        // Note that p here contains no actual data! It is just the type that represents a CGA point
+        // with internal tags that refer to the values contained in the outer scope p (we locally
+        // shadow the variable name for brevity)
         return p >> p;
     });
 }
@@ -117,7 +120,7 @@ auto plane = engine.compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3
     // operator^        := Exterior (aka wedge) product
     // operator~        := Reversion
     // operator!        := (Poincare) Dual
-    // operator|        := Join
+    // operator&        := Regressive product (point meet, plane join)
     // operator+        := Vector space addition
     // operator-        := Vector space subtraction
     // operator>>       := Left Contraction
@@ -126,9 +129,9 @@ auto plane = engine.compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3
     // Operations that are permitted are chosen because they respect associativity
     // in the way you would expect.
 
-    // Here we just use the join operator to construct a plane which passes through
+    // Here we just use the regressive product to construct a plane which passes through
     // the three points.
-    return p1 | p2 | p3;
+    return p1 & p2 & p3;
 });
 
 // The results have now been computed and placed into the constructed plane which

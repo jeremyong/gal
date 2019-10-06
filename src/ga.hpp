@@ -18,6 +18,7 @@ namespace ga
     {
         template <typename... T>
         using term_t = term<T...>;
+        using metric_t = Metric;
 
         struct contract
         {
@@ -369,4 +370,38 @@ struct scalar
         return {engine.template evaluate<T>(s_e)};
     }
 };
+
+#define GAL_OPERATORS(Algebra) \
+    template <typename... I, typename... J> \
+    [[nodiscard]] constexpr auto operator>>(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept \
+    {\
+        return ::gal::detail::product<Algebra::contract>(lhs, rhs);\
+    }\
+    template <typename... I, typename... J>\
+    [[nodiscard]] constexpr auto operator^(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept\
+    {\
+        return ::gal::detail::product<Algebra::exterior>(lhs, rhs);\
+    }\
+    template <typename... I, typename... J>\
+    [[nodiscard]] constexpr auto operator*(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept\
+    {\
+        return detail::product<Algebra::geometric>(lhs, rhs);\
+    }\
+    template <typename V, typename T>\
+    [[nodiscard]] constexpr auto conjugate(V action, T subject) noexcept\
+    {\
+        return action * subject * ~action;\
+    }\
+    template <typename... I>\
+    [[nodiscard]] constexpr auto operator!(multivector<void, I...> input) noexcept\
+    {\
+        return dual<Algebra::metric_t>(input);\
+    }\
+    template <typename M1, typename M2>\
+    [[nodiscard]] constexpr auto operator&(M1 lhs, M2 rhs) noexcept\
+    {\
+        return !(!lhs ^ !rhs);\
+    }
+
+
 } // namespace gal

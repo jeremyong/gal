@@ -15,43 +15,7 @@ namespace cga
     // The CGA is a graded algebra with 32 basis elements
     using algebra = ga::algebra<metric>;
 
-    // Left contraction
-    // NOTE: We choose this operator because like the left contraction, >> is right associative
-    template <typename... I, typename... J>
-    [[nodiscard]] constexpr auto operator>>(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
-    {
-        return ::gal::detail::product<algebra::contract>(lhs, rhs);
-    }
-
-    template <typename... I, typename... J>
-    [[nodiscard]] constexpr auto operator^(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
-    {
-        return ::gal::detail::product<algebra::exterior>(lhs, rhs);
-    }
-
-    template <typename... I, typename... J>
-    [[nodiscard]] constexpr auto operator*(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept
-    {
-        return ::gal::detail::product<algebra::geometric>(lhs, rhs);
-    }
-
-    template <typename V, typename T>
-    [[nodiscard]] constexpr auto conjugate(V action, T subject) noexcept
-    {
-        return action * subject * ~action;
-    }
-
-    template <typename... I>
-    [[nodiscard]] constexpr auto operator!(multivector<void, I...> input) noexcept
-    {
-        return dual<metric>(input);
-    }
-
-    template <typename M1, typename M2>
-    [[nodiscard]] constexpr auto operator|(M1 lhs, M2 rhs) noexcept
-    {
-        return !(!lhs ^ !rhs);
-    }
+    GAL_OPERATORS(algebra)
 
     template <int X, int Y, int Z>
     using point_t = multivector<void,
@@ -61,7 +25,6 @@ namespace cga
         term<element<0b1000>, monomial<one_half>, monomial<rational<-(X * X + Y * Y + Z * Z), 2>>>,
         term<element<0b10000>, monomial<one_half>, monomial<rational<X * X + Y * Y + Z * Z, 2>>>>;
 
-    // TODO: provide representations for points, planes, spheres, flats, etc.
     template <typename T = float>
     struct alignas(16) point
     {
@@ -126,5 +89,7 @@ namespace cga
             return {x, y, z};
         }
     };
+
+    // TODO: provide representations for planes, spheres, flats, etc.
 } // namespace cga
 } // namespace gal

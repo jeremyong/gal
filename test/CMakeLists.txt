@@ -4,6 +4,7 @@ add_executable(gal_test
     test_engine.cpp
     test_ega.cpp
     test_ga.cpp
+    test_cga.cpp
     test_pga2.cpp
     test_pga.cpp)
 target_link_libraries(gal_test PRIVATE gal)

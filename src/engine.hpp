@@ -30,6 +30,12 @@ public:
         return Result::convert(*this, result);
     }
 
+    template <typename T, typename... Ts>
+    [[nodiscard]] constexpr auto evaluate_terms(Ts... terms) const noexcept
+    {
+        return std::tuple(evaluate<T>(terms)...);
+    }
+
     template <typename T, typename E, typename... M>
     [[nodiscard]] constexpr T evaluate(term<E, M...>) const noexcept
     {

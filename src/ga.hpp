@@ -351,4 +351,22 @@ template <size_t E, typename... T>
         return detail::extract<E>(mv);
     }
 }
+
+template <typename T = float>
+struct scalar
+{
+    T data;
+
+    [[nodiscard]] constexpr operator T() const noexcept
+    {
+        return data;
+    }
+
+    template <typename Engine, typename... I>
+    [[nodiscard]] constexpr static scalar<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
+    {
+        auto s_e = extract<0>(mv);
+        return {engine.template evaluate<T>(s_e)};
+    }
+};
 } // namespace gal

@@ -67,6 +67,15 @@ struct monomial
     using rational_t              = Q;
 };
 
+template <typename Q>
+struct monomial<Q>
+{
+    constexpr static size_t size = 1;
+    constexpr static int degree = 0;
+    constexpr static bool is_zero = false;
+    using rational_t              = Q;
+};
+
 template <typename Q, typename G>
 struct monomial<Q, G>
 {

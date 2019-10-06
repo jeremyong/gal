@@ -106,7 +106,7 @@ namespace pga2
         }
 
         template <typename Engine, typename... I>
-        [[nodiscard]] constexpr static point<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
+        [[nodiscard]] constexpr static point<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
         {
             auto x_e = extract<0b101>(mv);
             auto y_e = extract<0b11>(mv);
@@ -152,7 +152,7 @@ namespace pga2
         }
 
         template <typename Engine, typename... I>
-        [[nodiscard]] constexpr static line<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
+        [[nodiscard]] constexpr static line<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
         {
             auto a_e = extract<0b10>(mv);
             auto b_e = extract<0b100>(mv);

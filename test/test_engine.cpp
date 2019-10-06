@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include <formatters.hpp>
+#include <cga.hpp>
 #include <pga.hpp>
 #include <pga2.hpp>
 #include <engine.hpp>
@@ -44,6 +45,20 @@ TEST_CASE("basic-computation")
         CHECK_EQ(p1.x * p.x + p1.y * p.y + p1.z * p.z + p.d, epsilon);
         CHECK_EQ(p2.x * p.x + p2.y * p.y + p2.z * p.z + p.d, epsilon);
         CHECK_EQ(p3.x * p.x + p3.y * p.y + p3.z * p.z + p.d, epsilon);
+    }
+
+    SUBCASE("cga-expression-evaluation")
+    {
+        using namespace gal::cga;
+        point<> p{3.5f, 0.2f, -23.9f};
+
+        gal::engine engine{p};
+        // Compute the contraction of a point as itself
+        auto n = engine.compute<gal::scalar<>>([](auto p)
+        {
+            return p >> p;
+        });
+        CHECK_EQ(n, epsilon);
     }
 }
 

@@ -73,7 +73,7 @@ namespace pga
                                term<element<0b1000>, monomial<rational<Z>>>>;
 
     template <typename T = float>
-    struct plane
+    struct alignas(16) plane
     {
         using value_t = T;
 
@@ -106,10 +106,7 @@ namespace pga
             auto y_e = extract<0b100>(mv);
             auto z_e = extract<0b1000>(mv);
 
-            T d = engine.template evaluate<T>(d_e);
-            T x = engine.template evaluate<T>(x_e);
-            T y = engine.template evaluate<T>(y_e);
-            T z = engine.template evaluate<T>(z_e);
+            auto&& [d, x, y, z] = engine.template evaluate_terms<T>(d_e, x_e, y_e, z_e);
 
             return {d, x, y, z};
         }
@@ -124,7 +121,7 @@ namespace pga
 
 
     template <typename T = float>
-    struct point
+    struct alignas(16) point
     {
         using value_t = T;
 
@@ -166,15 +163,12 @@ namespace pga
         template <typename Engine, typename... I>
         [[nodiscard]] constexpr static point<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
         {
-            auto x_e = extract<0b1101>(mv);
+            auto x_e = -extract<0b1101>(mv);
             auto y_e = extract<0b1011>(mv);
-            auto z_e = extract<0b111>(mv);
+            auto z_e = -extract<0b111>(mv);
             auto c_e = extract<0b1110>(mv);
 
-            T x = -engine.template evaluate<T>(x_e);
-            T y = engine.template evaluate<T>(y_e);
-            T z = -engine.template evaluate<T>(z_e);
-            T c = engine.template evaluate<T>(c_e);
+            auto&& [x, y, z, c] = engine.template evaluate_terms<T>(x_e, y_e, z_e, c_e);
 
             return {x / c, y / c, z / c};
         }

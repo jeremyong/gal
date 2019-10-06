@@ -20,6 +20,70 @@ GAL is in the early stages of development, so please stay tuned for more!
 
 Being a template-library, GAL is header-only and can be installed by either linking the `gal` interface target via cmake or by copying the files in `src` to a known include path.
 
+## Motivation
+
+Geometric Algebra promises (and fulfills) a unified algebraic system for manipulating geometric objects
+(points, lines, planes, spheres, etc) in a way that is coordinate-free, consistent, and logical. A
+typical computer graphics library is often the union of a number of disjoint algebras and algorithms.
+Examples include dual quaternions for skinning, quaternions for rotation, 1-up projective space for linear
+rotations and translations when interpolation is not needed, and special handling for objects that do not
+transform covariantly with the metric (e.g. normal vectors).
+
+A (very) loose way of understanding how GA does this is by encoding operations in a way that loses less
+relevant information. For example, consider the cross-product. Once computed, the information that it
+originated from two vectors with some orientation relative to each other is lost. Indeed, given nothing
+but the coordinates of a normal vector, it is impossible to describe the orientation of the vectors that
+produced it. In GA, such information is encoded by higher ordered basis elements beyond the standard ones
+proferred in the typical R3 vector space. This is what makes GA a *graded* algebra. The second important
+(and necessary) piece that gives GA its power are the operations between elements of this algebra. Without
+going into much detail, the geometric product encodes both projections and rejections nicely within the
+framework, allow the *conjugate* (aka "sandwich") operator to elegantly supply interpolatable (read.
+differentiable) rotations and translations of any geometric object. All of this is to say, the state
+space of the *code* needed to express a vast range of computation is compressed significantly.
+
+There is a "problem" though, which is that, being a graded algebra, geometric algebras are necessarily
+higher-dimensional than the spaces they represent. A 3D space typically requires 3 coordinates but in GA,
+this would require 8 (2^3) coordinates to describe a fully general multivector. The 5D conformal space
+(conformal meaning that homomorphisms are angle-preserving) requires 32 coordinates! On top of that,
+there are often a number of term cancellations as expressions are evaluated (as quantities contract one
+one another in ways that are degenerate for example). This results in a higher operation count, all else
+being equal.
+
+To combat this, GAL provides a fully compile time expression evaluation system and computational engine
+to fully simplify expressions. Perhaps the most egregious example is a CGA (Conformal Geometric Algebra)
+point being contracted onto itself (the contraction operator resembles the dot product but is generalized
+to act on higher-order elements than just vectors). Under CGA, the contraction of a point to itself is
+*exactly* zero. However, if you implemented a contraction operator using standard floating point math,
+the compiler would be unable to optimize this as such in general. GAL makes the following code possible:
+
+```c++
+using gal::scalar;
+using gal::cga::point;
+
+float construct_plane(point<float> p)
+{
+    gal::engine engine{p};
+
+    return engine.compute<scalar<float>>([](auto p)
+    {
+        // Contract a cga point back onto itself
+        return p >> p;
+    });
+}
+```
+
+The assembly for the routine above looks like the following (compiled with -O1, not even -O2):
+
+```assembly
+construct_plane(gal::cga::point<float>):
+        pxor    xmm0, xmm0
+        ret
+```
+
+and it should go without saying that `xor` of a register to itself is assembly-shorthand for just zeroing
+the register. In other words, all the multiplications of a 5-coordinate vector to itself got optimized away
+completely!
+
 ## API
 
 The library is still under flux, but for now, the file `test/test_engine.cpp` should give you a decent idea of how to use GAL.
@@ -56,7 +120,7 @@ auto plane = engine.compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3
     // operator|        := Join
     // operator+        := Vector space addition
     // operator-        := Vector space subtraction
-    // operator<<       := Left Contraction
+    // operator>>       := Left Contraction
     // conjugate(a, b)  := a ^ b ^ ~a
 
     // Operations that are permitted are chosen because they respect associativity

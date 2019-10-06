@@ -3,7 +3,6 @@
 #include <doctest/doctest.h>
 #include <formatters.hpp>
 #include <pga.hpp>
-#include <ring_generator.hpp>
 
 using namespace gal::pga;
 

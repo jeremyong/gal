@@ -85,22 +85,22 @@ struct formatter<gal::generator<Tag, Degree, Order>>
     constexpr auto format(const type&, FC& ctx)
     {
         // Untagged generators are displayed with a 0
-        constexpr auto id = Tag::value == ~0ull ? 0 : Tag::value;
+        constexpr auto id = Tag::id == ~0ull ? 0 : Tag::id;
         if constexpr (Degree::value > 1)
         {
-            return format_to(ctx.out(), "{}^{}", fg(color::orange) * id, Degree::value);
+            return format_to(ctx.out(), "{}_{}^{}", fg(color::orange) * id, fg(color::chartreuse) * Tag::index, Degree::value);
         }
         else if constexpr (Degree::value == 1)
         {
-            return format_to(ctx.out(), "{}", fg(color::orange) * id);
+            return format_to(ctx.out(), "{}_{}", fg(color::orange) * id, fg(color::chartreuse) * Tag::index);
         }
         else if constexpr (Degree::value == 0)
         {
-            return format_to(ctx.out(), "{}", fg(color::navajo_white) * 1);
+            return format_to(ctx.out(), "{}_{}", fg(color::navajo_white) * 1);
         }
         else
         {
-            return format_to(ctx.out(), "{}^{{{}}}", fg(color::orange) * id, Degree::value);
+            return format_to(ctx.out(), "{}_{}^{{{}}}", fg(color::orange) * id, fg(color::chartreuse) * Tag::index, Degree::value);
         }
     }
 };

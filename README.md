@@ -46,6 +46,8 @@ ninja
 ./bin/gal_test
 ```
 
+It is recommend when using clang that `-fno-math-errno` be passed to your compiler's build settings as this was found to be an obstacle for clang to generate optimal code in many circumstances. Many platforms set this as the default, but depending on the math library that is linked on your system, your mileage may vary.
+
 ## Motivation
 
 Geometric Algebra promises (and fulfills) a unified algebraic system for manipulating geometric objects
@@ -149,7 +151,8 @@ auto plane = engine.compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3
     // operator&        := Regressive product (point meet, plane join)
     // operator+        := Vector space addition
     // operator-        := Vector space subtraction
-    // operator>>       := Left Contraction
+    // operator|        := Symmetric inner product
+    // operator>>       := Left contraction
     // conjugate(a, b)  := a ^ b ^ ~a
 
     // Operations that are permitted are chosen because they respect associativity

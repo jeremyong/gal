@@ -253,6 +253,19 @@ template <typename Q1, typename Q2, typename... G>
     }
 };
 
+template <int N, int D, typename Q, typename... G>
+[[nodiscard]] constexpr auto operator*(rational<N, D> lhs, monomial<Q, G...>) noexcept
+{
+    if constexpr (N == 0 || Q::is_zero)
+    {
+        return monomial<zero>{};
+    }
+    else
+    {
+        return monomial<decltype(lhs * Q{}), G...>{};
+    }
+}
+
 // Unlike other functions in this module, `simplify` does not assume its input is ordered with respect to
 // any monomial ordering. It relies on the addition operator to coalesce like-terms and the output is
 // respect to be well-ordered.
@@ -345,23 +358,6 @@ namespace detail
         }
     }
 } // namespace detail
-
-// Lack of constexpr arguments prevent this from being detailementable as an operator
-template <int S, typename T>
-struct scale
-{};
-
-template <int S, typename Q, typename... G>
-struct scale<S, monomial<Q, G...>>
-{
-    using type = monomial<rational<S * Q::num, Q::den>, G...>;
-};
-
-template <typename Q, typename... G>
-struct scale<0, monomial<Q, G...>>
-{
-    using type = monomial<zero>;
-};
 
 template <typename Q1, typename Q2, typename... G1, typename... G2>
 struct equals<monomial<Q1, G1...>, monomial<Q2, G2...>>
@@ -484,13 +480,6 @@ struct term<E, A, As...>
     constexpr static bool is_zero         = A::is_zero && sizeof...(As) == 0;
 };
 
-template <int S, typename E, typename... A>
-struct scale<S, term<E, A...>>
-{
-    // Scale the monomials of the term by the lhs
-    using type = term<E, typename scale<S, A>::type...>;
-};
-
 template <typename E1, typename E2, typename... A1, typename... A2>
 struct equals<term<E1, A1...>, term<E2, A2...>>
 {
@@ -509,6 +498,23 @@ struct less<term<E1, A1...>, term<E2, A2...>>
     }
 };
 
+template <int N, int D, typename E, typename... A>
+[[nodiscard]] constexpr auto operator*(rational<N, D> lhs, term<E, A...>) noexcept
+{
+    if constexpr (N == 0)
+    {
+        return term<element<0>>{};
+    }
+    else if constexpr (sizeof...(A) == 0)
+    {
+        return term<element<0>>{};
+    }
+    else
+    {
+        return term<E, decltype(lhs * A{})...>{};
+    }
+}
+
 template <typename E, typename... I, typename... J>
 [[nodiscard]] constexpr auto operator+(term<E, I...> lhs, term<E, J...> rhs) noexcept
 {
@@ -516,9 +522,9 @@ template <typename E, typename... I, typename... J>
 }
 
 template <typename E, typename... I>
-[[nodiscard]] constexpr auto operator-(term<E, I...>) noexcept
+[[nodiscard]] constexpr auto operator-(term<E, I...> in) noexcept
 {
-    return typename scale<-1, term<E, I...>>::type{};
+    return minus_one{} * in;
 }
 
 template <typename E, typename... I, typename... J>
@@ -566,26 +572,49 @@ struct multivector<void, T, Ts...>
     constexpr static bool is_zero = T::is_zero && sizeof...(Ts) == 0;
 };
 
-template <int S, typename... T>
-struct scale<S, multivector<void, T...>>
+template <int N, int D, typename... T>
+[[nodiscard]] constexpr auto operator*(rational<N, D> lhs, multivector<void, T...>) noexcept
 {
-    using type = multivector<void, typename scale<S, T>::type...>;
-};
+    if constexpr (N == 0)
+    {
+        return multivector<void>{};
+    }
+    else if constexpr (sizeof...(T) == 0)
+    {
+        return multivector<void>{};
+    }
+    else
+    {
+        return multivector<void, decltype(lhs * T{})...>{};
+    }
+}
 
 template <typename... I, typename... J>
-[[nodiscard]] constexpr auto operator+(multivector<void, I...> lhs, multivector<void, J...> rhs)
+[[nodiscard]] constexpr auto operator+(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept
 {
     return ::gal::detail::sum(multivector<void>{}, lhs, rhs);
 }
 
-template <typename... I>
-[[nodiscard]] constexpr auto operator-(multivector<void, I...>)
+template <int N, int D, typename... I>
+[[nodiscard]] constexpr auto operator+(rational<N, D>, multivector<void, I...> rhs) noexcept
 {
-    return typename scale<-1, multivector<void, I...>>::type{};
+    return multivector<void, term<element<0>, monomial<rational<N, D>>>>{} +  rhs;
+}
+
+template <int N, int D, typename... I>
+[[nodiscard]] constexpr auto operator+(multivector<void, I...> lhs, rational<N, D>) noexcept
+{
+    return lhs + multivector<void, term<element<0>, monomial<rational<N, D>>>>{};
+}
+
+template <typename... I>
+[[nodiscard]] constexpr auto operator-(multivector<void, I...> in) noexcept
+{
+    return minus_one{} * in;
 }
 
 template <typename... I, typename... J>
-[[nodiscard]] constexpr auto operator-(multivector<void, I...> lhs, multivector<void, J...> rhs)
+[[nodiscard]] constexpr auto operator-(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept
 {
     return ::gal::detail::sum(multivector<void>{}, lhs, -rhs);
 }
@@ -597,7 +626,7 @@ template <typename... I, typename... J>
 // just normal vectors.
 // Algebra := defines invokable product between basis elements (size_t, size_t) -> size_t
 template <typename Algebra, typename... I, typename... J>
-[[nodiscard]] constexpr auto operator*(multivector<void, I...> lhs, multivector<void, J...> rhs)
+[[nodiscard]] constexpr auto operator*(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept
 {
     return ::gal::detail::product<Algebra>(lhs, rhs);
 }

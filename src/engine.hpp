@@ -17,6 +17,9 @@ namespace gal
 // unreasonable to use a dense representation for memoized products. However, a total ordering exists between the
 // generators so intermediate products are amenable to storage in a trie-like structure.
 
+// TODO: AT THE MOMENT (10/06/2019) this optimization does not yet seem necessary because the compiler correctly
+// memoizes results, even without -ffast-math. However, depending on benchmarks, this may need to be revisted in the
+// feature.
 template <typename... T>
 struct mem_trie
 {
@@ -86,31 +89,17 @@ private:
         else
         {
             const auto value = get<T, Tag::id, Tag::index>();
-            constexpr bool is_derived
-                = std::is_same<typename std::decay<decltype(value)>::type, derived_generator<T>>::value;
+            // constexpr bool is_derived
+                // = std::is_same<typename std::decay<decltype(value)>::type, derived_generator<T>>::value;
             // TODO: memoize derived results
             if constexpr (Degree::value == 1)
             {
-                if constexpr (is_derived)
-                {
-                    return value.value;
-                }
-                else
-                {
-                    return value;
-                }
+                return value;
             }
             else
             {
                 // TODO: permit substitution of a different power function for more exotic types
-                if constexpr (is_derived)
-                {
-                    return std::pow(value.value, Degree::value);
-                }
-                else
-                {
-                    return std::pow(value, Degree::value);
-                }
+                return std::pow(value, Degree::value);
             }
         }
     }

@@ -15,6 +15,9 @@ namespace cga
     // The CGA is a graded algebra with 32 basis elements
     using algebra = ga::algebra<metric>;
 
+    using e_o = multivector<void, term<element<0b100>, monomial<one_half>>, term<element<0b1000>, monomial<one_half>>>;
+    using e_inf = multivector<void, term<element<0b100>, monomial<minus_one_half>>, term<element<0b1000>, monomial<one_half>>>;
+
     GAL_OPERATORS(algebra);
 
     template <int X, int Y, int Z>

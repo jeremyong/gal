@@ -53,11 +53,13 @@ TEST_CASE("basic-computation")
 
         gal::engine engine{p};
         // Compute the contraction of a point as itself
-        auto n = engine.compute<gal::scalar<>>([](auto p)
+        // Most expressions cannot be evaluated as constexpr in the way this one can, but because all terms cancel, the
+        // result is actually entirely known at compile time
+        constexpr auto n = engine.compute<gal::scalar<>>([](auto p)
         {
             return p >> p;
         });
-        CHECK_EQ(n, epsilon);
+        static_assert(n == 0.f);
     }
 }
 

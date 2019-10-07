@@ -7,7 +7,58 @@
 using namespace gal;
 using namespace gal::pga;
 
+using e     = multivector<void, term<element<0>, monomial<one>>>;
+using e0    = multivector<void, term<element<0b1>, monomial<one>>>;
+using e1    = multivector<void, term<element<0b10>, monomial<one>>>;
+using e2    = multivector<void, term<element<0b100>, monomial<one>>>;
+using e3    = multivector<void, term<element<0b1000>, monomial<one>>>;
+using e012  = multivector<void, term<element<0b111>, monomial<one>>>;
+using e013  = multivector<void, term<element<0b1011>, monomial<one>>>;
+using e023  = multivector<void, term<element<0b1101>, monomial<one>>>;
+using e123  = multivector<void, term<element<0b1110>, monomial<one>>>;
+using e0123 = multivector<void, term<element<0b1111>, monomial<one>>>;
+
 TEST_SUITE_BEGIN("geometric-algebra");
+
+TEST_CASE("symmetric-inner-product")
+{
+    using inner = ga::algebra<gal::pga::metric>::inner;
+    SUBCASE("inner-same")
+    {
+        auto [e1, p1] = inner::inner_product<2, 2>();
+        CHECK_EQ(e1, 0);
+        CHECK_EQ(p1, 1);
+    }
+
+    SUBCASE("inner-orthogonal")
+    {
+        auto [e1, p1] = inner::inner_product<1, 2>();
+        auto [e2, p2] = inner::inner_product<2, 1>();
+        CHECK_EQ(e1, 0);
+        CHECK_EQ(p1, 0);
+        CHECK_EQ(e2, 0);
+        CHECK_EQ(p2, 0);
+    }
+
+    SUBCASE("inner-mixed-grade")
+    {
+        auto [e1, p1] = inner::inner_product<0b110, 0b1>();
+        CHECK_EQ(e1, 0);
+        CHECK_EQ(p1, 0);
+
+        auto [e2, p2] = inner::inner_product<0b1, 0b110>();
+        CHECK_EQ(e1, 0);
+        CHECK_EQ(p1, 0);
+
+        auto [e3, p3] = inner::inner_product<0b110, 0b10>();
+        CHECK_EQ(e3, 0b100);
+        CHECK_EQ(p3, -1);
+
+        auto [e4, p4] = inner::inner_product<0b10, 0b110>();
+        CHECK_EQ(e4, 0b100);
+        CHECK_EQ(p4, 1);
+    }
+}
 
 TEST_CASE("blade-contraction")
 {
@@ -139,11 +190,14 @@ TEST_CASE("multivector-contraction")
     SUBCASE("single-element")
     {
         multivector<void, term<element<2>, monomial<rational<1>, generator<tag<1>, degree<1>>>>> m1{};
-        multivector<void, term<element<2>, monomial<rational<2>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<2>>>>> m2{};
+        multivector<void, term<element<2>, monomial<rational<2>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<2>>>>>
+            m2{};
         auto m12 = m1 >> m2;
         static_assert(
-            std::is_same<multivector<void, term<element<0>, monomial<rational<2>, generator<tag<1>, degree<2>>, generator<tag<2>, degree<2>>>>>,
-                         decltype(m12)>::value);
+            std::is_same<
+                multivector<void,
+                            term<element<0>, monomial<rational<2>, generator<tag<1>, degree<2>>, generator<tag<2>, degree<2>>>>>,
+                decltype(m12)>::value);
     }
 
     SUBCASE("single-element-orthogonal")
@@ -157,12 +211,16 @@ TEST_CASE("multivector-contraction")
     SUBCASE("distribute-one-to-many")
     {
         multivector<void, term<element<0b10>, monomial<rational<1>, generator<tag<1>, degree<1>>>>> m1{};
-        multivector<void, term<element<0b10>, monomial<rational<1>, generator<tag<2>, degree<1>>>>,
+        multivector<void,
+                    term<element<0b10>, monomial<rational<1>, generator<tag<2>, degree<1>>>>,
                     term<element<0b100>, monomial<rational<1>, generator<tag<3>, degree<1>>>>>
             m2{};
         auto m12 = m1 >> m2;
         static_assert(
-            std::is_same<multivector<void, term<element<0>, monomial<rational<1>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>>>>, decltype(m12)>::value);
+            std::is_same<
+                multivector<void,
+                            term<element<0>, monomial<rational<1>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>>>>,
+                decltype(m12)>::value);
         // The contraction operator does not generally commute but it does in this case
         static_assert(std::is_same<decltype(m1 >> m2), decltype(m2 >> m1)>::value);
     }
@@ -174,16 +232,21 @@ TEST_CASE("multivector-contraction")
         // Equivalent to the inner vector product
         auto p12 = p1 >> p2;
         static_assert(
-            std::is_same<multivector<void, term<element<0>, monomial<rational<1>, generator<tag<1, 1>, degree<1>>, generator<tag<2, 1>, degree<1>>>,
-                                                monomial<rational<1>, generator<tag<1, 2>, degree<1>>, generator<tag<2, 2>, degree<1>>>,
-                                                monomial<rational<1>, generator<tag<1, 3>, degree<1>>, generator<tag<2, 3>, degree<1>>>>>,
-                         decltype(p12)>::value);
+            std::is_same<
+                multivector<void,
+                            term<element<0>,
+                                 monomial<rational<1>, generator<tag<1, 1>, degree<1>>, generator<tag<2, 1>, degree<1>>>,
+                                 monomial<rational<1>, generator<tag<1, 2>, degree<1>>, generator<tag<2, 2>, degree<1>>>,
+                                 monomial<rational<1>, generator<tag<1, 3>, degree<1>>, generator<tag<2, 3>, degree<1>>>>>,
+                decltype(p12)>::value);
         static_assert(std::is_same<decltype(p2 >> p1), decltype(p1 >> p2)>::value);
         // Vector norm
-        static_assert(
-            std::is_same<multivector<void, term<element<0>, monomial<rational<1>, generator<tag<1, 1>, degree<2>>>,
-                                                monomial<rational<1>, generator<tag<1, 2>, degree<2>>>, monomial<rational<1>, generator<tag<1, 3>, degree<2>>>>>,
-                         decltype(p1 >> p1)>::value);
+        static_assert(std::is_same<multivector<void,
+                                               term<element<0>,
+                                                    monomial<rational<1>, generator<tag<1, 1>, degree<2>>>,
+                                                    monomial<rational<1>, generator<tag<1, 2>, degree<2>>>,
+                                                    monomial<rational<1>, generator<tag<1, 3>, degree<2>>>>>,
+                                   decltype(p1 >> p1)>::value);
     }
 }
 
@@ -202,8 +265,12 @@ TEST_CASE("multivector-wedge")
         multivector<void, term<element<1>, monomial<rational<1>, generator<tag<1>, degree<1>>>>> m1{};
         multivector<void, term<element<2>, monomial<rational<1>, generator<tag<2>, degree<1>>>>> m2{};
         auto m12 = m1 ^ m2;
-        static_assert(
-            std::is_same<multivector<void, term<element<0b11>, monomial<rational<1>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>>>>, decltype(m12)>::value);
+        print(m12);
+        // static_assert(
+        //     std::is_same<multivector<void,
+        //                              term<element<0b11>,
+        //                                   monomial<rational<1>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>>>>,
+        //                  decltype(m12)>::value);
         static_assert(std::is_same<decltype(-(m2 ^ m1)), decltype(m12)>::value);
         static_assert(std::is_same<decltype(-m2 ^ m1), decltype(m12)>::value);
         static_assert(std::is_same<decltype(m2 ^ -m1), decltype(m12)>::value);
@@ -214,10 +281,11 @@ TEST_CASE("multivector-wedge")
         multivector<void, term<element<0b1>, monomial<rational<1>>>, term<element<0b10>, monomial<rational<1>>>> m1{};
         multivector<void, term<element<0b10>, monomial<rational<1>>>, term<element<0b100>, monomial<rational<1>>>> m2{};
         auto m12 = m1 ^ m2;
-        static_assert(
-            std::is_same<multivector<void, term<element<0b11>, monomial<rational<1>>>,
-                                     term<element<0b101>, monomial<rational<1>>>, term<element<0b110>, monomial<rational<1>>>>,
-                         decltype(m12)>::value);
+        static_assert(std::is_same<multivector<void,
+                                               term<element<0b11>, monomial<rational<1>>>,
+                                               term<element<0b101>, monomial<rational<1>>>,
+                                               term<element<0b110>, monomial<rational<1>>>>,
+                                   decltype(m12)>::value);
         static_assert(std::is_same<decltype(m2 ^ -m1), decltype(m12)>::value);
     }
 }
@@ -252,8 +320,9 @@ TEST_CASE("reversion")
     {
         multivector<void, term<element<0b1>, monomial<rational<1>>>, term<element<0b11>, monomial<rational<1>>>> m{};
         static_assert(
-            std::is_same<multivector<void, term<element<0b1>, monomial<rational<1>>>, term<element<0b11>, monomial<rational<-1>>>>,
-                         decltype(~m)>::value);
+            std::is_same<
+                multivector<void, term<element<0b1>, monomial<rational<1>>>, term<element<0b11>, monomial<rational<-1>>>>,
+                decltype(~m)>::value);
     }
 }
 

@@ -153,7 +153,7 @@ template <int N1, int D1, int N2, int D2>
     {
         return zero{};
     }
-    else if constexpr (D != 1 && N >= (std::numeric_limits<int>::max() >> 2))
+    else if constexpr (D > 1 && (N > 1 || N < -1))
     {
         // Periodically reduce the fraction if possible to prevent overflow
         constexpr auto gcd = std::gcd(N, D);
@@ -174,7 +174,7 @@ template <int N1, int D1, int N2, int D2>
     {
         return zero{};
     }
-    else if constexpr (D != 1 && N >= (std::numeric_limits<int>::max() >> 2))
+    else if constexpr (D > 1 && (N > 1 || N < -1))
     {
         constexpr auto gcd = std::gcd(N, D);
         if constexpr (D < 0)
@@ -210,7 +210,7 @@ template <int N1, int D1, int N2, int D2>
     else
     {
         constexpr auto D = D1 * D2;
-        if constexpr (D != 1 && N >= (std::numeric_limits<int>::max() >> 2))
+        if constexpr (D > 1 && (N > 1 || N < -1))
         {
             constexpr auto gcd = std::gcd(N, D);
             return rational<N / gcd, D / gcd>{};

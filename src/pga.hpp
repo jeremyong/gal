@@ -20,17 +20,6 @@ namespace pga
 
     GAL_OPERATORS(algebra);
 
-    using e    = multivector<void, term<element<0>, monomial<one>>>;
-    using e0   = multivector<void, term<element<0b1>, monomial<one>>>;
-    using e1   = multivector<void, term<element<0b10>, monomial<one>>>;
-    using e2   = multivector<void, term<element<0b100>, monomial<one>>>;
-    using e3   = multivector<void, term<element<0b1000>, monomial<one>>>;
-    using e012 = multivector<void, term<element<0b111>, monomial<one>>>;
-    using e013 = multivector<void, term<element<0b1011>, monomial<one>>>;
-    using e023 = multivector<void, term<element<0b1101>, monomial<one>>>;
-    using e123 = multivector<void, term<element<0b1110>, monomial<one>>>;
-    using e0123 = multivector<void, term<element<0b1111>, monomial<one>>>;
-
     template <int D, int X, int Y, int Z>
     using plane_t = multivector<void,
                                term<element<1>, monomial<rational<D>>>,

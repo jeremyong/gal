@@ -20,6 +20,49 @@ namespace ga
         using term_t = term<T...>;
         using metric_t = Metric;
 
+        struct inner
+        {
+            constexpr static bool has_order_preserving_product = true;
+
+            template <typename E1, typename E2, typename... M1, typename... M2>
+            [[nodiscard]] constexpr static auto product(term_t<E1, M1...> lhs, term_t<E2, M2...> rhs) noexcept
+            {
+                constexpr auto inner = inner_product<E1::value, E2::value>();
+                if constexpr (inner.second == 0)
+                {
+                    return multivector<void>{};
+                }
+                else
+                {
+                    using element_t = element<inner.first>;
+                    using term_t = decltype(rational<inner.second>{} * term_t<element_t, M1...>{} * term_t<element_t, M2...>{});
+                    return multivector<void, term_t>{};
+                }
+            }
+
+            template <size_t E1, size_t E2>
+            [[nodiscard]] constexpr static std::pair<size_t, int> inner_product() noexcept
+            {
+                if constexpr (E1 == 0 || E2 == 0)
+                {
+                    return {0, 0};
+                }
+                else
+                {
+                    constexpr auto gp = geometric::template geometric_product<E1, E2>();
+                    constexpr auto desired_grade = static_cast<int>(E2) - static_cast<int>(E1);
+                    if constexpr ((gp.first == desired_grade || gp.first == -desired_grade) && gp.second != 0)
+                    {
+                        return gp;
+                    }
+                    else
+                    {
+                        return {0, 0};
+                    }
+                }
+            }
+        };
+
         struct contract
         {
             constexpr static bool has_order_preserving_product = false;
@@ -35,8 +78,7 @@ namespace ga
                 else
                 {
                     using element_t = element<contraction.first>;
-                    using term_t    = decltype(typename scale<contraction.second, term_t<element_t, M1...>>::type{}
-                                            * term_t<element_t, M2...>{});
+                    using term_t = decltype(rational<contraction.second>{} * term_t<element_t, M1...>{} * term_t<element_t, M2...>{});
                     return multivector<void, term_t>{};
                 }
             }
@@ -104,8 +146,7 @@ namespace ga
                 else
                 {
                     using element_t = element<wedge.first>;
-                    using term_t    = decltype(typename scale<wedge.second, term_t<element_t, M1...>>::type{}
-                                            * term_t<element_t, M2...>{});
+                    using term_t = decltype(rational<wedge.second>{} * term_t<element_t, M1...>{} * term_t<element_t, M2...>{});
                     return multivector<void, term_t>{};
                 }
             }
@@ -163,8 +204,7 @@ namespace ga
                 else
                 {
                     using element_t = element<gp.first>;
-                    using term_t    = decltype(typename scale<gp.second, term_t<element_t, M1...>>::type{}
-                                            * term_t<element_t, M2...>{});
+                    using term_t = decltype(rational<gp.second>{} * term_t<element_t, M1...>{} * term_t<element_t, M2...>{});
                     return multivector<void, term_t>{};
                 }
             }
@@ -257,7 +297,7 @@ namespace ga
         }
         else
         {
-            return typename scale<-1, term<element<complement>, As...>>::type{};
+            return minus_one{} * term<element<complement>, As...>{};
         }
     }
 } // namespace ga
@@ -353,25 +393,12 @@ template <size_t E, typename... T>
     }
 }
 
-template <typename T = float>
-struct scalar
-{
-    T data;
-
-    [[nodiscard]] constexpr operator T() const noexcept
-    {
-        return data;
-    }
-
-    template <typename Engine, typename... I>
-    [[nodiscard]] constexpr static scalar<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
-    {
-        auto s_e = extract<0>(mv);
-        return {engine.template evaluate<T>(s_e)};
-    }
-};
-
 #define GAL_OPERATORS(Algebra) \
+    template <typename... I, typename... J> \
+    [[nodiscard]] constexpr auto operator|(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept \
+    {\
+        return ::gal::detail::product<Algebra::inner>(lhs, rhs);\
+    }\
     template <typename... I, typename... J> \
     [[nodiscard]] constexpr auto operator>>(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept \
     {\
@@ -403,8 +430,7 @@ struct scalar
         return !(!lhs ^ !rhs);\
     }\
     template <typename T = float> using scalar = ::gal::scalar<T>;\
-    using ::gal::simplify;\
-    using ::gal::scale
+    using ::gal::simplify
 
 #define GAL_ACCESSORS \
         [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept\
@@ -424,7 +450,32 @@ struct scalar
             }\
             else\
             {\
-                return derived_generator<T>{get_special(std::integral_constant<size_t, I>{})};\
+                return get_special(std::integral_constant<size_t, I>{});\
             }\
         }
+
+template <typename T = float>
+struct scalar
+{
+    constexpr static size_t size = 1;
+
+    template <size_t ID>
+    using type = multivector<void, term<element<0>, monomial<one, generator<tag<ID, 0>>>>>;
+
+    T data;
+
+    [[nodiscard]] constexpr operator T() const noexcept
+    {
+        return data;
+    }
+
+    GAL_ACCESSORS
+
+    template <typename Engine, typename... I>
+    [[nodiscard]] constexpr static scalar<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
+    {
+        auto s_e = extract<0>(mv);
+        return {engine.template evaluate<T>(s_e)};
+    }
+};
 } // namespace gal

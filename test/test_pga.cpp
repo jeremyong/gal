@@ -44,7 +44,7 @@ TEST_CASE("primitives")
         plane_t<0, 0, 1, 0> plane2;
 
         // The two lines constructed this way are off by a scalar multiple
-        static_assert(std::is_same<decltype(point1 & point2), scale<-2, decltype(plane1 ^ plane2)>::type>::value);
+        static_assert(std::is_same<decltype(point1 & point2), decltype(gal::rational<-2>{} * plane1 ^ plane2)>::value);
     }
 
     SUBCASE("plane-construction")

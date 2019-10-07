@@ -2,6 +2,8 @@
 
 #include "ga.hpp"
 
+#include <cmath>
+
 // The Projective Geometric Algebra for representing Euclidean 3-space
 // NOTE: In comments, we often write "the PGA" to mean literally "the projective geometric algebra."
 
@@ -16,7 +18,7 @@ namespace pga
     // The PGA is a graded algebra with 16 basis elements
     using algebra = ga::algebra<metric>;
 
-    GAL_OPERATORS(algebra)
+    GAL_OPERATORS(algebra);
 
     using e    = multivector<void, term<element<0>, monomial<one>>>;
     using e0   = multivector<void, term<element<0b1>, monomial<one>>>;
@@ -53,15 +55,7 @@ namespace pga
         T y;
         T z;
 
-        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
-        {
-            return *(reinterpret_cast<const T*>(this) + index);
-        }
-
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
-        {
-            return *(reinterpret_cast<T*>(this) + index);
-        }
+        GAL_ACCESSORS
 
         template <typename Engine, typename... I>
         [[nodiscard]] constexpr static plane<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
@@ -116,15 +110,7 @@ namespace pga
             T w;
         };
 
-        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
-        {
-            return *(reinterpret_cast<const T*>(this) + index);
-        }
-
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
-        {
-            return *(reinterpret_cast<T*>(this) + index);
-        }
+        GAL_ACCESSORS
 
         template <typename Engine, typename... I>
         [[nodiscard]] constexpr static point<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
@@ -140,12 +126,11 @@ namespace pga
         }
     };
 
-    // Lines in P^3 are defined using Plücker coordinates: https://en.wikipedia.org/wiki/Plücker_coordinates
-    template <typename T>
-    struct line
-    {
-
-    };
+    template <int X, int Y, int Z>
+    using direction_t = multivector<void,
+                                    term<element<0b111>, monomial<rational<-Z>>>,
+                                    term<element<0b1011>, monomial<rational<Y>>>,
+                                    term<element<0b1101>, monomial<rational<-X>>>>;
 
     template <typename T>
     struct alignas(16) direction
@@ -163,15 +148,7 @@ namespace pga
         T y;
         T z;
 
-        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
-        {
-            return *(reinterpret_cast<const T*>(this) + index);
-        }
-
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
-        {
-            return *(reinterpret_cast<T*>(this) + index);
-        }
+        GAL_ACCESSORS
 
         template <typename Engine, typename... I>
         [[nodiscard]] constexpr static direction<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
@@ -186,11 +163,108 @@ namespace pga
         }
     };
 
-    // Produces a rotor 
-    template <typename T>
-    [[nodiscard]] constexpr auto exp(T theta, T x, T y, T z)
-    {
+    // Lines in P^3 are defined using Plücker coordinates: https://en.wikipedia.org/wiki/Plücker_coordinates
+    // The lines e01, e02, and e03 are the idea lines representing the intersections of e1, e2, and e3 with the ideal
+    // plane respectively. The lines e23, e31, and e12 are lines through the origin in the x, y, and z directions
+    // respectively. We opt not to provide a 6 coordinate representation for now (join points to construct a line or
+    // meet planes)
 
-    }
+    template <int X, int Y, int Z>
+    using rotor_t = multivector<void,
+                                term<element<0>, monomial<one, generator<tag<0, 0>>>>,
+                                term<element<0b110>, monomial<rational<Z>, generator<tag<0, 1>>>>,   // +z
+                                term<element<0b1010>, monomial<rational<-Y>, generator<tag<0, 1>>>>, // -y
+                                term<element<0b1100>, monomial<rational<X>, generator<tag<0, 1>>>>>; // +x
+
+    // A rotor, when conjugated with any geometric entity, rotates it theta radians about its axis
+    template <typename T = float, typename AngleT = T>
+    struct rotor
+    {
+        using angle_t = AngleT;
+        using value_t = T;
+        constexpr static size_t size = 4;
+
+        // theta := ID 0, index 0
+        // x := ID 0, index 1
+        // y := ID 0, index 2
+        // z := ID 0, index 3
+        // Cos\theta := ID 0, index 4
+        // Sin\theta := ID 0, index 5
+        template <size_t ID>
+        using type
+            = multivector<void,
+                          term<element<0>, monomial<one, generator<tag<ID, 4>>>>,
+                          term<element<0b110>, monomial<one, generator<tag<ID, 3>>, generator<tag<ID, 5>>>>, // +z
+                          term<element<0b1010>, monomial<minus_one, generator<tag<ID, 2>>, generator<tag<ID, 5>>>>, // -y
+                          term<element<0b1100>, monomial<one, generator<tag<ID, 1>>, generator<tag<ID, 5>>>>>; // +x
+
+        AngleT theta;
+        T x;
+        T y;
+        T z;
+
+        // As always when doing any normalization operation, NaNs are producible when normalizing
+        // vectors of zero length. This is not checked for!
+        void normalize() noexcept
+        {
+            auto l2_inv = T{1} / std::sqrt(x * x + y * y + z * z);
+            x = x * l2_inv;
+            y = y * l2_inv;
+            z = z * l2_inv;
+        }
+
+        GAL_ACCESSORS
+
+        template <size_t I>
+        [[nodiscard]] constexpr T get_special(std::integral_constant<size_t, I>) const noexcept
+        {
+            if constexpr (I == 4)
+            {
+                return std::cos(theta * 0.5);
+            }
+            else if constexpr (I == 5)
+            {
+                return std::sin(theta * 0.5);
+            }
+            else
+            {
+                static_assert(I == 4 || I == 5, "Unreachable branch");
+            }
+        }
+    };
+
+    // A translator, when conjugated with any geometric entity, translates it along its axis by the specified distance
+    template <typename T = float, typename DistanceT = T>
+    struct translator
+    {
+        using distance_t = DistanceT;
+        using value_t = T;
+        constexpr static size_t size = 4;
+
+        template <size_t ID>
+        using type
+            = multivector<void,
+                          term<element<0>, monomial<one>>,
+                          term<element<0b11>, monomial<minus_one_half, generator<tag<ID, 0>>, generator<tag<ID, 1>>>>, // -x
+                          term<element<0b101>, monomial<minus_one_half, generator<tag<ID, 0>>, generator<tag<ID, 2>>>>, // -y
+                          term<element<0b1001>, monomial<minus_one_half, generator<tag<ID, 0>>, generator<tag<ID, 3>>>>>; // -z
+
+        DistanceT distance;
+        T x;
+        T y;
+        T z;
+
+        // As always when doing any normalization operation, NaNs are producible when normalizing
+        // vectors of zero length. This is not checked for!
+        void normalize() noexcept
+        {
+            auto l2_inv = T{1} / std::sqrt(x * x + y * y + z * z);
+            x = x * l2_inv;
+            y = y * l2_inv;
+            z = z * l2_inv;
+        }
+
+        GAL_ACCESSORS
+    };
 } // namespace pga
 } // namespace gal

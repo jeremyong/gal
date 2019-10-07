@@ -70,6 +70,14 @@ struct generator
     constexpr static bool is_zero = false;
 };
 
+// The derived generator is an expression that is dependent on other generators and indicates to the engine that the
+// result contained should be memoized
+template <typename T>
+struct derived_generator
+{
+    T value;
+};
+
 // This struct exists purely as a tag to indicate that a generator has been annihilated
 struct zero_generator
 {
@@ -119,6 +127,7 @@ struct rational
 using one       = rational<1>;
 using minus_one = rational<-1>;
 using one_half  = rational<1, 2>;
+using minus_one_half = rational<-1, 2>;
 using zero      = rational<0>;
 
 template <int N1, int D1, int N2, int D2>

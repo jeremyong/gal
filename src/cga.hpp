@@ -15,7 +15,7 @@ namespace cga
     // The CGA is a graded algebra with 32 basis elements
     using algebra = ga::algebra<metric>;
 
-    GAL_OPERATORS(algebra)
+    GAL_OPERATORS(algebra);
 
     template <int X, int Y, int Z>
     using point_t = multivector<void,
@@ -29,6 +29,7 @@ namespace cga
     struct alignas(16) point
     {
         using value_t = T;
+        constexpr static size_t size = 3;
 
         template <typename Q, size_t ID>
         using p2
@@ -68,15 +69,7 @@ namespace cga
             T w;
         };
 
-        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
-        {
-            return *(reinterpret_cast<const T*>(this) + index);
-        }
-
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
-        {
-            return *(reinterpret_cast<T*>(this) + index);
-        }
+        GAL_ACCESSORS
 
         template <typename Engine, typename... I>
         [[nodiscard]] constexpr static point<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept

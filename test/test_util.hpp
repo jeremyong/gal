@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <formatters.hpp>
+#include <doctest/doctest.h>
 
 template <typename T>
 void print_type()
@@ -20,3 +21,5 @@ void print(const T& in)
 {
     fmt::print("{}\n", in);
 }
+
+inline auto epsilon = doctest::Approx(0.0f);

@@ -4,7 +4,6 @@
 #include <ega.hpp>
 #include <formatters.hpp>
 
-using namespace gal;
 using namespace gal::ega;
 
 TEST_SUITE_BEGIN("euclidean-geometric-algebra");

@@ -1,12 +1,11 @@
-#include <doctest/doctest.h>
+#include "test_util.hpp"
 
+#include <doctest/doctest.h>
 #include <formatters.hpp>
 #include <cga.hpp>
 #include <pga.hpp>
 #include <pga2.hpp>
 #include <engine.hpp>
-
-static auto epsilon = doctest::Approx(0.f);
 
 TEST_SUITE_BEGIN("engine");
 

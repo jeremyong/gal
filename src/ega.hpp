@@ -13,7 +13,7 @@ namespace ega
 
     using algebra = ga::algebra<metric>;
 
-    GAL_OPERATORS(algebra)
+    GAL_OPERATORS(algebra);
 
     template <size_t ID>
     using t = term<element<0>, monomial<one, generator<tag<ID>>>>;

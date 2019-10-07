@@ -373,12 +373,12 @@ struct scalar
 
 #define GAL_OPERATORS(Algebra) \
     template <typename... I, typename... J> \
-    [[nodiscard]] constexpr auto operator>>(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept \
+    [[nodiscard]] constexpr auto operator>>(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept \
     {\
         return ::gal::detail::product<Algebra::contract>(lhs, rhs);\
     }\
     template <typename... I, typename... J>\
-    [[nodiscard]] constexpr auto operator^(::gal::multivector<void, I...> lhs, ::gal::multivector<void, J...> rhs) noexcept\
+    [[nodiscard]] constexpr auto operator^(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept\
     {\
         return ::gal::detail::product<Algebra::exterior>(lhs, rhs);\
     }\
@@ -401,7 +401,30 @@ struct scalar
     [[nodiscard]] constexpr auto operator&(M1 lhs, M2 rhs) noexcept\
     {\
         return !(!lhs ^ !rhs);\
-    }
+    }\
+    template <typename T = float> using scalar = ::gal::scalar<T>;\
+    using ::gal::simplify;\
+    using ::gal::scale
 
-
+#define GAL_ACCESSORS \
+        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept\
+        {\
+            return *(reinterpret_cast<const T*>(this) + index);\
+        }\
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept\
+        {\
+            return *(reinterpret_cast<T*>(this) + index);\
+        }\
+        template <size_t I>\
+        [[nodiscard]] constexpr auto get() const noexcept\
+        {\
+            if constexpr (I < size)\
+            {\
+                return *(reinterpret_cast<const T*>(this) + I);\
+            }\
+            else\
+            {\
+                return derived_generator<T>{get_special(std::integral_constant<size_t, I>{})};\
+            }\
+        }
 } // namespace gal

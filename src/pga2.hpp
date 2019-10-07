@@ -15,10 +15,9 @@ namespace pga2
     // interpretation. Here, we opt to define e0^2 := 1 by convention
     using metric = gal::metric<2, 0, 1>;
 
-    // The CRA is a graded algebra with 8 basis elements
     using algebra = ga::algebra<metric>;
 
-    GAL_OPERATORS(algebra)
+    GAL_OPERATORS(algebra);
 
     using e    = multivector<void, term<element<0>, monomial<one>>>;
     using e0   = multivector<void, term<element<0b1>, monomial<one>>>;
@@ -40,6 +39,7 @@ namespace pga2
     struct point
     {
         using value_t = T;
+        constexpr static size_t size = 2;
 
         template <size_t ID>
         using type = multivector<void,
@@ -61,15 +61,7 @@ namespace pga2
             T t;
         };
 
-        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
-        {
-            return *(reinterpret_cast<const T*>(this) + index);
-        }
-
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
-        {
-            return *(reinterpret_cast<T*>(this) + index);
-        }
+        GAL_ACCESSORS
 
         template <typename Engine, typename... I>
         [[nodiscard]] constexpr static point<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
@@ -97,6 +89,7 @@ namespace pga2
     struct line
     {
         using value_t = T;
+        constexpr static size_t size = 3;
 
         template <size_t ID>
         using type  = multivector<void,
@@ -107,15 +100,7 @@ namespace pga2
         T b;
         T c;
 
-        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
-        {
-            return *(reinterpret_cast<const T*>(this) + index);
-        }
-
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
-        {
-            return *(reinterpret_cast<T*>(this) + index);
-        }
+        GAL_ACCESSORS
 
         template <typename Engine, typename... I>
         [[nodiscard]] constexpr static line<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
@@ -141,7 +126,7 @@ namespace pga2
     struct alignas(16) direction
     {
         using value_t = T;
-        constexpr static size_t size = 3;
+        constexpr static size_t size = 2;
 
         template <size_t ID>
         using type = multivector<void,
@@ -151,15 +136,7 @@ namespace pga2
         T x;
         T y;
 
-        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept
-        {
-            return *(reinterpret_cast<const T*>(this) + index);
-        }
-
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
-        {
-            return *(reinterpret_cast<T*>(this) + index);
-        }
+        GAL_ACCESSORS
 
         template <typename Engine, typename... I>
         [[nodiscard]] constexpr static direction<T> convert(Engine& engine, multivector<void, I...> mv) noexcept

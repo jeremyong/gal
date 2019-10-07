@@ -20,6 +20,32 @@ GAL is in the early stages of development, so please stay tuned for more!
 
 Being a template-library, GAL is header-only and can be installed by either linking the `gal` interface target via cmake or by copying the files in `src` to a known include path.
 
+To build the tests, you need a C++ compiler (currently untested via MSVC) that supports C++17 or greater.
+Conan is used to easily fetch `doctest` and `fmt` as additional dependencies. Neither are required for GAL
+to function but you will need to link `fmt` in your own code if you wish to include `formatters.hpp` for
+pretty type printing.
+
+```sh
+# From the root directory of this project
+mkdir build
+cd build
+
+# If you don't have conan installed already, the easiest way to get it is with `pip install conan` with
+# a working python 3 installation (use `pip install conan --user` for a local installation)
+
+# Install test dependencies
+conan install ..
+
+# Optionally supply release type, flags, etc and pick your favorite generator
+cmake .. -G Ninja
+
+# ... or whichever (ideally multicore-friendly) build system you choose
+ninja
+
+# Run the tests
+./bin/gal_test
+```
+
 ## Motivation
 
 Geometric Algebra promises (and fulfills) a unified algebraic system for manipulating geometric objects
@@ -37,7 +63,7 @@ produced it. In GA, such information is encoded by higher ordered basis elements
 proferred in the typical R3 vector space. This is what makes GA a *graded* algebra. The second important
 (and necessary) piece that gives GA its power are the operations between elements of this algebra. Without
 going into much detail, the geometric product encodes both projections and rejections nicely within the
-framework, allow the *conjugate* (aka "sandwich") operator to elegantly supply interpolatable (read.
+framework supplies us with the *conjugate* (aka "sandwich") operator to elegantly supply interpolatable (read.
 differentiable) rotations and translations of any geometric object. All of this is to say, the state
 space of the *code* needed to express a vast range of computation is compressed significantly.
 
@@ -57,14 +83,14 @@ to act on higher-order elements than just vectors). Under CGA, the contraction o
 the compiler would be unable to optimize this as such in general. GAL makes the following code possible:
 
 ```c++
-using gal::scalar;
-using gal::cga::point;
+using scalar = gal::cga::scalar<float>;
+using point  = gal::cga::point<float>;
 
-float construct_plane(point<float> p)
+float construct_plane(point p)
 {
     gal::engine engine{p};
 
-    return engine.compute<scalar<float>>([](auto p)
+    return engine.compute<scalar>([](auto p)
     {
         // Contract a cga point back onto itself
         // Note that p here contains no actual data! It is just the type that represents a CGA point
@@ -144,12 +170,12 @@ CHECK_EQ(p2.x * p.x + p2.y * p.y + p2.z * p.z + p.d, epsilon);
 CHECK_EQ(p3.x * p.x + p3.y * p.y + p3.z * p.z + p.d, epsilon);
 ```
 
+### Projective Geometric Algebra
 
 ## TODO
 
-- Implement additional geometric objects (even sub-algebra versors, etc)
-- Implement additional operators (exponential maps and logarithms)
-- Implement the Conformal Geometric Algebra
+- Implement logarithms/derivatives
+- Flesh out metrics that aren't PGA3 with the same functionality (rotors/translators)
 - Add sample applications and provide benchmark
 - Add an additional engine that compiles expressions to SPIR-V or shader code
 - Add additional documentation

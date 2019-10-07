@@ -12,6 +12,16 @@ namespace gal
 // TODO: SIMD engine
 // TODO: constraint evaluation
 
+// Memoization trie used to store and retrieve results of subexpressions that repeat during a computation
+// The number of combinations possible of multiplications between N factors scales as the factorial of N, so it is
+// unreasonable to use a dense representation for memoized products. However, a total ordering exists between the
+// generators so intermediate products are amenable to storage in a trie-like structure.
+
+template <typename... T>
+struct mem_trie
+{
+};
+
 template <typename... I>
 class engine
 {
@@ -68,14 +78,47 @@ private:
     [[nodiscard]] constexpr T evaluate(generator<Tag, Degree, Order>) const noexcept
     {
         static_assert(!Tag::untagged, "A generator in the field field of an expression is unlabeled");
-        // TODO: permit substitution of a different power function for more exotic types
-        return std::pow(get<T, Tag::id, Tag::index>(), Degree::value);
+        // TODO: leverage sub-expression memoization table to accelerate compile times and unoptimized codegen
+        if constexpr (Degree::value == 0)
+        {
+            return T{1};
+        }
+        else
+        {
+            const auto value = get<T, Tag::id, Tag::index>();
+            constexpr bool is_derived
+                = std::is_same<typename std::decay<decltype(value)>::type, derived_generator<T>>::value;
+            // TODO: memoize derived results
+            if constexpr (Degree::value == 1)
+            {
+                if constexpr (is_derived)
+                {
+                    return value.value;
+                }
+                else
+                {
+                    return value;
+                }
+            }
+            else
+            {
+                // TODO: permit substitution of a different power function for more exotic types
+                if constexpr (is_derived)
+                {
+                    return std::pow(value.value, Degree::value);
+                }
+                else
+                {
+                    return std::pow(value, Degree::value);
+                }
+            }
+        }
     }
 
     template <typename T, size_t ID, size_t Index>
-    [[nodiscard]] constexpr const auto& get() const noexcept
+    [[nodiscard]] constexpr auto get() const noexcept
     {
-        return std::get<ID>(data)[Index];
+        return std::get<ID>(data).template get<Index>();
     }
 
     template <size_t... N>

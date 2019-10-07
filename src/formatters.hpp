@@ -218,7 +218,7 @@ struct formatter<gal::term<E, Monomials...>>
     {
         if constexpr (sizeof...(Monomials) == 0)
         {
-            return ctx.out();
+            return format_to(ctx.out(), "0");
         }
 
         format_to(ctx.out(), "[");
@@ -253,7 +253,7 @@ struct formatter<gal::term<E, Monomials...>>
 };
 
 template <typename... Terms>
-struct formatter<gal::multivector<void, Terms...>>
+struct formatter<::gal::multivector<void, Terms...>>
 {
     template <typename PC>
     constexpr auto parse(PC& ctx)
@@ -284,7 +284,7 @@ struct formatter<gal::multivector<void, Terms...>>
             {
                 if (!first)
                 {
-                    format_to(ctx.out(), " + {}", T{});
+                    format_to(ctx.out(), "\n + {}", T{});
                 }
                 else
                 {
@@ -307,7 +307,7 @@ struct formatter<gal::multivector<void, Terms...>>
                 }
                 else
                 {
-                    format_to(ctx.out(), " + {}", T{});
+                    format_to(ctx.out(), "\n + {}", T{});
                 }
             }
         }

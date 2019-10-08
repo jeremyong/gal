@@ -22,4 +22,10 @@ void print(const T& in)
     fmt::print("{}\n", in);
 }
 
+template <typename T>
+void print(const char* label, const T& in)
+{
+    fmt::print("{}: {}\n", label, in);
+}
+
 inline auto epsilon = doctest::Approx(0.0f);

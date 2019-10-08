@@ -3,6 +3,7 @@
 #include <doctest/doctest.h>
 #include <formatters.hpp>
 #include <cga.hpp>
+#include <ega.hpp>
 #include <pga.hpp>
 #include <pga2.hpp>
 #include <engine.hpp>
@@ -11,6 +12,26 @@ TEST_SUITE_BEGIN("engine");
 
 TEST_CASE("basic-computation")
 {
+    SUBCASE("variadic-return")
+    {
+        using namespace gal::ega;
+
+        point<> p1{2.4f, 3.6f, 4.2};
+        point<> p2{-1.1f, 2.7f, 1.6};
+
+        gal::engine engine{p1, p2};
+        auto&& [q1, q2] = (std::tuple<point<>, point<>>)engine.compute([](auto p1, auto p2)
+        {
+            return std::tuple{p1, p2};
+        });
+
+        for (size_t i = 0; i != 3; ++i)
+        {
+            CHECK_EQ(p1[i], q1[i]);
+            CHECK_EQ(p2[i], q2[i]);
+        }
+    }
+
     SUBCASE("pga2-expression-evaluation")
     {
         using namespace gal::pga2;
@@ -19,7 +40,7 @@ TEST_CASE("basic-computation")
         point<> p2{-1.1f, 2.7f};
 
         gal::engine engine{p1, p2};
-        auto l = engine.compute<line<>>([](auto p1, auto p2)
+        line<> l = engine.compute([](auto p1, auto p2)
         {
             return p1 & p2;
         });
@@ -31,14 +52,14 @@ TEST_CASE("basic-computation")
     SUBCASE("pga3-expression-evaluation")
     {
         using namespace gal::pga;
-        point<> p1{2.4f, 3.6f, 1.3f};
-        point<> p2{-1.1f, 2.7f, 5.0f};
-        point<> p3{-1.8f, -2.7f, -4.3f};
+        point<double> p1{2.4f, 3.6f, 1.3f};
+        point<double> p2{-1.1f, 11.7f, 5.0f};
+        point<double> p3{-1.8f, -2.7f, -4.3f};
 
         gal::engine engine{p1, p2, p3};
-        auto p = engine.compute<plane<>>([](auto p1, auto p2, auto p3)
+        plane<double> p = engine.compute([](auto p1, auto p2, auto p3)
         {
-            return p3 & p1 & p2;
+            return p1 & p2 & p3;
         });
 
         CHECK_EQ(p1.x * p.x + p1.y * p.y + p1.z * p.z + p.d, epsilon);
@@ -53,13 +74,11 @@ TEST_CASE("basic-computation")
 
         gal::engine engine{p};
         // Compute the contraction of a point as itself
-        // Most expressions cannot be evaluated as constexpr in the way this one can, but because all terms cancel, the
-        // result is actually entirely known at compile time
-        constexpr auto n = engine.compute<gal::scalar<>>([](auto p)
+        gal::scalar<> n = engine.compute([](auto p)
         {
             return p >> p;
         });
-        static_assert(n == 0.f);
+        CHECK_EQ(n, epsilon);
     }
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "finite_algebra.hpp"
+#include "ga.hpp"
 #include "utility.hpp"
 
 #include <fmt/color.h>
@@ -36,6 +36,53 @@ struct formatter<styled_object<T>>
     {
         auto styled_text = ::fmt::vformat(so.ts, "{}", basic_format_args<FC>{format_arg_store<FC, T>{so.value}});
         return format_to(ctx.out(), "{}", styled_text);
+    }
+};
+
+template <typename T, size_t... E>
+struct formatter<gal::entity<T, E...>>
+{
+    using type = gal::entity<T, E...>;
+    using elements = std::tuple<gal::element<E>...>;
+
+    template <typename PC>
+    constexpr auto parse(PC& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template <typename FC>
+    constexpr auto format(const type& entity, FC& ctx)
+    {
+        if constexpr (type::size == 0)
+        {
+            return ctx.out();
+        }
+        else
+        {
+            format_terms(entity, ctx, std::make_index_sequence<sizeof...(E)>{});
+        }
+
+        return ctx.out();
+    }
+
+    template <typename FC, size_t... Is>
+    constexpr void format_terms(const type& entity, FC& ctx, std::index_sequence<Is...>)
+    {
+        (format_term(entity, std::integral_constant<size_t, Is>{}, ctx), ...);
+    }
+
+    template <size_t N, typename FC>
+    constexpr void format_term(const type& entity, std::integral_constant<size_t, N>, FC& ctx)
+    {
+        if constexpr (N < sizeof...(E) - 1)
+        {
+            format_to(ctx.out(), "{}{} + ", entity.data[N], std::tuple_element_t<N, elements>{});
+        }
+        else
+        {
+            format_to(ctx.out(), "{} * {}", entity.data[N], std::tuple_element_t<N, elements>{});
+        }
     }
 };
 
@@ -284,7 +331,7 @@ struct formatter<::gal::multivector<void, Terms...>>
             {
                 if (!first)
                 {
-                    format_to(ctx.out(), "\n + {}", T{});
+                    format_to(ctx.out(), " + {}", T{});
                 }
                 else
                 {
@@ -307,7 +354,7 @@ struct formatter<::gal::multivector<void, Terms...>>
                 }
                 else
                 {
-                    format_to(ctx.out(), "\n + {}", T{});
+                    format_to(ctx.out(), " + {}", T{});
                 }
             }
         }

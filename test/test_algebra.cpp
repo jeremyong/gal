@@ -10,6 +10,20 @@ using namespace gal;
 TEST_SUITE_BEGIN("finite-algebra");
 
 // The majority of these tests are actually compile-time tests (compilation and correctness are equivalent)
+TEST_CASE("rational-perturbation")
+{
+    SUBCASE("small-undisturbed")
+    {
+        constexpr auto q = detail::overflow_gate(rational<1, 128>{});
+        static_assert(q.num == 1);
+        static_assert(q.den == 128);
+    }
+
+    SUBCASE("perturb-irreducible-rationals")
+    {
+        // TODO: Ensure accuracy of rational mediant approximation
+    }
+}
 
 TEST_CASE("term-arithmetic")
 {

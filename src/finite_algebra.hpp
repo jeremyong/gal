@@ -2,7 +2,6 @@
 
 #include "ring_generator.hpp"
 
-#include <tuple>
 #include <type_traits>
 
 namespace gal
@@ -28,6 +27,7 @@ namespace gal
 template <size_t P, size_t V, size_t R>
 struct metric
 {
+    constexpr static bool is_diagonal = true;
     constexpr static size_t p = P;
     constexpr static size_t v = V;
     constexpr static size_t r = R;
@@ -37,20 +37,38 @@ struct metric
     // associated with it is [graded](https://en.wikipedia.org/wiki/Graded_multivector_space) (e.g. Clifford Algebra).
     constexpr static size_t dimension = P + V + R;
 
-    // In our indexing, 0-norm units come first, followed by 1-norm units, and finally -1-norm units
-    [[nodiscard]] constexpr static int element_norm(size_t e) noexcept
+    // The dot product between two 1-grade basis elements fully defines the Cayley table of an algebra. This metric may
+    // be specialized to support non-diagonal 1-grade Cayley tables (e.g. Conformal Geometric Algebra)
+    [[nodiscard]] constexpr static int dot(size_t lhs, size_t rhs) noexcept
     {
-        if (e < r)
+        // The default metric features a diagonal Cayley table
+        if (lhs != rhs || lhs < r)
         {
             return 0;
         }
-        else if (e >= r + p)
+        else if (lhs >= r + p)
         {
             return -1;
         }
         else
         {
             return 1;
+        }
+    }
+
+    // This is a helper function derived from the Cayley table. Given a basis element, it returns whether the blade
+    // supplied contains a vector with a non-zero dot product as the index in the first position, and the dot product in
+    // the second position. Returning {-1, .} indicates that the blade and element are orthogonal
+    [[nodiscard]] constexpr static std::pair<int, int> intercept(size_t e, size_t blade) noexcept
+    {
+        // This is the implementation for a diagonal Cayley table
+        if (blade & (1 << e))
+        {
+            return {e, dot(e, e)};
+        }
+        else
+        {
+            return {-1, 0};
         }
     }
 };
@@ -123,6 +141,7 @@ namespace detail
     [[nodiscard]] constexpr auto
     product(monomial<M, I...> accum, monomial<one, G1, J...> lhs, monomial<one, G2, K...> rhs)
     {
+        static_assert(!G1::tag_t::untagged && !G2::tag_t::untagged);
         if constexpr (G1::tag_t::untagged && G2::tag_t::untagged)
         {
             // reduce an extra recursion if both factors are untagged
@@ -169,7 +188,7 @@ namespace detail
             {
                 if constexpr (g::is_zero)
                 {
-                    return monomial<M, I..., J..., K...>{};
+                    return monomial<zero>{};
                 }
                 else
                 {
@@ -180,7 +199,7 @@ namespace detail
             {
                 if constexpr (g::is_zero)
                 {
-                    return product(monomial<M, I...>{}, monomial<one, J...>{}, monomial<one, K...>{});
+                    return monomial<zero>{};
                 }
                 else
                 {
@@ -629,6 +648,19 @@ template <typename Algebra, typename... I, typename... J>
 [[nodiscard]] constexpr auto operator*(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept
 {
     return ::gal::detail::product<Algebra>(lhs, rhs);
+}
+
+template <typename E, typename... G>
+[[nodiscard]] constexpr auto fiber(term<E, G...>) noexcept
+{
+    return term<E, monomial<one>>{};
+}
+
+// Returns the multivector with all polynomial generators stripped
+template <typename... I>
+[[nodiscard]] constexpr auto fiber(multivector<void, I...>) noexcept
+{
+    return multivector<void, decltype(fiber(I{}))...>{};
 }
 
 // An algebra over a field is a multivector space equipped with a bilinear product.

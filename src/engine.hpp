@@ -25,9 +25,75 @@ struct mem_trie
 {
 };
 
+namespace detail
+{
+    template <typename T>
+    struct is_tuple
+    {
+        constexpr static bool value = false;
+    };
+
+    template <typename... T>
+    struct is_tuple<std::tuple<T...>>
+    {
+        constexpr static bool value = true;
+    };
+}
+
 template <typename... I>
 class engine
 {
+    template <typename E>
+    struct thunk
+    {
+        thunk(const engine& e, E expression)
+            : engine_{e}
+            , expression_{expression}
+        {}
+
+        template <typename T>
+        [[nodiscard]] constexpr auto extract() const noexcept
+        {
+            if constexpr (detail::is_tuple<E>::value)
+            {
+                return extract<T>(std::make_index_sequence<std::tuple_size<E>::value>{});
+            }
+            else
+            {
+                using type = decltype(detail::compute_entity<T>(expression_));
+                return type::convert(engine_, expression_);
+            }
+        }
+
+        template <typename T, size_t... N>
+        [[nodiscard]] constexpr auto extract(std::index_sequence<N...>) const noexcept
+        {
+            return std::make_tuple(decltype(detail::compute_entity<T>(typename std::tuple_element<N, E>::type{}))::convert(
+                engine_, typename std::tuple_element<N, E>::type{})...);
+        }
+
+        template <typename T>
+        [[nodiscard]] constexpr operator T() const noexcept
+        {
+            return T::convert(engine_, expression_);
+        }
+
+        template <typename... T>
+        [[nodiscard]] constexpr operator std::tuple<T...>() const noexcept
+        {
+            return convert_results<T...>(std::make_index_sequence<sizeof...(T)>{});
+        }
+
+        template <typename... T, size_t... N>
+        [[nodiscard]] constexpr auto convert_results(std::index_sequence<N...>) const noexcept
+        {
+            return std::make_tuple<T...>(T::convert(engine_, std::get<N>(expression_))...);
+        }
+
+        const engine& engine_;
+        E expression_;
+    };
+
 public:
     constexpr engine(const I&... inputs) noexcept
         : data{inputs...}
@@ -35,12 +101,12 @@ public:
         static_assert(sizeof...(I) > 0, "An engine without any inputs cannot do any useful computation");
     }
 
-    template <typename Result, typename T>
-    [[nodiscard]] constexpr auto compute(T&& lambda) const noexcept
+    template <typename L>
+    [[nodiscard]] constexpr auto compute(L&& lambda) const noexcept
     {
-        const auto inputs = types(std::make_index_sequence<sizeof...(I)>{});
-        const auto result = std::apply(std::forward<T>(lambda), inputs);
-        return Result::convert(*this, result);
+        constexpr auto inputs = types(std::make_index_sequence<sizeof...(I)>{});
+        const auto result = std::apply(std::forward<L>(lambda), inputs);
+        return thunk{*this, result};
     }
 
     template <typename T, typename... Ts>
@@ -111,7 +177,7 @@ private:
     }
 
     template <size_t... N>
-    [[nodiscard]] constexpr auto types(std::index_sequence<N...>) const noexcept
+    [[nodiscard]] constexpr static auto types(std::index_sequence<N...>) noexcept
     {
         return std::tuple<typename I::template type<N>...>();
     }

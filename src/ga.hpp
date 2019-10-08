@@ -3,6 +3,8 @@
 #include "finite_algebra.hpp"
 #include "utility.hpp"
 
+#include <array>
+
 namespace gal
 {
 template <typename E>
@@ -16,8 +18,6 @@ namespace ga
     template <typename Metric>
     struct algebra
     {
-        template <typename... T>
-        using term_t = term<T...>;
         using metric_t = Metric;
 
         struct inner
@@ -25,7 +25,7 @@ namespace ga
             constexpr static bool has_order_preserving_product = true;
 
             template <typename E1, typename E2, typename... M1, typename... M2>
-            [[nodiscard]] constexpr static auto product(term_t<E1, M1...> lhs, term_t<E2, M2...> rhs) noexcept
+            [[nodiscard]] constexpr static auto product(term<E1, M1...> lhs, term<E2, M2...> rhs) noexcept
             {
                 constexpr auto inner = inner_product<E1::value, E2::value>();
                 if constexpr (inner.second == 0)
@@ -35,8 +35,17 @@ namespace ga
                 else
                 {
                     using element_t = element<inner.first>;
-                    using term_t = decltype(rational<inner.second>{} * term_t<element_t, M1...>{} * term_t<element_t, M2...>{});
-                    return multivector<void, term_t>{};
+                    if constexpr (inner.second == 1)
+                    {
+                        using term_t = decltype(term<element_t, M1...>{} * term<element_t, M2...>{});
+                        return multivector<void, term_t>{};
+                    }
+                    else
+                    {
+                        using term_t = decltype(rational<inner.second>{} * term<element_t, M1...>{}
+                                                * term<element_t, M2...>{});
+                        return multivector<void, term_t>{};
+                    }
                 }
             }
 
@@ -68,7 +77,7 @@ namespace ga
             constexpr static bool has_order_preserving_product = false;
 
             template <typename E1, typename E2, typename... M1, typename... M2>
-            [[nodiscard]] constexpr static auto product(term_t<E1, M1...> lhs, term_t<E2, M2...> rhs) noexcept
+            [[nodiscard]] constexpr static auto product(term<E1, M1...> lhs, term<E2, M2...> rhs) noexcept
             {
                 constexpr auto contraction = contract_product<E1::value, E2::value>();
                 if constexpr (contraction.second == 0)
@@ -78,8 +87,17 @@ namespace ga
                 else
                 {
                     using element_t = element<contraction.first>;
-                    using term_t = decltype(rational<contraction.second>{} * term_t<element_t, M1...>{} * term_t<element_t, M2...>{});
-                    return multivector<void, term_t>{};
+                    if constexpr (contraction.second == 1)
+                    {
+                        using term_t = decltype(term<element_t, M1...>{} * term<element_t, M2...>{});
+                        return multivector<void, term_t>{};
+                    }
+                    else
+                    {
+                        using term_t = decltype(rational<contraction.second>{} * term<element_t, M1...>{}
+                                                * term<element_t, M2...>{});
+                        return multivector<void, term_t>{};
+                    }
                 }
             }
 
@@ -90,7 +108,7 @@ namespace ga
                 {
                     return {E2, 1};
                 }
-                else if constexpr (E1 > E2)
+                else if constexpr (count_bits(E1) > count_bits(E2))
                 {
                     return {0, 0};
                 }
@@ -98,35 +116,28 @@ namespace ga
                 {
                     size_t lhs = E1;
                     size_t rhs = E2;
-                    int parity = 1;
+                    int swaps = 0;
                     while (lhs > 0)
                     {
                         auto lhs_element = leading_index(lhs);
-                        if (rhs & (1 << lhs_element))
-                        {
-                            auto en = Metric::element_norm(lhs_element);
-                            if (en == 0)
-                            {
-                                return {0, 0};
-                            }
-
-                            if (count_bits(rhs & ((1 << lhs_element) - 1)))
-                            {
-                                parity *= -1;
-                            }
-                            lhs &= ~(1 << lhs_element);
-                            rhs &= ~(1 << lhs_element);
-
-                            // Account for negative elements in the metric signature
-                            parity *= en;
-                        }
-                        else
+                        auto [index, dot] = Metric::intercept(lhs_element, rhs);
+                        if (index == -1 || dot == 0)
                         {
                             return {0, 0};
                         }
+                        else
+                        {
+                            swaps += count_bits(rhs & ((1 << index) - 1));
+                            lhs &= ~(1 << lhs_element);
+                            rhs &= ~(1 << index);
+                            if (dot == -1)
+                            {
+                                ++swaps;
+                            }
+                        }
                     }
 
-                    return {rhs, parity};
+                    return {rhs, swaps % 2 == 0 ? 1 : -1};
                 }
             }
         };
@@ -136,7 +147,7 @@ namespace ga
             constexpr static bool has_order_preserving_product = false;
 
             template <typename E1, typename E2, typename... M1, typename... M2>
-            [[nodiscard]] constexpr static auto product(term_t<E1, M1...> lhs, term_t<E2, M2...> rhs) noexcept
+            [[nodiscard]] constexpr static auto product(term<E1, M1...> lhs, term<E2, M2...> rhs) noexcept
             {
                 constexpr auto wedge = exterior_product<E1::value, E2::value>();
                 if constexpr (wedge.second == 0)
@@ -146,8 +157,17 @@ namespace ga
                 else
                 {
                     using element_t = element<wedge.first>;
-                    using term_t = decltype(rational<wedge.second>{} * term_t<element_t, M1...>{} * term_t<element_t, M2...>{});
-                    return multivector<void, term_t>{};
+                    if constexpr (wedge.second == 1)
+                    {
+                        using term_t = decltype(term<element_t, M1...>{} * term<element_t, M2...>{});
+                        return multivector<void, term_t>{};
+                    }
+                    else
+                    {
+                        using term_t = decltype(rational<wedge.second>{} * term<element_t, M1...>{}
+                                                * term<element_t, M2...>{});
+                        return multivector<void, term_t>{};
+                    }
                 }
             }
 
@@ -194,7 +214,30 @@ namespace ga
             constexpr static bool has_order_preserving_product = false;
 
             template <typename E1, typename E2, typename... M1, typename... M2>
-            [[nodiscard]] constexpr static auto product(term_t<E1, M1...> lhs, term_t<E2, M2...> rhs) noexcept
+            [[nodiscard]] constexpr static auto product(term<E1, M1...> lhs, term<E2, M2...> rhs) noexcept
+            {
+                if constexpr (!Metric::is_diagonal)
+                {
+                    if constexpr (Metric::multi_term_gp(E1::value, E2::value))
+                    {
+                        auto lhs2 = Metric::diagonalize(lhs);
+                        auto rhs2 = Metric::diagonalize(rhs);
+                        auto p = detail::product<typename algebra<typename Metric::base_metric>::geometric>(lhs2, rhs2);
+                        return Metric::undiagonalize(p);
+                    }
+                    else
+                    {
+                        return product_diagonal(lhs, rhs);
+                    }
+                }
+                else
+                {
+                    return product_diagonal(lhs, rhs);
+                }
+            }
+
+            template <typename E1, typename E2, typename... M1, typename... M2>
+            [[nodiscard]] constexpr static auto product_diagonal(term<E1, M1...> lhs, term<E2, M2...> rhs) noexcept
             {
                 constexpr auto gp = geometric_product<E1::value, E2::value>();
                 if constexpr (gp.second == 0)
@@ -204,8 +247,17 @@ namespace ga
                 else
                 {
                     using element_t = element<gp.first>;
-                    using term_t = decltype(rational<gp.second>{} * term_t<element_t, M1...>{} * term_t<element_t, M2...>{});
-                    return multivector<void, term_t>{};
+                    if constexpr (gp.second == 1)
+                    {
+                        using term_t = decltype(term<element_t, M1...>{} * term<element_t, M2...>{});
+                        return multivector<void, term_t>{};
+                    }
+                    else
+                    {
+                        using term_t
+                            = decltype(rational<gp.second>{} * term<element_t, M1...>{} * term<element_t, M2...>{});
+                        return multivector<void, term_t>{};
+                    }
                 }
             }
 
@@ -230,25 +282,29 @@ namespace ga
                     while (lhs > 0)
                     {
                         auto lhs_element = leading_index(lhs);
-                        swaps += count_bits(rhs & ((1 << lhs_element) - 1));
-                        lhs &= ~(1 << lhs_element);
-                        if (rhs & (1 << lhs_element))
+                        auto [index, dot] = Metric::intercept(lhs_element, rhs);
+                        if (index == -1)
                         {
-                            auto en = Metric::element_norm(lhs_element);
-                            if (en == 0)
-                            {
-                                return {0, 0};
-                            }
-                            else if (en == -1)
-                            {
-                                ++swaps;
-                            }
-                            rhs &= ~(1 << lhs_element);
+                            // Exterior
+                            swaps += count_bits(rhs & ((1 << lhs_element) - 1));
+                            rhs |= 1 << lhs_element;
                         }
                         else
                         {
-                            rhs |= 1 << lhs_element;
+                            // Contract
+                            swaps += count_bits(rhs & ((1 << index) - 1));
+                            if (dot == 0)
+                            {
+                                return {0, 0};
+                            }
+                            else if (dot == -1)
+                            {
+                                ++swaps;
+                            }
+                            rhs &= ~(1 << index);
                         }
+                        
+                        lhs &= ~(1 << lhs_element);
                     }
                     return {element, swaps % 2 == 0 ? 1 : -1};
                 }
@@ -300,6 +356,7 @@ namespace ga
             return minus_one{} * term<element<complement>, As...>{};
         }
     }
+
 } // namespace ga
 
 // The geometric algebra also leverages additional operations
@@ -308,14 +365,13 @@ namespace ga
 // - grade selection
 // - dual (contraction onto the unit pseudoscalar)
 
-// The following operations are general regardless of metric so we keep them in the upper namespace
 // Term reversion
 template <typename E, typename... M>
-[[nodiscard]] constexpr auto operator~(term<E, M...> t) noexcept
+[[nodiscard]] constexpr auto reverse(term<E, M...> t) noexcept
 {
     constexpr auto g    = grade<E>();
-    constexpr bool flip = (g * (g - 1) / 2) % 2 == 1;
-    if constexpr (flip)
+    constexpr int flips = (g * (g - 1) / 2);
+    if constexpr (flips % 2 == 1)
     {
         return -t;
     }
@@ -327,16 +383,20 @@ template <typename E, typename... M>
 
 // General multivector reversion
 template <typename... T>
-[[nodiscard]] constexpr auto operator~(multivector<void, T...>) noexcept
+[[nodiscard]] constexpr auto reverse(multivector<void, T...>) noexcept
 {
-    return multivector<void, decltype(~T{})...>{};
+    return multivector<void, decltype(reverse(T{}))...>{};
 }
 
 template <typename Metric>
 struct pseudoscalar
 {
     constexpr static multivector<void, term<element<(1 << Metric::dimension) - 1>, monomial<one>>> value{};
-    constexpr static auto inverse = ~value;
+    constexpr static multivector<
+        void,
+        term<element<(1 << Metric::dimension) - 1>,
+             monomial<std::conditional_t<((Metric::dimension * (Metric::dimension - 1) / 2) + Metric::v) % 2 == 0, one, minus_one>>>>
+        inverse{};
 };
 
 template <typename Metric, typename M>
@@ -412,12 +472,17 @@ template <size_t E, typename... T>
     template <typename... I, typename... J>\
     [[nodiscard]] constexpr auto operator*(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept\
     {\
-        return detail::product<Algebra::geometric>(lhs, rhs);\
+        return ::gal::detail::product<Algebra::geometric>(lhs, rhs);\
+    }\
+    template <typename... I>\
+    [[nodiscard]] constexpr auto operator~(multivector<void, I...> lhs) noexcept\
+    {\
+        return ::gal::reverse(lhs);\
     }\
     template <typename V, typename T>\
     [[nodiscard]] constexpr auto conjugate(V action, T subject) noexcept\
     {\
-        return action * subject * ~action;\
+        return action * subject * ::gal::reverse(action);\
     }\
     template <typename... I>\
     [[nodiscard]] constexpr auto operator!(multivector<void, I...> input) noexcept\
@@ -430,7 +495,8 @@ template <size_t E, typename... T>
         return !(!lhs ^ !rhs);\
     }\
     template <typename T = float> using scalar = ::gal::scalar<T>;\
-    using ::gal::simplify
+    using ::gal::simplify;\
+    using pseudoscalar = ::gal::pseudoscalar<Algebra::metric_t>
 
 #define GAL_ACCESSORS \
         [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept\
@@ -476,6 +542,71 @@ struct scalar
     {
         auto s_e = extract<0>(mv);
         return {engine.template evaluate<T>(s_e)};
+    }
+};
+
+namespace detail
+{
+    template <size_t ID, size_t... I, size_t... E>
+    [[nodiscard]] constexpr static auto
+    compute_type(std::integral_constant<size_t, ID>, std::index_sequence<I...>, std::index_sequence<E...>) noexcept
+    {
+        return multivector<void, term<element<E>, monomial<one, generator<tag<ID, I>>>>...>{};
+    }
+}
+
+template <typename T, size_t... E>
+struct entity
+{
+    constexpr static size_t size = sizeof...(E);
+
+    template <size_t ID>
+    using type = decltype(detail::compute_type(std::integral_constant<size_t, ID>{},
+                                               std::make_index_sequence<sizeof...(E)>{},
+                                               std::index_sequence<E...>{}));
+
+    std::array<T, size> data;
+
+    GAL_ACCESSORS
+
+    template <typename Engine, typename... I>
+    [[nodiscard]] constexpr static entity convert(const Engine& engine, multivector<void, I...> mv) noexcept
+    {
+        return {engine.template evaluate<T>(extract<E>(mv))...};
+    }
+};
+
+namespace detail
+{
+    template <typename T, typename... E>
+    [[nodiscard]] constexpr static auto compute_entity(multivector<void, E...>) noexcept
+    {
+        return entity<T, E::element_t::value...>{};
+    }
+}
+
+// Convenience type for situations where all values need to be extracted
+// USE SPARINGLY (or for debugging only)
+template <typename Metric, typename T = float>
+struct dense_vector
+{
+    constexpr static size_t size = (1 << Metric::dimension);
+
+    std::array<T, size> data;
+
+    GAL_ACCESSORS
+
+    template <typename Engine, typename... I>
+    [[nodiscard]] constexpr static dense_vector convert(const Engine& engine, multivector<void, I...> mv) noexcept
+    {
+        return convert(engine, mv, std::make_index_sequence<size>{});
+    }
+
+private:
+    template <typename Engine, typename M, size_t... I>
+    [[nodiscard]] constexpr static dense_vector convert(const Engine& engine, M mv, std::index_sequence<I...>) noexcept
+    {
+        return {engine.template evaluate<T>(extract<I>(mv))...};
     }
 };
 } // namespace gal

@@ -18,16 +18,16 @@ TEST_CASE("primitives")
         point_t<0, 0, 1> pz;
 
         // x-direction := e23
-        fmt::print("PGA line along x:");
-        print(origin & px);
+        // fmt::print("PGA line along x:");
+        // print(origin & px);
 
-        // y-direction := e31
-        fmt::print("PGA line along y:");
-        print(origin & py);
+        // // y-direction := e31
+        // fmt::print("PGA line along y:");
+        // print(origin & py);
 
-        // z-direction := e31
-        fmt::print("PGA line along z:");
-        print(origin & pz);
+        // // z-direction := e31
+        // fmt::print("PGA line along z:");
+        // print(origin & pz);
     }
 
     SUBCASE("line-construction")
@@ -100,7 +100,7 @@ TEST_CASE("primitives")
         point<> point2{.70710678118f, .70710678118f, 1.0f};
         gal::engine engine{point1, point2};
 
-        auto distance = engine.compute<scalar<>>([](auto point1, auto point2) {
+        scalar<> distance = engine.compute([](auto point1, auto point2) {
             auto l = point1 & point2;
             return l >> l;
         });
@@ -118,7 +118,7 @@ TEST_CASE("rotors")
     {
         point_t<0, 0, 1> p;
         rotor_t<0, 1, 0> r;
-        fmt::print("Rotating (0, 0, 1) about the y-axis gives: {}\n", conjugate(r, p));
+        // fmt::print("Rotating (0, 0, 1) about the y-axis gives: {}\n", conjugate(r, p));
     }
 
     SUBCASE("point-rotation")
@@ -128,7 +128,7 @@ TEST_CASE("rotors")
         rotor r{M_PI * 0.5f, 0.0f, 1.0f, 0.0f};
         gal::engine engine{p, r};
 
-        auto p2 = engine.compute<point>([](auto p, auto r) {
+        point p2 = engine.compute([](auto p, auto r) {
             return conjugate(r, p);
         });
 
@@ -145,7 +145,7 @@ TEST_CASE("rotors")
 
         gal::engine engine{p, t};
 
-        auto p2 = engine.compute<point>([](auto p, auto t) {
+        point p2 = engine.compute([](auto p, auto t) {
             return conjugate(t, p);
         });
         CHECK_EQ(p2.x, doctest::Approx(1.0f));

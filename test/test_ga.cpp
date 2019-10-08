@@ -122,7 +122,7 @@ TEST_CASE("blade-contraction")
 
         auto [e4, p4] = contract::contract_product<0b110, 0b111>();
         CHECK_EQ(e4, 1);
-        CHECK_EQ(p4, 1);
+        CHECK_EQ(p4, -1);
     }
 }
 
@@ -265,12 +265,11 @@ TEST_CASE("multivector-wedge")
         multivector<void, term<element<1>, monomial<rational<1>, generator<tag<1>, degree<1>>>>> m1{};
         multivector<void, term<element<2>, monomial<rational<1>, generator<tag<2>, degree<1>>>>> m2{};
         auto m12 = m1 ^ m2;
-        print(m12);
-        // static_assert(
-        //     std::is_same<multivector<void,
-        //                              term<element<0b11>,
-        //                                   monomial<rational<1>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>>>>,
-        //                  decltype(m12)>::value);
+        static_assert(
+            std::is_same<multivector<void,
+                                     term<element<0b11>,
+                                          monomial<rational<1>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>>>>,
+                         decltype(m12)>::value);
         static_assert(std::is_same<decltype(-(m2 ^ m1)), decltype(m12)>::value);
         static_assert(std::is_same<decltype(-m2 ^ m1), decltype(m12)>::value);
         static_assert(std::is_same<decltype(m2 ^ -m1), decltype(m12)>::value);
@@ -292,27 +291,28 @@ TEST_CASE("multivector-wedge")
 
 TEST_CASE("reversion")
 {
+    using namespace gal::pga;
     SUBCASE("single-element")
     {
-        term<element<1>, monomial<rational<1>>> t;
+        multivector<void, term<element<1>, monomial<rational<1>>>> t;
         static_assert(std::is_same<decltype(~t), decltype(t)>::value);
     }
 
     SUBCASE("2-blade")
     {
-        term<element<0b11>, monomial<rational<1>>> t;
+        multivector<void, term<element<0b11>, monomial<rational<1>>>> t;
         static_assert(std::is_same<decltype(~t), decltype(-t)>::value);
     }
 
     SUBCASE("3-blade")
     {
-        term<element<0b111>, monomial<rational<1>>> t;
+        multivector<void, term<element<0b111>, monomial<rational<1>>>> t;
         static_assert(std::is_same<decltype(~t), decltype(-t)>::value);
     }
 
     SUBCASE("4-blade")
     {
-        term<element<0b1111>, monomial<rational<1>>> t;
+        multivector<void, term<element<0b1111>, monomial<rational<1>>>> t;
         static_assert(std::is_same<decltype(~t), decltype(t)>::value);
     }
 

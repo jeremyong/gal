@@ -1,7 +1,7 @@
 #include "test_util.hpp"
 
 #include <doctest/doctest.h>
-#include <formatters.hpp>
+#include <gal/formatters.hpp>
 
 using real_t = double;
 #include "../benchmark/ga-benchmark/SpecializedAlgorithmInverseKinematics.hpp"

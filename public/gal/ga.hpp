@@ -453,6 +453,42 @@ template <size_t E, typename... T>
     }
 }
 
+// Filter the term that matches the element E
+template <size_t E, typename... T>
+[[nodiscard]] constexpr auto filter(multivector<void, T...> mv) noexcept
+{
+    if constexpr (sizeof...(T) == 0)
+    {
+        return mv;
+    }
+    else
+    {
+        return (std::conditional_t<T::element_t::value == E, multivector<void>, multivector<void, T>>{} + ...);
+    }
+}
+
+// Project a multivector onto a subset of the graded-basis provided in the template parameter sequence
+template <size_t... E, typename... T>
+[[nodiscard]] constexpr auto component_select(multivector<void, T...> mv) noexcept
+{
+    static_assert(sizeof...(E) > 0, "Can't select 0 terms from a multivector");
+    return multivector<void, decltype(extract<E>(mv))...>{};
+}
+
+// Remove all terms in a multivector that are elements contained in the template parameter sequence
+template <size_t E, size_t... Es, typename... T>
+[[nodiscard]] constexpr auto component_filter(multivector<void, T...> mv) noexcept
+{
+    if constexpr (sizeof...(Es) == 0)
+    {
+        return filter<E>(mv);
+    }
+    else
+    {
+        return component_filter<Es...>(filter<E>(mv));
+    }
+}
+
 #define GAL_OPERATORS(Algebra) \
     template <typename... I, typename... J> \
     [[nodiscard]] constexpr auto operator|(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept \

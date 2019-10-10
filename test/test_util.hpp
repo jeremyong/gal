@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdio>
-#include <formatters.hpp>
+#include <gal/formatters.hpp>
 #include <doctest/doctest.h>
 
 template <typename T>

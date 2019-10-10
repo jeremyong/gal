@@ -1,8 +1,8 @@
 #include "test_util.hpp"
 
 #include <doctest/doctest.h>
-#include <pga.hpp>
-#include <formatters.hpp>
+#include <gal/pga.hpp>
+#include <gal/formatters.hpp>
 
 using namespace gal;
 using namespace gal::pga;

@@ -85,6 +85,8 @@ to act on higher-order elements than just vectors). Under CGA, the contraction o
 the compiler would be unable to optimize this as such in general. GAL makes the following code possible:
 
 ```c++
+#include <gal/cga.hpp>
+
 using scalar = gal::cga::scalar<float>;
 using point  = gal::cga::point<float>;
 
@@ -122,6 +124,8 @@ The library is still under flux, but for now, the file `test/test_engine.cpp` sh
 Example usage:
 
 ```c++
+#include <gal/cga.hpp>
+
 // Let's work with the projectivized dual space of R3
 using point = gal::pga::point<float>;
 

@@ -1,9 +1,9 @@
 #include "test_util.hpp"
 
 #include <doctest/doctest.h>
-#include <ega.hpp>
-#include <engine.hpp>
-#include <formatters.hpp>
+#include <gal/ega.hpp>
+#include <gal/engine.hpp>
+#include <gal/formatters.hpp>
 
 using namespace gal::ega;
 

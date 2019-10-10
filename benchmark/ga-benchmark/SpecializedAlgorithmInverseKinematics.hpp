@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cga.hpp>
-#include <engine.hpp>
-#include <formatters.hpp>
+#include <gal/cga.hpp>
+#include <gal/engine.hpp>
+#include <gal/formatters.hpp>
 
 // SANITY TEST
 //
@@ -21,8 +21,9 @@
 //   R3 = 0.959806 - 0.272314 * e1^e3 + 0.0678954 * e2^e3 - 404.827 * e1^ni + 100.935 * e2^ni + 161.69 * e3^ni
 //   T2 = 1 - 182.475 * e1^ni + 45.4961 * e2^ni + 41.6926 * e3^ni
 //   R4 = 0.834423 + 0.296658 * e1^e2 + 0.112228 * e1^e3 + 0.450123 * e2^e3 + 145.475 * e1^ni + 583.469 * e2^ni
-//   Rg = 0.933654 + 0.277405 * e1^e2 + 0.0937376 * e1^e3 - 0.206198 * e2^e3 + 112.644 * e1^ni - 763.223 * e2^ni -
-//   174.171 * e3^ni Jg_f = 1351.52 * e1 - 498.052 * e2 + 2132.49 * e3 + 0.99996 * no + 3.31122e+06 * ni
+//   Rg = 0.933654 + 0.277405 * e1^e2 + 0.0937376 * e1^e3 - 0.206198 * e2^e3 + 112.644 * e1^ni - 763.223 * e2^ni
+//        - 174.171 * e3^ni
+//   Jg_f = 1351.52 * e1 - 498.052 * e2 + 2132.49 * e3 + 0.99996 * no + 3.31122e+06 * ni
 //
 // where 'no' is the null point at the origin and 'ni' is the null point at infinity.
 
@@ -36,16 +37,14 @@ using namespace gal;
 template <typename T>
 inline auto expp(T arg)
 {
-    return gal::engine{arg}
-        .compute([](auto arg) {
-            auto arg2 = arg * arg;
-            auto arg3 = arg2 * arg;
-            auto arg4 = arg2 * arg2;
-            return rational<1>{} + arg + one_half{} * arg2 + rational<1, 6>{} * arg3 + rational<1, 24>{} * arg4;
-        })
-        .template extract<real_t>();
+    return gal::engine{arg}.compute([](auto arg) {
+        auto arg2 = arg * arg;
+        auto arg3 = arg2 * arg;
+        auto arg4 = arg2 * arg2;
+        return component_filter<0b10111>(rational<1>{} + arg + one_half{} * arg2 + rational<1, 6>{} * arg3
+                                         + rational<1, 24>{} * arg4);
+    }).template reify<real_t>();
 }
-
 
 template <typename T = real_t>
 struct point_z
@@ -54,9 +53,9 @@ struct point_z
 
     template <size_t ID>
     using type = multivector<void,
-                                  term<element<0b100>, monomial<one>>,
-                                  term<element<0b1000>, monomial<one>>,
-                                  term<element<0b10000>, monomial<one_half>>>;
+                             term<element<0b100>, monomial<one>>,
+                             term<element<0b1000>, monomial<one>>,
+                             term<element<0b10000>, monomial<one_half>>>;
 
     GAL_ACCESSORS
 };
@@ -119,7 +118,7 @@ InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang3, co
                   .compute([](auto Pz, auto ang1) {
                       return one_half{} * ang1 * ((e_o ^ Pz ^ e_inf) >> cga::pseudoscalar::inverse);
                   })
-                  .template extract<real_t>();
+                  .template reify<real_t>();
     auto R1 = expp(Lz);
 
     point P2_help{J1_x, J1_y + 1.0, J1_z};
@@ -128,13 +127,12 @@ InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang3, co
                       auto L2init = (J1 ^ P2_help ^ e_inf) >> cga::pseudoscalar::inverse;
                       return one_half{} * ang2 * conjugate(R1, L2init);
                   })
-                  .template extract<real_t>();
+                  .template reify<real_t>();
     auto R2 = expp(L2);
 
     point P3_help{J2_x, J2_y + 1.0, J2_z};
-    point Pg_help{J3_x, J3_y + 1.0, J3_z};
 
-    auto R21 = gal::engine{R1, R2}.compute([](auto R1, auto R2) { return R2 * R1; }).template extract<real_t>();
+    auto R21 = gal::engine{R1, R2}.compute([](auto R1, auto R2) { return R2 * R1; }).template reify<real_t>();
 
     auto [J2_f, L3] = gal::engine{R21, J2, P3_help, ang3}
                           .compute([](auto R21, auto J2, auto P3_help, auto ang3) {
@@ -142,25 +140,69 @@ InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang3, co
                               auto J2_f   = conjugate(R21, J2);
                               return std::make_tuple(J2_f, one_half{} * ang3 * conjugate(R21, L3init));
                           })
-                          .template extract<real_t>();
+                          .template reify<real_t>();
+
     auto R3 = expp(L3);
 
-    using euclidean_vector = entity<real_t, 1, 0b10, 0b100>;
-    euclidean_vector t2{J2_f[0], J2_f[1], J2_f[2]};
-    auto [J2_rot1, t2_help] = gal::engine{R1, J2, t2}
-                                  .compute([](auto R1, auto J2, auto t2) {
+    auto [J2_rot1, t2_help] = gal::engine{R1, J2, J2_f}
+                                  .compute([](auto R1, auto J2, auto J2_f) {
                                       auto J2_rot1 = conjugate(R1, J2);
-                                      return std::make_tuple(J2_rot1, one_half{} * (t2 - J2_rot1) ^ e_inf);
+                                      auto t2      = gal::component_select<0b1, 0b10, 0b100>(J2_f)
+                                                - gal::component_select<0b1, 0b10, 0b100>(J2_rot1);
+                                      return std::make_tuple(J2_rot1, minus_one_half{} * t2 ^ e_inf);
                                   })
-                                  .template extract<real_t>();
+                                  .template reify<real_t>();
+
     auto T2 = expp(t2_help);
 
-    // auto R4_help = gal::engine{R3, J3, Jg};
-    // TODO: finalize this calculation
+    auto [L4init, L4weight, R3T2R1] = gal::engine{J3, Jg, R3, T2, R1}
+                                          .compute([](auto J3, auto Jg, auto R3, auto T2, auto R1) {
+                                              auto L4init   = (J3 ^ Jg ^ e_inf) >> cga::pseudoscalar::inverse;
+                                              auto L4weight = L4init >> ~L4init;
+                                              return std::make_tuple(L4init, L4weight, R3 * T2 * R1);
+                                          })
+                                          .template reify<real_t>();
 
-    fmt::print("R1: {}\n", R1);
-    fmt::print("R2: {}\n", R2);
-    fmt::print("R3: {}\n", R3);
-    fmt::print("T2: {}\n", T2);
+    auto norm = L4weight.data[0] < 0 ? -std::sqrt(-L4weight.data[0]) : std::sqrt(L4weight.data[0]);
+    for (auto& component : L4init.data)
+    {
+        component /= norm;
+    }
+
+    auto L4
+        = gal::engine{L4init, R3T2R1, ang4}
+              .compute([](auto L4init, auto R3T2R1, auto ang4) { return one_half{} * ang4 * conjugate(R3T2R1, L4init); })
+              .template reify<real_t>();
+    auto R4 = expp(L4);
+
+    point Pg_help{J3_x, J3_y + 1.0, J3_z};
+    auto [Lginit, R4R3T2R1] = gal::engine{R4, R3T2R1, J3, Pg_help}
+                                  .compute([](auto R4, auto R3T2R1, auto J3, auto Pg_help) {
+                                      auto Lginit   = (J3 ^ Pg_help ^ e_inf) >> cga::pseudoscalar::inverse;
+                                      auto R4R3T2R1 = R4 * R3T2R1;
+                                      return std::make_tuple(Lginit, R4R3T2R1);
+                                  })
+                                  .template reify<real_t>();
+    auto Lg = gal::engine{Lginit, R4R3T2R1, ang5}
+                  .compute([](auto Lginit, auto R4R3T2R1, auto ang5) {
+                      return one_half{} * ang5 * conjugate(R4R3T2R1, Lginit);
+                  })
+                  .template reify<real_t>();
+    auto Rg = expp(Lg);
+    auto Rfinal
+        = gal::engine{Rg, R4R3T2R1}.compute([](auto Rg, auto R4R3T2R1) { return Rg * R4R3T2R1; }).template reify<real_t>();
+
+    auto Jg_f = gal::engine{Rfinal, Jg}
+                    .compute([](auto Rfinal, auto Jg) { return conjugate(Rfinal, Jg); })
+                    .template reify<real_t>();
+
+    return std::make_tuple(R1, R2, R3, T2, R4, Rg, Jg_f);
+    // fmt::print("R1: {}\n", R1);
+    // fmt::print("R2: {}\n", R2);
+    // fmt::print("R3: {}\n", R3);
+    // fmt::print("T2: {}\n", T2);
+    // fmt::print("R4: {}\n", R4);
+    // fmt::print("Rg: {}\n", Rg);
+    // fmt::print("Jg_f: {}\n", Jg_f);
 }
 } // namespace gabenchmark

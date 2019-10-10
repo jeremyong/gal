@@ -1,8 +1,8 @@
 #include "test_util.hpp"
 
 #include <doctest/doctest.h>
-#include <formatters.hpp>
-#include <cga.hpp>
+#include <gal/formatters.hpp>
+#include <gal/cga.hpp>
 
 
 TEST_SUITE_BEGIN("conformal-geometric-algebra");

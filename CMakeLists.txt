@@ -10,6 +10,7 @@ endif()
 # NOTE: When GAL is included as a transitive dependency, these switches are disabled
 option(GAL_TESTS_ENABLED "Enable GAL test compilation" ON)
 option(GAL_SAMPLES_ENABLED "Enable GAL samples compilation" ON)
+option(GAL_FORMATTERS_ENABLED "Enable formatters for use with fmtlib" ON)
 
 # NEVER mutate global cmake state unless we are building as a standalone project
 if (GAL_STANDALONE)
@@ -34,7 +35,12 @@ if (GAL_STANDALONE)
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 endif()
 
-add_subdirectory(src)
+add_library(gal INTERFACE)
+target_include_directories(gal INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/public)
+if (GAL_SAMPLES_ENABLED)
+  target_link_libraries(gal INTERFACE fmt)
+endif()
+target_compile_features(gal INTERFACE cxx_std_17)
 
 if (GAL_TESTS_ENABLED AND GAL_STANDALONE)
   include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)

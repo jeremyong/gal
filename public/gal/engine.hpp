@@ -43,32 +43,33 @@ namespace detail
 template <typename... I>
 class engine
 {
+    // F := field over which computation is done (i.e. float)
     template <typename E>
     struct thunk
     {
-        thunk(const engine& e, E expression)
+        constexpr thunk(const engine& e, E expression) noexcept
             : engine_{e}
             , expression_{expression}
         {}
 
-        template <typename T>
-        [[nodiscard]] constexpr auto extract() const noexcept
+        template <typename F = float>
+        [[nodiscard]] constexpr auto reify() const noexcept
         {
             if constexpr (detail::is_tuple<E>::value)
             {
-                return extract<T>(std::make_index_sequence<std::tuple_size<E>::value>{});
+                return extract<F>(std::make_index_sequence<std::tuple_size<E>::value>{});
             }
             else
             {
-                using type = decltype(detail::compute_entity<T>(expression_));
-                return type::convert(engine_, expression_);
+                using type = decltype(detail::compute_entity<F>(expression_));
+                return type::template convert(engine_, expression_);
             }
         }
 
-        template <typename T, size_t... N>
+        template <typename F, size_t... N>
         [[nodiscard]] constexpr auto extract(std::index_sequence<N...>) const noexcept
         {
-            return std::make_tuple(decltype(detail::compute_entity<T>(typename std::tuple_element<N, E>::type{}))::convert(
+            return std::make_tuple(decltype(detail::compute_entity<F>(typename std::tuple_element<N, E>::type{}))::convert(
                 engine_, typename std::tuple_element<N, E>::type{})...);
         }
 
@@ -109,14 +110,14 @@ public:
         return thunk{*this, result};
     }
 
-    template <typename T, typename... Ts>
+    template <typename F, typename... Ts>
     [[nodiscard]] constexpr auto evaluate_terms(Ts... terms) const noexcept
     {
-        return std::tuple(evaluate<T>(terms)...);
+        return std::tuple(evaluate<F>(terms)...);
     }
 
-    template <typename T, typename E, typename... M>
-    [[nodiscard]] constexpr T evaluate(term<E, M...>) const noexcept
+    template <typename F, typename E, typename... M>
+    [[nodiscard]] constexpr F evaluate(term<E, M...>) const noexcept
     {
         if constexpr (sizeof...(M) == 0)
         {
@@ -124,37 +125,37 @@ public:
         }
         else
         {
-            return (evaluate<T>(M{}) + ...);
+            return (evaluate<F>(M{}) + ...);
         }
     }
 
 private:
-    template <typename T, typename Q, typename... G>
-    [[nodiscard]] constexpr T evaluate(monomial<Q, G...>) const noexcept
+    template <typename F, typename Q, typename... G>
+    [[nodiscard]] constexpr F evaluate(monomial<Q, G...>) const noexcept
     {
-        constexpr auto q = Q::template convert<T>();
+        constexpr auto q = Q::template convert<F>();
         if constexpr (sizeof...(G) == 0)
         {
             return q;
         }
         else
         {
-            return q * ((evaluate<T>(G{})) * ...);
+            return q * ((evaluate<F>(G{})) * ...);
         }
     }
 
-    template <typename T, typename Tag, typename Degree, size_t Order>
-    [[nodiscard]] constexpr T evaluate(generator<Tag, Degree, Order>) const noexcept
+    template <typename F, typename Tag, typename Degree, size_t Order>
+    [[nodiscard]] constexpr F evaluate(generator<Tag, Degree, Order>) const noexcept
     {
         static_assert(!Tag::untagged, "A generator in the field field of an expression is unlabeled");
         // TODO: leverage sub-expression memoization table to accelerate compile times and unoptimized codegen
         if constexpr (Degree::value == 0)
         {
-            return T{1};
+            return {1};
         }
         else
         {
-            const auto value = get<T, Tag::id, Tag::index>();
+            const auto value = get<Tag::id, Tag::index>();
             // constexpr bool is_derived
                 // = std::is_same<typename std::decay<decltype(value)>::type, derived_generator<T>>::value;
             // TODO: memoize derived results
@@ -170,7 +171,7 @@ private:
         }
     }
 
-    template <typename T, size_t ID, size_t Index>
+    template <size_t ID, size_t Index>
     [[nodiscard]] constexpr auto get() const noexcept
     {
         return std::get<ID>(data).template get<Index>();
@@ -185,3 +186,5 @@ private:
     std::tuple<const I&...> data;
 };
 } // namespace gal
+
+#define GAL_COMPUTE(...)

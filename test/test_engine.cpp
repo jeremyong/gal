@@ -1,12 +1,12 @@
 #include "test_util.hpp"
 
 #include <doctest/doctest.h>
-#include <formatters.hpp>
-#include <cga.hpp>
-#include <ega.hpp>
-#include <pga.hpp>
-#include <pga2.hpp>
-#include <engine.hpp>
+#include <gal/formatters.hpp>
+#include <gal/cga.hpp>
+#include <gal/ega.hpp>
+#include <gal/pga.hpp>
+#include <gal/pga2.hpp>
+#include <gal/engine.hpp>
 
 TEST_SUITE_BEGIN("engine");
 
@@ -20,8 +20,7 @@ TEST_CASE("basic-computation")
         point<> p2{-1.1f, 2.7f, 1.6};
 
         gal::engine engine{p1, p2};
-        auto&& [q1, q2] = (std::tuple<point<>, point<>>)engine.compute([](auto p1, auto p2)
-        {
+        auto&& [q1, q2] = (std::tuple<point<>, point<>>)engine.compute([](auto p1, auto p2) {
             return std::tuple{p1, p2};
         });
 
@@ -40,10 +39,7 @@ TEST_CASE("basic-computation")
         point<> p2{-1.1f, 2.7f};
 
         gal::engine engine{p1, p2};
-        line<> l = engine.compute([](auto p1, auto p2)
-        {
-            return p1 & p2;
-        });
+        line<> l = engine.compute([](auto p1, auto p2) { return p1 & p2; });
 
         CHECK_EQ(p1.x * l.a + p1.y * l.b + l.c, epsilon);
         CHECK_EQ(p2.x * l.a + p2.y * l.b + l.c, epsilon);
@@ -57,10 +53,7 @@ TEST_CASE("basic-computation")
         point<double> p3{-1.8f, -2.7f, -4.3f};
 
         gal::engine engine{p1, p2, p3};
-        plane<double> p = engine.compute([](auto p1, auto p2, auto p3)
-        {
-            return p1 & p2 & p3;
-        });
+        plane<double> p = engine.compute([](auto p1, auto p2, auto p3) { return p1 & p2 & p3; });
 
         CHECK_EQ(p1.x * p.x + p1.y * p.y + p1.z * p.z + p.d, epsilon);
         CHECK_EQ(p2.x * p.x + p2.y * p.y + p2.z * p.z + p.d, epsilon);
@@ -74,10 +67,7 @@ TEST_CASE("basic-computation")
 
         gal::engine engine{p};
         // Compute the contraction of a point as itself
-        gal::scalar<> n = engine.compute([](auto p)
-        {
-            return p >> p;
-        });
+        gal::scalar<> n = engine.compute([](auto p) { return p >> p; });
         CHECK_EQ(n, epsilon);
     }
 }

@@ -1,9 +1,9 @@
 #include "test_util.hpp"
 
 #include <doctest/doctest.h>
-#include <engine.hpp>
-#include <formatters.hpp>
-#include <pga.hpp>
+#include <gal/engine.hpp>
+#include <gal/formatters.hpp>
+#include <gal/pga.hpp>
 
 TEST_SUITE_BEGIN("projective-geometric-algebra");
 
@@ -128,9 +128,7 @@ TEST_CASE("rotors")
         rotor r{M_PI * 0.5f, 0.0f, 1.0f, 0.0f};
         gal::engine engine{p, r};
 
-        point p2 = engine.compute([](auto p, auto r) {
-            return conjugate(r, p);
-        });
+        point p2 = engine.compute([](auto p, auto r) { return conjugate(r, p); });
 
         CHECK_EQ(p2.x, doctest::Approx(-1.0f));
         CHECK_EQ(p2.y, epsilon);
@@ -145,9 +143,8 @@ TEST_CASE("rotors")
 
         gal::engine engine{p, t};
 
-        point p2 = engine.compute([](auto p, auto t) {
-            return conjugate(t, p);
-        });
+        point p2 = engine.compute([](auto p, auto t) { return conjugate(t, p); });
+
         CHECK_EQ(p2.x, doctest::Approx(1.0f));
         CHECK_EQ(p2.y, doctest::Approx(1.0f));
         CHECK_EQ(p2.z, doctest::Approx(1.0f));

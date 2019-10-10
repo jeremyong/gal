@@ -1,7 +1,7 @@
 #include <doctest/doctest.h>
 
-#include <finite_algebra.hpp>
-#include <formatters.hpp>
+#include <gal/finite_algebra.hpp>
+#include <gal/formatters.hpp>
 
 #include "test_util.hpp"
 

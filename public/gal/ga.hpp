@@ -1,6 +1,7 @@
 #pragma once
 
 #include "finite_algebra.hpp"
+#include "entity.hpp"
 #include "utility.hpp"
 
 #include <array>
@@ -419,76 +420,7 @@ template <typename Metric, typename... T>
     }
 }
 
-namespace detail
-{
-    template <size_t E, typename T, typename... Ts>
-    [[nodiscard]] constexpr auto extract(multivector<void, T, Ts...>) noexcept
-    {
-        if constexpr (E == T::element_t::value)
-        {
-            return T{};
-        }
-        else if constexpr (sizeof...(Ts) == 0)
-        {
-            return term<element<0>, monomial<zero>>{};
-        }
-        else
-        {
-            return extract<E>(multivector<void, Ts...>{});
-        }
-    }
-} // namespace detail
-
-// Extract a term containing a given basis element from a multivector
-template <size_t E, typename... T>
-[[nodiscard]] constexpr auto extract(multivector<void, T...> mv) noexcept
-{
-    if constexpr (sizeof...(T) == 0)
-    {
-        return term<element<0>, monomial<zero>>{};
-    }
-    else
-    {
-        return detail::extract<E>(mv);
-    }
-}
-
-// Filter the term that matches the element E
-template <size_t E, typename... T>
-[[nodiscard]] constexpr auto filter(multivector<void, T...> mv) noexcept
-{
-    if constexpr (sizeof...(T) == 0)
-    {
-        return mv;
-    }
-    else
-    {
-        return (std::conditional_t<T::element_t::value == E, multivector<void>, multivector<void, T>>{} + ...);
-    }
-}
-
-// Project a multivector onto a subset of the graded-basis provided in the template parameter sequence
-template <size_t... E, typename... T>
-[[nodiscard]] constexpr auto component_select(multivector<void, T...> mv) noexcept
-{
-    static_assert(sizeof...(E) > 0, "Can't select 0 terms from a multivector");
-    return multivector<void, decltype(extract<E>(mv))...>{};
-}
-
-// Remove all terms in a multivector that are elements contained in the template parameter sequence
-template <size_t E, size_t... Es, typename... T>
-[[nodiscard]] constexpr auto component_filter(multivector<void, T...> mv) noexcept
-{
-    if constexpr (sizeof...(Es) == 0)
-    {
-        return filter<E>(mv);
-    }
-    else
-    {
-        return component_filter<Es...>(filter<E>(mv));
-    }
-}
-
+// Convenience macro for specializing the various operators for a given metric tensor
 #define GAL_OPERATORS(Algebra) \
     template <typename... I, typename... J> \
     [[nodiscard]] constexpr auto operator|(multivector<void, I...> lhs, multivector<void, J...> rhs) noexcept \
@@ -533,116 +465,4 @@ template <size_t E, size_t... Es, typename... T>
     template <typename T = float> using scalar = ::gal::scalar<T>;\
     using ::gal::simplify;\
     using pseudoscalar = ::gal::pseudoscalar<Algebra::metric_t>
-
-#define GAL_ACCESSORS \
-        [[nodiscard]] constexpr const T& operator[](size_t index) const noexcept\
-        {\
-            return *(reinterpret_cast<const T*>(this) + index);\
-        }\
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept\
-        {\
-            return *(reinterpret_cast<T*>(this) + index);\
-        }\
-        template <size_t I>\
-        [[nodiscard]] constexpr auto get() const noexcept\
-        {\
-            if constexpr (I < size)\
-            {\
-                return *(reinterpret_cast<const T*>(this) + I);\
-            }\
-            else\
-            {\
-                return get_special(std::integral_constant<size_t, I>{});\
-            }\
-        }
-
-template <typename T = float>
-struct scalar
-{
-    constexpr static size_t size = 1;
-
-    template <size_t ID>
-    using type = multivector<void, term<element<0>, monomial<one, generator<tag<ID, 0>>>>>;
-
-    T data;
-
-    [[nodiscard]] constexpr operator T() const noexcept
-    {
-        return data;
-    }
-
-    GAL_ACCESSORS
-
-    template <typename Engine, typename... I>
-    [[nodiscard]] constexpr static scalar<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
-    {
-        auto s_e = extract<0>(mv);
-        return {engine.template evaluate<T>(s_e)};
-    }
-};
-
-namespace detail
-{
-    template <size_t ID, size_t... I, size_t... E>
-    [[nodiscard]] constexpr static auto
-    compute_type(std::integral_constant<size_t, ID>, std::index_sequence<I...>, std::index_sequence<E...>) noexcept
-    {
-        return multivector<void, term<element<E>, monomial<one, generator<tag<ID, I>>>>...>{};
-    }
-}
-
-template <typename T, size_t... E>
-struct entity
-{
-    constexpr static size_t size = sizeof...(E);
-
-    template <size_t ID>
-    using type = decltype(detail::compute_type(std::integral_constant<size_t, ID>{},
-                                               std::make_index_sequence<sizeof...(E)>{},
-                                               std::index_sequence<E...>{}));
-
-    std::array<T, size> data;
-
-    GAL_ACCESSORS
-
-    template <typename Engine, typename... I>
-    [[nodiscard]] constexpr static entity convert(const Engine& engine, multivector<void, I...> mv) noexcept
-    {
-        return {engine.template evaluate<T>(extract<E>(mv))...};
-    }
-};
-
-namespace detail
-{
-    template <typename T, typename... E>
-    [[nodiscard]] constexpr static auto compute_entity(multivector<void, E...>) noexcept
-    {
-        return entity<T, E::element_t::value...>{};
-    }
-}
-
-// Convenience type for situations where all values need to be extracted
-// USE SPARINGLY (or for debugging only)
-template <typename Metric, typename T = float>
-struct dense_vector
-{
-    constexpr static size_t size = (1 << Metric::dimension);
-
-    std::array<T, size> data;
-
-    GAL_ACCESSORS
-
-    template <typename Engine, typename... I>
-    [[nodiscard]] constexpr static dense_vector convert(const Engine& engine, multivector<void, I...> mv) noexcept
-    {
-        return convert(engine, mv, std::make_index_sequence<size>{});
-    }
-
-private:
-    template <typename Engine, typename M, size_t... I>
-    [[nodiscard]] constexpr static dense_vector convert(const Engine& engine, M mv, std::index_sequence<I...>) noexcept
-    {
-        return {engine.template evaluate<T>(extract<I>(mv))...};
-    }
-};
 } // namespace gal

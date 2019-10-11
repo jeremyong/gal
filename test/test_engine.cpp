@@ -8,6 +8,8 @@
 #include <gal/pga2.hpp>
 #include <gal/engine.hpp>
 
+using engine = gal::engine<float>;
+
 TEST_SUITE_BEGIN("engine");
 
 TEST_CASE("basic-computation")
@@ -19,10 +21,12 @@ TEST_CASE("basic-computation")
         point<> p1{2.4f, 3.6f, 4.2};
         point<> p2{-1.1f, 2.7f, 1.6};
 
-        gal::engine engine{p1, p2};
-        auto&& [q1, q2] = (std::tuple<point<>, point<>>)engine.compute([](auto p1, auto p2) {
-            return std::tuple{p1, p2};
-        });
+        auto&& [q1, q2] = (std::tuple<point<>, point<>>)engine::compute(
+            [](auto p1, auto p2) {
+                return std::tuple{p1, p2};
+            },
+            p1,
+            p2);
 
         for (size_t i = 0; i != 3; ++i)
         {
@@ -38,8 +42,7 @@ TEST_CASE("basic-computation")
         point<> p1{2.4f, 3.6f};
         point<> p2{-1.1f, 2.7f};
 
-        gal::engine engine{p1, p2};
-        line<> l = engine.compute([](auto p1, auto p2) { return p1 & p2; });
+        line<> l = engine::compute([](auto p1, auto p2) { return p1 & p2; }, p1, p2);
 
         CHECK_EQ(p1.x * l.a + p1.y * l.b + l.c, epsilon);
         CHECK_EQ(p2.x * l.a + p2.y * l.b + l.c, epsilon);
@@ -49,11 +52,10 @@ TEST_CASE("basic-computation")
     {
         using namespace gal::pga;
         point<double> p1{2.4f, 3.6f, 1.3f};
-        point<double> p2{-1.1f, 11.7f, 5.0f};
+        point<double> p2{-1.1f, 1.7f, 5.0f};
         point<double> p3{-1.8f, -2.7f, -4.3f};
 
-        gal::engine engine{p1, p2, p3};
-        plane<double> p = engine.compute([](auto p1, auto p2, auto p3) { return p1 & p2 & p3; });
+        plane<double> p = engine::compute([](auto p1, auto p2, auto p3) { return p1 & p2 & p3; }, p1, p2, p3);
 
         CHECK_EQ(p1.x * p.x + p1.y * p.y + p1.z * p.z + p.d, epsilon);
         CHECK_EQ(p2.x * p.x + p2.y * p.y + p2.z * p.z + p.d, epsilon);
@@ -65,9 +67,8 @@ TEST_CASE("basic-computation")
         using namespace gal::cga;
         point<> p{3.5f, 0.2f, -23.9f};
 
-        gal::engine engine{p};
         // Compute the contraction of a point as itself
-        gal::scalar<> n = engine.compute([](auto p) { return p >> p; });
+        scalar<> n = engine::compute([](auto p) { return p >> p; }, p);
         CHECK_EQ(n, epsilon);
     }
 }

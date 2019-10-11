@@ -39,10 +39,10 @@ struct formatter<styled_object<T>>
     }
 };
 
-template <typename T, size_t... E>
-struct formatter<gal::entity<T, E...>>
+template <typename T, typename S, size_t... E>
+struct formatter<gal::entity<T, S, E...>>
 {
-    using type = gal::entity<T, E...>;
+    using type = gal::entity<T, S, E...>;
     using elements = std::tuple<gal::element<E>...>;
 
     template <typename PC>

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "finite_algebra.hpp"
 #include "ga.hpp"
 
 // The 3D Euclidean Geometric Algebra
@@ -15,6 +14,15 @@ namespace ega
 
     GAL_OPERATORS(algebra);
 
+    inline multivector<void, term<element<0>, monomial<one>>> e;
+    inline multivector<void, term<element<0b1>, monomial<one>>> e0;
+    inline multivector<void, term<element<0b10>, monomial<one>>> e1;
+    inline multivector<void, term<element<0b100>, monomial<one>>> e2;
+    inline multivector<void, term<element<0b11>, monomial<one>>> e01;
+    inline multivector<void, term<element<0b101>, monomial<one>>> e02;
+    inline multivector<void, term<element<0b110>, monomial<one>>> e12;
+    inline multivector<void, term<element<0b111>, monomial<one>>> e012;
+
     template <int X, int Y, int Z>
     using point_t = multivector<void,
                                 term<element<0b1>, monomial<rational<X>>>,
@@ -22,15 +30,33 @@ namespace ega
                                 term<element<0b100>, monomial<rational<Z>>>>;
 
     template <typename T = float>
-    struct alignas(16) point
+    struct alignas(16) point : public entity<T, point<T>, 0b1, 0b10, 0b100>
     {
-        constexpr static size_t size = 3;
-
         template <size_t ID>
         using type = multivector<void,
                                  term<element<0b1>, monomial<one, generator<tag<ID, 0>>>>,
                                  term<element<0b10>, monomial<one, generator<tag<ID, 1>>>>,
                                  term<element<0b100>, monomial<one, generator<tag<ID, 2>>>>>;
+
+        [[nodiscard]] constexpr static size_t size() noexcept
+        {
+            return 3;
+        }
+
+        point(T x, T y, T z)
+            : x{x}
+            , y{y}
+            , z{z}
+        {}
+
+        template <typename T1, size_t... E>
+        point(entity<T1, void, E...> const& other)
+        {
+            x = static_cast<T>(other.template get_by_element<0b1>());
+            y = static_cast<T>(other.template get_by_element<0b10>());
+            z = static_cast<T>(other.template get_by_element<0b100>());
+        }
+
         union
         {
             T x;
@@ -46,20 +72,6 @@ namespace ega
             T z;
             T w;
         };
-
-        GAL_ACCESSORS
-
-        template <typename Engine, typename... I>
-        [[nodiscard]] constexpr static point<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
-        {
-            auto x_e = extract<0b1>(mv);
-            auto y_e = extract<0b10>(mv);
-            auto z_e = extract<0b100>(mv);
-
-            auto&& [x, y, z] = engine.template evaluate_terms<T>(x_e, y_e, z_e);
-
-            return {x, y, z};
-        }
     };
 
     template <int X, int Y, int Z>
@@ -71,11 +83,9 @@ namespace ega
 
     // A rotor, when conjugated with any geometric entity, rotates it theta radians about its axis
     template <typename T = float, typename AngleT = T>
-    struct rotor
+    struct rotor : public entity<T, rotor<T, AngleT>, 0, 0b11, 0b101, 0b110>
     {
         using angle_t = AngleT;
-        using value_t = T;
-        constexpr static size_t size = 4;
 
         // theta := ID 0, index 0
         // x := ID 0, index 1
@@ -91,6 +101,18 @@ namespace ega
                           term<element<0b101>, monomial<minus_one, generator<tag<ID, 2>>, generator<tag<ID, 5>>>>, // -y
                           term<element<0b110>, monomial<one, generator<tag<ID, 1>>, generator<tag<ID, 5>>>>>;      // +x
 
+        [[nodiscard]] constexpr static size_t size() noexcept
+        {
+            return 4;
+        }
+
+        rotor(AngleT theta, T x, T y, T z)
+            : theta{theta}
+            , x{x}
+            , y{y}
+            , z{z}
+        {}
+
         AngleT theta;
         T x;
         T y;
@@ -101,15 +123,13 @@ namespace ega
         void normalize() noexcept
         {
             auto l2_inv = T{1} / std::sqrt(x * x + y * y + z * z);
-            x = x * l2_inv;
-            y = y * l2_inv;
-            z = z * l2_inv;
+            x           = x * l2_inv;
+            y           = y * l2_inv;
+            z           = z * l2_inv;
         }
 
-        GAL_ACCESSORS
-
         template <size_t I>
-        [[nodiscard]] constexpr T get_special(std::integral_constant<size_t, I>) const noexcept
+        [[nodiscard]] T get(std::integral_constant<size_t, I>) const noexcept
         {
             if constexpr (I == 4)
             {
@@ -119,10 +139,7 @@ namespace ega
             {
                 return std::sin(theta * 0.5);
             }
-            else
-            {
-                static_assert(I == 4 || I == 5, "Unreachable branch");
-            }
+            // unreachable
         }
     };
 } // namespace ega

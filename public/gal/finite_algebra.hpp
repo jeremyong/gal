@@ -83,6 +83,11 @@ struct monomial
     constexpr static int degree   = (Generators::degree + ...);
     constexpr static bool is_zero = false;
     using rational_t              = Q;
+
+    [[nodiscard]] constexpr static size_t gen_count() noexcept
+    {
+        return sizeof...(Generators);
+    }
 };
 
 template <typename Q>
@@ -92,6 +97,11 @@ struct monomial<Q>
     constexpr static int degree = 0;
     constexpr static bool is_zero = false;
     using rational_t              = Q;
+
+    [[nodiscard]] constexpr static size_t gen_count() noexcept
+    {
+        return 0;
+    }
 };
 
 template <typename Q, typename G>
@@ -102,6 +112,11 @@ struct monomial<Q, G>
     constexpr static bool is_zero = false;
     using tag_t                   = typename G::tag_t;
     using rational_t              = Q;
+
+    [[nodiscard]] constexpr static size_t gen_count() noexcept
+    {
+        return 1;
+    }
 };
 
 template <>
@@ -111,6 +126,11 @@ struct monomial<zero>
     constexpr static int degree   = 0;
     constexpr static bool is_zero = true;
     using rational_t              = zero;
+
+    [[nodiscard]] constexpr static size_t gen_count() noexcept
+    {
+        return 0;
+    }
 };
 
 template <typename M>
@@ -477,9 +497,9 @@ struct element
 // Operations that would contribute or subtract in a manner that cancels out the term
 // will annihilate it during the final reduction.
 // E := the basis element associated with this term
-// As := the variadic addends that comprise the polynomial coefficient of the term.
+// Ms := the variadic monomials that comprise the polynomial coefficient of the term.
 // The basis element index is used to impose a partial ordering on terms
-template <typename E, typename... As>
+template <typename E, typename... Ms>
 struct term
 {
     using element_t = E;
@@ -488,15 +508,15 @@ struct term
     constexpr static bool is_zero = true;
 };
 
-template <typename E, typename A, typename... As>
-struct term<E, A, As...>
+template <typename E, typename M, typename... Ms>
+struct term<E, M, Ms...>
 {
     using element_t = E;
-    using first_t                         = A;
-    using subsequent_t                    = term<E, As...>;
-    constexpr static size_t size          = sizeof...(As) + 1;
+    using first_t                         = M;
+    using subsequent_t                    = term<E, Ms...>;
+    constexpr static size_t size          = sizeof...(Ms) + 1;
     constexpr static size_t basis_element = E::value;
-    constexpr static bool is_zero         = A::is_zero && sizeof...(As) == 0;
+    constexpr static bool is_zero         = M::is_zero && sizeof...(Ms) == 0;
 };
 
 template <typename E1, typename E2, typename... A1, typename... A2>

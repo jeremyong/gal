@@ -7,17 +7,6 @@
 using namespace gal;
 using namespace gal::pga;
 
-using e     = multivector<void, term<element<0>, monomial<one>>>;
-using e0    = multivector<void, term<element<0b1>, monomial<one>>>;
-using e1    = multivector<void, term<element<0b10>, monomial<one>>>;
-using e2    = multivector<void, term<element<0b100>, monomial<one>>>;
-using e3    = multivector<void, term<element<0b1000>, monomial<one>>>;
-using e012  = multivector<void, term<element<0b111>, monomial<one>>>;
-using e013  = multivector<void, term<element<0b1011>, monomial<one>>>;
-using e023  = multivector<void, term<element<0b1101>, monomial<one>>>;
-using e123  = multivector<void, term<element<0b1110>, monomial<one>>>;
-using e0123 = multivector<void, term<element<0b1111>, monomial<one>>>;
-
 TEST_SUITE_BEGIN("geometric-algebra");
 
 TEST_CASE("symmetric-inner-product")
@@ -374,22 +363,22 @@ TEST_CASE("geometric-product")
 {
     SUBCASE("self-inverse")
     {
-        static_assert(std::is_same<decltype(e1{} * e1{}), e>::value);
+        static_assert(std::is_same<decltype(e1 * e1), decltype(e)>::value);
     }
 
     SUBCASE("grade-raising")
     {
-        static_assert(std::is_same<decltype(e1{} * e2{}), multivector<void, term<element<0b110>, monomial<one>>>>::value);
+        static_assert(std::is_same<decltype(e1 * e2), multivector<void, term<element<0b110>, monomial<one>>>>::value);
     }
 
     SUBCASE("non-euclidean-metric")
     {
-        static_assert(std::is_same<decltype(e0{} * e0{}), multivector<void>>::value);
+        static_assert(std::is_same<decltype(e0 * e0), multivector<void>>::value);
     }
 
     SUBCASE("vector-inverse")
     {
-        auto v = e2{} + e3{};
+        auto v = e2 + e3;
         static_assert(std::is_same<decltype(v * v), multivector<void, term<element<0>, monomial<rational<2>>>>>::value);
     }
 }

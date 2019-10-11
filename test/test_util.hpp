@@ -28,4 +28,4 @@ void print(const char* label, const T& in)
     fmt::print("{}: {}\n", label, in);
 }
 
-inline auto epsilon = doctest::Approx(0.0f);
+inline auto epsilon = doctest::Approx(0.0f).epsilon(0.001);

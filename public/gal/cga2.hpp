@@ -14,11 +14,11 @@ namespace cga2
     // the canonical Euclidean R3 basis representation.
     struct cga_metric
     {
-        using base_metric = metric<3, 1, 0>;
+        using base_metric                 = metric<3, 1, 0>;
         constexpr static bool is_diagonal = false;
-        constexpr static size_t p = 3;
-        constexpr static size_t v = 1;
-        constexpr static size_t r = 0;
+        constexpr static size_t p         = 3;
+        constexpr static size_t v         = 1;
+        constexpr static size_t r         = 0;
         constexpr static size_t dimension = p + v + r;
 
         [[nodiscard]] constexpr static bool multi_term_gp(size_t lhs, size_t rhs) noexcept
@@ -31,14 +31,14 @@ namespace cga2
         template <typename E, typename... M>
         [[nodiscard]] constexpr static auto diagonalize(term<E, M...>) noexcept
         {
-            if constexpr (E::value & 0b1100)
+            if constexpr ((E::value & 0b1100) > 0)
             {
-                if constexpr ((E::value & 0b1000) && (E::value & 0b100))
+                if constexpr (((E::value & 0b1000) > 0) && ((E::value & 0b100) > 0))
                 {
                     // e_o ^ e_inf = -1 + e_3 ^ e_4
                     return multivector<void, term<element<E::value & 0b11>, monomial<minus_one>>, term<E, M...>>{};
                 }
-                else if constexpr (E::value & 0b1000)
+                else if constexpr ((E::value & 0b1000) > 0)
                 {
                     // e_inf = e_4 - e_3
                     constexpr size_t e = E::value ^ 0b1100;
@@ -75,14 +75,14 @@ namespace cga2
         template <typename E, typename... M>
         [[nodiscard]] constexpr static auto undiagonalize(term<E, M...>) noexcept
         {
-            if constexpr (E::value & 0b1100)
+            if constexpr ((E::value & 0b1100) > 0)
             {
-                if constexpr ((E::value & 0b1000) && (E::value & 0b100))
+                if constexpr (((E::value & 0b1000) > 0) && ((E::value & 0b100) > 0))
                 {
                     // e_3 ^ e_4 = e_o ^ e_inf
                     return multivector<void, term<E, M...>>{};
                 }
-                else if constexpr (E::value & 0b1000)
+                else if constexpr (E::value & 0b1000 > 0)
                 {
                     // e_4 = e_o + 1/2 * e_inf
                     constexpr size_t e = E::value ^ 0b1100;
@@ -150,17 +150,14 @@ namespace cga2
 
     template <int X, int Y>
     using point_t = multivector<void,
-        term<element<0b1>, monomial<rational<X>>>,
-        term<element<0b10>, monomial<rational<Y>>>,
-        term<element<0b100>, monomial<one>>,
-        term<element<0b1000>, monomial<rational<X * X + Y * Y, 2>>>>;
+                                term<element<0b1>, monomial<rational<X>>>,
+                                term<element<0b10>, monomial<rational<Y>>>,
+                                term<element<0b100>, monomial<one>>,
+                                term<element<0b1000>, monomial<rational<X * X + Y * Y, 2>>>>;
 
     template <typename T = float>
-    struct point
+    struct point : public entity<T, point<T>, 0b1, 0b10>
     {
-        using value_t = T;
-        constexpr static size_t size = 2;
-
         template <size_t ID>
         using type = multivector<void,
                                  term<element<0b1>, monomial<one, generator<tag<ID, 0>>>>,
@@ -169,6 +166,25 @@ namespace cga2
                                  term<element<0b1000>,
                                       monomial<one_half, generator<tag<ID, 0>, degree<2>>>,
                                       monomial<one_half, generator<tag<ID, 1>, degree<2>>>>>;
+
+        [[nodiscard]] constexpr static size_t size() noexcept
+        {
+            return 2;
+        }
+
+        point(T x, T y)
+            : x{x}
+            , y{y}
+        {}
+
+        // WARNING: This implicit conversion from an entity does not check if the weight is 0
+        template <typename T1, size_t... E>
+        point(entity<T1, void, E...> const& other)
+        {
+            auto weight_inv = T{1} / static_cast<T>(other.template get_by_element<0b100>);
+            x               = static_cast<T>(other.template get_by_element<0b1>()) * weight_inv;
+            y               = static_cast<T>(other.template get_by_element<0b10>()) * weight_inv;
+        }
 
         union
         {
@@ -183,21 +199,8 @@ namespace cga2
             T v;
             T t;
         };
-
-        GAL_ACCESSORS
-
-        template <typename Engine, typename... I>
-        [[nodiscard]] constexpr static point<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
-        {
-            auto o_e = extract<0b100>(mv);
-            auto x_e = extract<0b1>(mv);
-            auto y_e = extract<0b10>(mv);
-
-            auto&& [o, x, y] = engine.template evaluate_terms<T>(o_e, x_e, y_e);
-            return {x / o, y / o};
-        }
     };
 
     // TODO: provide representations for planes, spheres, flats, etc.
-} // namespace cga
+} // namespace cga2
 } // namespace gal

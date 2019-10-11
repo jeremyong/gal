@@ -19,14 +19,14 @@ namespace pga2
 
     GAL_OPERATORS(algebra);
 
-    using e    = multivector<void, term<element<0>, monomial<one>>>;
-    using e0   = multivector<void, term<element<0b1>, monomial<one>>>;
-    using e1   = multivector<void, term<element<0b10>, monomial<one>>>;
-    using e2   = multivector<void, term<element<0b100>, monomial<one>>>;
-    using e01  = multivector<void, term<element<0b11>, monomial<one>>>;
-    using e02  = multivector<void, term<element<0b101>, monomial<one>>>;
-    using e12  = multivector<void, term<element<0b110>, monomial<one>>>;
-    using e012 = multivector<void, term<element<0b111>, monomial<one>>>;
+    inline multivector<void, term<element<0>, monomial<one>>> e;
+    inline multivector<void, term<element<0b1>, monomial<one>>> e0;
+    inline multivector<void, term<element<0b10>, monomial<one>>> e1;
+    inline multivector<void, term<element<0b100>, monomial<one>>> e2;
+    inline multivector<void, term<element<0b11>, monomial<one>>> e01;
+    inline multivector<void, term<element<0b101>, monomial<one>>> e02;
+    inline multivector<void, term<element<0b110>, monomial<one>>> e12;
+    inline multivector<void, term<element<0b111>, monomial<one>>> e012;
 
     // Point at (x, y)
     template <int X, int Y>
@@ -36,16 +36,34 @@ namespace pga2
                                 term<element<0b110>, monomial<one>>>;
 
     template <typename T = float>
-    struct point
+    struct point : public entity<T, point<T>, 0b11, 0b101, 0b110>
     {
         using value_t = T;
-        constexpr static size_t size = 2;
 
         template <size_t ID>
         using type = multivector<void,
                                  term<element<0b11>, monomial<one, generator<tag<ID, 1>>>>,        // y
                                  term<element<0b101>, monomial<minus_one, generator<tag<ID, 0>>>>, // -x
                                  term<element<0b110>, monomial<one>>>;
+
+        [[nodiscard]] constexpr static size_t size() noexcept
+        {
+            return 2;
+        }
+
+        point(T x, T y)
+            : x{x}
+            , y{y}
+        {}
+
+        // WARNING: This implicit conversion from an entity does not check if the weight is 0
+        template <typename T1, size_t... E>
+        point(entity<T1, void, E...> const& other)
+        {
+            auto c_inv = T{1} / static_cast<T>(other.template get_by_element<0b110>);
+            x          = -static_cast<T>(other.template get_by_element<0b101>()) * c_inv;
+            y          = static_cast<T>(other.template get_by_element<0b11>()) * c_inv;
+        }
 
         union
         {
@@ -60,22 +78,6 @@ namespace pga2
             T v;
             T t;
         };
-
-        GAL_ACCESSORS
-
-        template <typename Engine, typename... I>
-        [[nodiscard]] constexpr static point<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
-        {
-            auto x_e = extract<0b101>(mv);
-            auto y_e = extract<0b11>(mv);
-            auto c_e = extract<0b110>(mv);
-
-            T x = -engine.template evaluate<T>(x_e);
-            T y = engine.template evaluate<T>(y_e);
-            T c = engine.template evaluate<T>(c_e);
-
-            return {x / c, y / c};
-        }
     };
 
     // Line with equation ax + by + c = 0
@@ -86,35 +88,38 @@ namespace pga2
                                term<element<0b100>, monomial<rational<B>>>>;
 
     template <typename T = float>
-    struct line
+    struct line : public entity<T, line<T>, 0b1, 0b10, 0b100>
     {
         using value_t = T;
-        constexpr static size_t size = 3;
 
         template <size_t ID>
-        using type  = multivector<void,
-                                   term<element<0b1>, monomial<one, generator<tag<ID, 2>>>>,
-                                   term<element<0b10>, monomial<one, generator<tag<ID, 0>>>>,
-                                   term<element<0b100>, monomial<one, generator<tag<ID, 1>>>>>;
+        using type = multivector<void,
+                                 term<element<0b1>, monomial<one, generator<tag<ID, 2>>>>,
+                                 term<element<0b10>, monomial<one, generator<tag<ID, 0>>>>,
+                                 term<element<0b100>, monomial<one, generator<tag<ID, 1>>>>>;
+
+        [[nodiscard]] constexpr static size_t size() noexcept
+        {
+            return 3;
+        }
+
+        line(T a, T b, T c)
+            : a{a}
+            , b{b}
+            , c{c}
+        {}
+
+        template <typename T1, size_t... E>
+        line(entity<T1, void, E...> const& other)
+        {
+            a = static_cast<T>(other.template get_by_element<0b10>());
+            b = static_cast<T>(other.template get_by_element<0b100>());
+            c = static_cast<T>(other.template get_by_element<0b1>());
+        }
+
         T a;
         T b;
         T c;
-
-        GAL_ACCESSORS
-
-        template <typename Engine, typename... I>
-        [[nodiscard]] constexpr static line<T> convert(const Engine& engine, multivector<void, I...> mv) noexcept
-        {
-            auto a_e = extract<0b10>(mv);
-            auto b_e = extract<0b100>(mv);
-            auto c_e = extract<0b1>(mv);
-
-            T a = engine.template evaluate<T>(a_e);
-            T b = engine.template evaluate<T>(b_e);
-            T c = engine.template evaluate<T>(c_e);
-
-            return {a, b, c};
-        }
     };
 
     // Direction pointing toward (x, y) aka an ideal point
@@ -123,32 +128,35 @@ namespace pga2
         = multivector<void, term<element<0b11>, monomial<rational<Y>>>, term<element<0b101>, monomial<rational<-X>>>>;
 
     template <typename T>
-    struct alignas(16) direction
+    struct alignas(16) direction : public entity<T, direction<T>, 0b11, 0b101>
     {
-        using value_t = T;
-        constexpr static size_t size = 2;
-
         template <size_t ID>
         using type = multivector<void,
                                  term<element<0b11>, monomial<minus_one, generator<tag<ID, 1>>>>, // y
                                  term<element<0b101>, monomial<one, generator<tag<ID, 0>>>>>;     // -x
 
+        [[nodiscard]] constexpr static size_t size() noexcept
+        {
+            return 2;
+        }
+
+        direction(T x, T y)
+            : x{x}
+            , y{y}
+        {}
+
+        template <typename T1, size_t... E>
+        direction(entity<T1, void, E...> const& other)
+        {
+            x = -static_cast<T>(other.template get_by_element<0b101>());
+            y = static_cast<T>(other.template get_by_element<0b11>());
+        }
+
         T x;
         T y;
-
-        GAL_ACCESSORS
-
-        template <typename Engine, typename... I>
-        [[nodiscard]] constexpr static direction<T> convert(Engine& engine, multivector<void, I...> mv) noexcept
-        {
-            auto x_e = -extract<0b101>(mv);
-            auto y_e = extract<0b11>(mv);
-
-            auto&& [x, y] = engine.template evaluate_terms<T>(x_e, y_e);
-
-            return {x, y};
-        }
     };
+
+    // TODO add rotor and translator
 
     // Additional helper functions for plane geometry and result verification
     template <typename... T>

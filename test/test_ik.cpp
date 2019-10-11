@@ -23,6 +23,7 @@ TEST_CASE("cga-ik")
     scalar ang4{deg_to_rad(66.9)};
     scalar ang5{deg_to_rad(-42.0)};
     gabenchmark::InverseKinematics(ang1, ang2, ang3, ang4, ang5);
+    // TODO: check values
 }
 
 TEST_SUITE_END();

@@ -22,8 +22,7 @@ namespace gal
 // feature.
 template <typename... T>
 struct mem_trie
-{
-};
+{};
 
 namespace detail
 {
@@ -38,153 +37,106 @@ namespace detail
     {
         constexpr static bool value = true;
     };
-}
 
-template <typename... I>
+    template <typename T>
+    inline constexpr bool is_tuple_v = is_tuple<T>::value;
+
+} // namespace detail
+
+enum class scalar_type
+{
+    single_precision,
+    double_precision,
+};
+
+// F := field over which computation is done (i.e. float)
+template <typename F = float>
 class engine
 {
-    // F := field over which computation is done (i.e. float)
-    template <typename E>
-    struct thunk
-    {
-        constexpr thunk(const engine& e, E expression) noexcept
-            : engine_{e}
-            , expression_{expression}
-        {}
-
-        template <typename F = float>
-        [[nodiscard]] constexpr auto reify() const noexcept
-        {
-            if constexpr (detail::is_tuple<E>::value)
-            {
-                return extract<F>(std::make_index_sequence<std::tuple_size<E>::value>{});
-            }
-            else
-            {
-                using type = decltype(detail::compute_entity<F>(expression_));
-                return type::template convert(engine_, expression_);
-            }
-        }
-
-        template <typename F, size_t... N>
-        [[nodiscard]] constexpr auto extract(std::index_sequence<N...>) const noexcept
-        {
-            return std::make_tuple(decltype(detail::compute_entity<F>(typename std::tuple_element<N, E>::type{}))::convert(
-                engine_, typename std::tuple_element<N, E>::type{})...);
-        }
-
-        template <typename T>
-        [[nodiscard]] constexpr operator T() const noexcept
-        {
-            return T::convert(engine_, expression_);
-        }
-
-        template <typename... T>
-        [[nodiscard]] constexpr operator std::tuple<T...>() const noexcept
-        {
-            return convert_results<T...>(std::make_index_sequence<sizeof...(T)>{});
-        }
-
-        template <typename... T, size_t... N>
-        [[nodiscard]] constexpr auto convert_results(std::index_sequence<N...>) const noexcept
-        {
-            return std::make_tuple<T...>(T::convert(engine_, std::get<N>(expression_))...);
-        }
-
-        const engine& engine_;
-        E expression_;
-    };
-
 public:
-    constexpr engine(const I&... inputs) noexcept
-        : data{inputs...}
+    template <typename L, typename... Data>
+    [[nodiscard]] inline constexpr static auto compute(L&& lambda, Data const&... source_data) noexcept
     {
-        static_assert(sizeof...(I) > 0, "An engine without any inputs cannot do any useful computation");
-    }
+        std::array<base_entity const*, sizeof...(Data)> const data{&source_data...};
+        std::array<scalar_type, sizeof...(Data)> const type_sizes{
+            (std::is_same_v<typename std::decay_t<decltype(source_data)>::value_t, float>
+                 ? scalar_type::single_precision
+                 : scalar_type::double_precision)...};
 
-    template <typename L>
-    [[nodiscard]] constexpr auto compute(L&& lambda) const noexcept
-    {
-        constexpr auto inputs = types(std::make_index_sequence<sizeof...(I)>{});
-        const auto result = std::apply(std::forward<L>(lambda), inputs);
-        return thunk{*this, result};
-    }
+        constexpr auto inputs = types<Data...>(std::make_index_sequence<sizeof...(Data)>{});
 
-    template <typename F, typename... Ts>
-    [[nodiscard]] constexpr auto evaluate_terms(Ts... terms) const noexcept
-    {
-        return std::tuple(evaluate<F>(terms)...);
-    }
+        // It is important that this lambda NOT be explicitly invoked as it is a constexpr lambda
+        using result_t = std::decay_t<decltype(std::apply(std::forward<L>(lambda), inputs))>;
 
-    template <typename F, typename E, typename... M>
-    [[nodiscard]] constexpr F evaluate(term<E, M...>) const noexcept
-    {
-        if constexpr (sizeof...(M) == 0)
+        if constexpr (detail::is_tuple_v<result_t>)
         {
-            return {};
+            return reify_entities(data, type_sizes, std::make_index_sequence<std::tuple_size_v<result_t>>{}, result_t{});
         }
         else
         {
-            return (evaluate<F>(M{}) + ...);
+            return reify_entity(data, type_sizes, result_t{});
         }
     }
 
 private:
-    template <typename F, typename Q, typename... G>
-    [[nodiscard]] constexpr F evaluate(monomial<Q, G...>) const noexcept
+    template <typename Data, typename E, typename Sizes, size_t... I>
+    [[nodiscard]] inline constexpr static auto
+    reify_entities(Data const& data, Sizes const& sizes, std::index_sequence<I...>, E) noexcept
     {
-        constexpr auto q = Q::template convert<F>();
-        if constexpr (sizeof...(G) == 0)
-        {
-            return q;
-        }
-        else
-        {
-            return q * ((evaluate<F>(G{})) * ...);
-        }
+        return std::make_tuple(reify_entity(data, sizes, std::tuple_element_t<I, E>{})...);
     }
 
-    template <typename F, typename Tag, typename Degree, size_t Order>
-    [[nodiscard]] constexpr F evaluate(generator<Tag, Degree, Order>) const noexcept
+    template <typename Data, typename Sizes, typename E>
+    [[nodiscard]] inline constexpr static auto reify_entity(Data const& data, Sizes const& sizes, E) noexcept
     {
-        static_assert(!Tag::untagged, "A generator in the field field of an expression is unlabeled");
-        // TODO: leverage sub-expression memoization table to accelerate compile times and unoptimized codegen
-        if constexpr (Degree::value == 0)
+        using entity_t = typename detail::entity_type<F, E>::type;
+        entity_t out;
+
+        using reifier          = detail::reifier<entity_t, E>;
+        size_t monomial_index  = 0;
+        size_t generator_index = 0;
+
+        for (size_t i = 0; i != reifier::monomial_counts.size(); ++i)
         {
-            return {1};
-        }
-        else
-        {
-            const auto value = get<Tag::id, Tag::index>();
-            // constexpr bool is_derived
-                // = std::is_same<typename std::decay<decltype(value)>::type, derived_generator<T>>::value;
-            // TODO: memoize derived results
-            if constexpr (Degree::value == 1)
+            auto const monomial_count = reifier::monomial_counts[i];
+            F accum{0};
+
+            for (size_t j = monomial_index; j != monomial_index + monomial_count; ++j)
             {
-                return value;
+                auto const generator_count = reifier::generator_counts[j];
+                auto const rational        = reifier::rationals[j];
+                F product                  = static_cast<F>(rational.first) / static_cast<F>(rational.second);
+
+                for (size_t k = generator_index; k != generator_index + generator_count; ++k)
+                {
+                    auto const generator = reifier::generators[k];
+                    auto const id        = std::get<0>(generator);
+                    auto const index     = std::get<1>(generator);
+                    auto const degree    = std::get<2>(generator);
+                    auto const& datum    = *data[id];
+                    // TODO: come up with a more robust way of negotiating the scalar types here
+                    auto const& gen = sizes[id] == scalar_type::single_precision
+                                          ? *(reinterpret_cast<float const*>(&datum) + index)
+                                          : *(reinterpret_cast<double const*>(&datum) + index);
+
+                    product *= std::pow(gen, degree);
+                }
+                accum += product;
+
+                generator_index += generator_count;
             }
-            else
-            {
-                // TODO: permit substitution of a different power function for more exotic types
-                return std::pow(value, Degree::value);
-            }
+
+            out[i] = accum;
+            monomial_index += monomial_count;
         }
+
+        return out;
     }
 
-    template <size_t ID, size_t Index>
-    [[nodiscard]] constexpr auto get() const noexcept
+    template <typename... Data, size_t... IDs>
+    [[nodiscard]] inline constexpr static auto types(std::index_sequence<IDs...>) noexcept
     {
-        return std::get<ID>(data).template get<Index>();
+        return std::tuple<typename Data::template type<IDs>...>();
     }
-
-    template <size_t... N>
-    [[nodiscard]] constexpr static auto types(std::index_sequence<N...>) noexcept
-    {
-        return std::tuple<typename I::template type<N>...>();
-    }
-
-    std::tuple<const I&...> data;
 };
 } // namespace gal
-
-#define GAL_COMPUTE(...)

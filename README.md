@@ -16,30 +16,38 @@ Some things that make GAL unique are:
 
 GAL is in the early stages of development, so please stay tuned for more!
 
+## Runtime and Compile-time performance
+
+Early results are showing that GAL is >2x faster than versor but with slower compile times which depend on
+the expression complexity.
+
+Runtime and compile time performance is achieved by using the following approach to expression evaluation.
+
+1. Expressions are encoded using standard expression tree templates.
+2. Expression inputs are entities that are encoded with flat representations (e.g. an R3 point is just 3 floats and not tied to a multivector representation).
+3. Prior to evaluation, expression inputs are expressed in indeterminate multivector form (parameters of each input are expressed via integral tags, not floating-point values). This is encoded using 3 flat compile-time arrays per multivector (storing intederminates, monomials, and polynomials) for fast simplification and evaluation.
+4. Expressions are expanded in indeterminate form using polynomial coefficients so that term arithmetic can happen exactly over the field of rationals. A number of techniques are used to put strict upper bounds on compile time memory and CPU usage whever possible.
+5. The final indeterminate form is evaluated coefficient by coefficient. For CSE, the compiler is relied on at this time, although future work in doing compile time multivariate polynomial reduction is possible.
+6. The results are optionally cast back into the flat entity form which extracts multivector components and applies scaling as appropriate. This operation is also a compile time operation which may cause additional computation to drop out trivially.
+
 ## Usage
 
 Being a template-library, GAL is header-only and can be installed by either linking the `gal` interface target via cmake or by copying the files in `src` to a known include path.
 
 To build the tests, you need a C++ compiler (currently untested via MSVC) that supports C++17 or greater.
-Conan is used to easily fetch `doctest` and `fmt` as additional dependencies. Neither are required for GAL
-to function but you will need to link `fmt` in your own code if you wish to include `formatters.hpp` for
-pretty type printing.
 
 ```sh
 # From the root directory of this project
 mkdir build
 cd build
 
-# If you don't have conan installed already, the easiest way to get it is with `pip install conan` with
-# a working python 3 installation (use `pip install conan --user` for a local installation)
-
-# Install test dependencies
-conan install ..
-
 # Optionally supply release type, flags, etc and pick your favorite generator
 cmake .. -G Ninja
 
 # ... or whichever (ideally multicore-friendly) build system you choose
+# CAREFUL currently this also builds an inverse-kinematics algorithm using a method that is pathologically
+# slower to compile. This implementation was chosen only to provide an apples to apples comparison to other
+# frameworks from ga-benchmark
 ninja
 
 # Run the tests
@@ -47,6 +55,11 @@ ninja
 ```
 
 It is recommend when using clang that `-fno-math-errno` be passed to your compiler's build settings as this was found to be an obstacle for clang to generate optimal code in many circumstances. Many platforms set this as the default, but depending on the math library that is linked on your system, your mileage may vary.
+
+A secondary recommendation is that usage should comfortably enable both `-ffast-math` and `-mfma`. The former
+is usually not used to retain finer control over numerical stability. However, using GA improves stability
+considerably over traditional linear algebra approaches. The second flag enables fused-multiply-add
+instructions which both improves precision and is available on most hardware.
 
 ## Motivation
 
@@ -75,7 +88,8 @@ this would require 8 (2^3) coordinates to describe a fully general multivector. 
 (conformal meaning that homomorphisms are angle-preserving) requires 32 coordinates! On top of that,
 there are often a number of term cancellations as expressions are evaluated (as quantities contract one
 one another in ways that are degenerate for example). This results in a higher operation count, all else
-being equal.
+being equal. Generally, actual computation is done in smaller embeddings within the full tensor algebra,
+and runtime compression of the data is unacceptable.
 
 To combat this, GAL provides a fully compile time expression evaluation system and computational engine
 to fully simplify expressions. Perhaps the most egregious example is a CGA (Conformal Geometric Algebra)
@@ -86,29 +100,28 @@ the compiler would be unable to optimize this as such in general. GAL makes the 
 
 ```c++
 #include <gal/cga.hpp>
+#include <gal/engine.hpp>
 
 using scalar = gal::cga::scalar<float>;
 using point  = gal::cga::point<float>;
 
-float construct_plane(point p)
+float point_norm(point p)
 {
-    gal::engine engine{p};
-
-    return engine.compute<scalar>([](auto p)
+    return compute([](auto p)
     {
         // Contract a cga point back onto itself
         // Note that p here contains no actual data! It is just the type that represents a CGA point
         // with internal tags that refer to the values contained in the outer scope p (we locally
         // shadow the variable name for brevity)
         return p >> p;
-    });
+    }, p);
 }
 ```
 
 The assembly for the routine above looks like the following (compiled with -O1, not even -O2):
 
 ```assembly
-construct_plane(gal::cga::point<float>):
+point_norm(gal::cga::point<float>):
         pxor    xmm0, xmm0
         ret
 ```
@@ -119,7 +132,7 @@ completely!
 
 ## API
 
-The library is still under flux, but for now, the file `test/test_engine.cpp` should give you a decent idea of how to use GAL.
+The library is still under flux, but for now, the snippet below should give you a decent idea of how to use GAL.
 
 Example usage:
 
@@ -136,15 +149,8 @@ point p1{2.4f, 3.6f, 1.3f};
 point p2{-1.1f, 2.7f, 5.0f};
 point p3{-1.8f, -2.7f, -4.3f};
 
-// Any time we wish to evaluate an expression, we create an instance
-// of an engine and pass all objects we wish to compute with to the constructor.
-// Like other aspects of the library, the engine is a compile time construct
-// and occupies no space (unless you choose to store it).
-gal::engine engine{p1, p2, p3};
-
-// We issue a computation using the `compute` method which takes a type parameter
-// to indicate the return type and a lambda which will perform the computation.
-auto plane = engine.compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3)
+// We issue a computation using the `compute` method which accepts a lambda
+plane<float> p = compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3)
 {
     // The p1, p2, and p3 variables here are shadow types of the points residing
     // "in the engine" and we operate with them using any of the operations:
@@ -165,7 +171,7 @@ auto plane = engine.compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3
     // Here we just use the regressive product to construct a plane which passes through
     // the three points.
     return p1 & p2 & p3;
-});
+}, p1, p2, p3);
 
 // The results have now been computed and placed into the constructed plane which
 // is parametered by the equation ax + by + cz + d = 0
@@ -176,14 +182,3 @@ CHECK_EQ(p1.x * p.x + p1.y * p.y + p1.z * p.z + p.d, epsilon);
 CHECK_EQ(p2.x * p.x + p2.y * p.y + p2.z * p.z + p.d, epsilon);
 CHECK_EQ(p3.x * p.x + p3.y * p.y + p3.z * p.z + p.d, epsilon);
 ```
-
-### Projective Geometric Algebra
-
-## TODO
-
-- Implement logarithms/derivatives
-- Flesh out metrics that aren't PGA3 with the same functionality (rotors/translators)
-- Add sample applications and provide benchmark
-- Add an additional engine that compiles expressions to SPIR-V or shader code
-- Add additional documentation
-- Support arithmetic constraints between finite field elements

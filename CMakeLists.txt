@@ -1,4 +1,8 @@
+# NOTE: A recent cmake is required due to the dependency on the FetchContent module
+# used to fetch doctest. If you are not building the tests, you can (probably) relax
+# this requirement.
 cmake_minimum_required(VERSION 3.15)
+
 project(gal LANGUAGES C CXX)
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -14,8 +18,10 @@ option(GAL_FORMATTERS_ENABLED "Enable formatters for use with fmtlib" ON)
 
 # NEVER mutate global cmake state unless we are building as a standalone project
 if (GAL_STANDALONE)
+  # Export compile commands for IDE/language-server/editor support
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+  # Output to a few canonical directories for convenience
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
@@ -35,17 +41,9 @@ if (GAL_STANDALONE)
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 endif()
 
-add_library(gal INTERFACE)
-target_include_directories(gal INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/public)
-if (GAL_SAMPLES_ENABLED)
-  target_link_libraries(gal INTERFACE fmt)
-endif()
-target_compile_features(gal INTERFACE cxx_std_17)
+add_subdirectory(src)
 
 if (GAL_TESTS_ENABLED AND GAL_STANDALONE)
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  conan_basic_setup(NO_OUTPUT_DIRS TARGETS SKIP_STD KEEP_RPATHS SKIP_FPIC)
-
   enable_testing()
   add_subdirectory(test)
 endif()

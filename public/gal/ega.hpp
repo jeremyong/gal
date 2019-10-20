@@ -1,6 +1,9 @@
 #pragma once
 
-#include "ga.hpp"
+#include "entity.hpp"
+#include "geometric_algebra.hpp"
+
+#include <cmath>
 
 // The 3D Euclidean Geometric Algebra
 
@@ -8,115 +11,134 @@ namespace gal
 {
 namespace ega
 {
-    using metric = ::gal::metric<3, 0, 0>;
+    using ega_metric = gal::metric<3, 0, 0>;
 
-    using algebra = ga::algebra<metric>;
+    using ega_algebra = gal::algebra<ega_metric>;
 
-    GAL_OPERATORS(algebra);
-
-    inline multivector<void, term<element<0>, monomial<one>>> e;
-    inline multivector<void, term<element<0b1>, monomial<one>>> e0;
-    inline multivector<void, term<element<0b10>, monomial<one>>> e1;
-    inline multivector<void, term<element<0b100>, monomial<one>>> e2;
-    inline multivector<void, term<element<0b11>, monomial<one>>> e01;
-    inline multivector<void, term<element<0b101>, monomial<one>>> e02;
-    inline multivector<void, term<element<0b110>, monomial<one>>> e12;
-    inline multivector<void, term<element<0b111>, monomial<one>>> e012;
-
-    template <int X, int Y, int Z>
-    using point_t = multivector<void,
-                                term<element<0b1>, monomial<rational<X>>>,
-                                term<element<0b10>, monomial<rational<Y>>>,
-                                term<element<0b100>, monomial<rational<Z>>>>;
+    // These are intended to be used only in a compute context
+    constexpr inline auto e = gal::e<ega_algebra, 0>;
+    constexpr inline auto e0 = gal::e<ega_algebra, 0b1>;
+    constexpr inline auto e1 = gal::e<ega_algebra, 0b10>;
+    constexpr inline auto e2 = gal::e<ega_algebra, 0b100>;
+    constexpr inline auto e01 = gal::e<ega_algebra, 0b11>;
+    constexpr inline auto e02 = gal::e<ega_algebra, 0b101>;
+    constexpr inline auto e12 = gal::e<ega_algebra, 0b110>;
+    constexpr inline auto e012 = gal::e<ega_algebra, 0b111>;
 
     template <typename T = float>
-    struct alignas(16) point : public entity<T, point<T>, 0b1, 0b10, 0b100>
+    union vector
     {
-        template <size_t ID>
-        using type = multivector<void,
-                                 term<element<0b1>, monomial<one, generator<tag<ID, 0>>>>,
-                                 term<element<0b10>, monomial<one, generator<tag<ID, 1>>>>,
-                                 term<element<0b100>, monomial<one, generator<tag<ID, 2>>>>>;
+        using algebra_t = ega_algebra;
+        using value_t   = T;
+
+        std::array<T, 3> data;
+        struct
+        {
+            union
+            {
+                T x;
+                T u;
+            };
+
+            union
+            {
+                T y;
+                T v;
+            };
+
+            union
+            {
+                T z;
+                T w;
+            };
+        };
+
+        [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
+        {
+            return detail::construct_ie<algebra_t>(
+                id, std::make_integer_sequence<width_t, 3>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100>{});
+        }
 
         [[nodiscard]] constexpr static size_t size() noexcept
         {
             return 3;
         }
 
-        point(T x, T y, T z)
-            : x{x}
-            , y{y}
-            , z{z}
-        {}
-
-        template <typename T1, size_t... E>
-        point(entity<T1, void, E...> const& other)
+        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
         {
-            x = static_cast<T>(other.template get_by_element<0b1>());
-            y = static_cast<T>(other.template get_by_element<0b10>());
-            z = static_cast<T>(other.template get_by_element<0b100>());
+            return 3;
         }
 
-        union
+        constexpr vector(T a, T b, T c) noexcept
+            : x{a}
+            , y{b}
+            , z{c}
+        {}
+
+        template <uint8_t... E>
+        constexpr vector(entity<ega_algebra, T, E...> in) noexcept
+            : data{in.template select<0b1, 0b10, 0b100>()}
         {
-            T x;
-            T u;
-        };
-        union
+        }
+
+        void normalize() noexcept
         {
-            T y;
-            T v;
-        };
-        union
+            auto l2_inv = T{1} / std::sqrt(x * x + y * y + z * z);
+            x           = x * l2_inv;
+            y           = y * l2_inv;
+            z           = z * l2_inv;
+        }
+
+        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
         {
-            T z;
-            T w;
-        };
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T get(size_t i) const noexcept
+        {
+            // Unused
+            return NAN;
+        }
     };
 
-    template <int X, int Y, int Z>
-    using rotor_t = multivector<void,
-                                term<element<0>, monomial<one, generator<tag<0, 0>>>>,
-                                term<element<0b11>, monomial<rational<Z>, generator<tag<0, 1>>>>,   // +z
-                                term<element<0b101>, monomial<rational<-Y>, generator<tag<0, 1>>>>, // +y
-                                term<element<0b110>, monomial<rational<X>, generator<tag<0, 1>>>>>; // +x
-
-    // A rotor, when conjugated with any geometric entity, rotates it theta radians about its axis
-    template <typename T = float, typename AngleT = T>
-    struct rotor : public entity<T, rotor<T, AngleT>, 0, 0b11, 0b101, 0b110>
+    template <typename T>
+    union rotor
     {
-        using angle_t = AngleT;
-
-        // theta := ID 0, index 0
-        // x := ID 0, index 1
-        // y := ID 0, index 2
-        // z := ID 0, index 3
-        // Cos\theta := ID 0, index 4
-        // Sin\theta := ID 0, index 5
-        template <size_t ID>
-        using type
-            = multivector<void,
-                          term<element<0>, monomial<one, generator<tag<ID, 4>>>>,
-                          term<element<0b11>, monomial<one, generator<tag<ID, 3>>, generator<tag<ID, 5>>>>,        // +z
-                          term<element<0b101>, monomial<minus_one, generator<tag<ID, 2>>, generator<tag<ID, 5>>>>, // -y
-                          term<element<0b110>, monomial<one, generator<tag<ID, 1>>, generator<tag<ID, 5>>>>>;      // +x
+        using algebra_t = ega_algebra;
+        using value_t = T;
 
         [[nodiscard]] constexpr static size_t size() noexcept
         {
-            return 4;
+            return 5;
         }
 
-        rotor(AngleT theta, T x, T y, T z)
-            : theta{theta}
+        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
+        {
+            return 5;
+        }
+
+        std::array<T, 5> data;
+        struct
+        {
+            T cos_theta;
+            T sin_theta;
+            T x;
+            T y;
+            T z;
+        };
+
+        constexpr rotor(T theta, T x, T y, T z) noexcept
+            : cos_theta{std::cos(T{0.5} * theta)}
+            , sin_theta{std::sin(T{0.5} * theta)}
             , x{x}
             , y{y}
             , z{z}
         {}
-
-        AngleT theta;
-        T x;
-        T y;
-        T z;
 
         // As always when doing any normalization operation, NaNs are producible when normalizing
         // vectors of zero length. This is not checked for!
@@ -128,18 +150,38 @@ namespace ega
             z           = z * l2_inv;
         }
 
-        template <size_t I>
-        [[nodiscard]] T get(std::integral_constant<size_t, I>) const noexcept
+        // Cos\theta := ID 0
+        // Sin\theta := ID 1
+        // x := ID 2
+        // y := ID 3
+        // z := ID 4
+        [[nodiscard]] constexpr static mv<ega_algebra, 8, 4, 4> ie(uint32_t id) noexcept
         {
-            if constexpr (I == 4)
-            {
-                return std::cos(theta * 0.5);
-            }
-            else if constexpr (I == 5)
-            {
-                return std::sin(theta * 0.5);
-            }
-            // unreachable
+            return {mv_size{7, 4, 4},
+                    {ind{id, 1},     // cos(t/2)
+                     ind{id + 1, 1}, // z * sin(t/2)
+                     ind{id + 4, 1},
+                     ind{id + 1, 1}, // -y * sin(t/2)
+                     ind{id + 3, 1},
+                     ind{id + 1, 1}, // x * sin(t/2)
+                     ind{id + 2, 1}},
+                    {mon{one, 1, 0, 1}, mon{minus_one, 2, 1, 2}, mon{one, 2, 3, 2}, mon{minus_one, 2, 5, 2}},
+                    {term{1, 0, 0}, term{1, 1, 0b11}, term{1, 2, 0b101}, term{1, 3, 0b110}}};
+        }
+
+        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T get(size_t i) const noexcept
+        {
+            return NAN;
         }
     };
 } // namespace ega

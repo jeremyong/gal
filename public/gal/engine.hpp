@@ -1,31 +1,38 @@
 #pragma once
 
-#include "ga.hpp"
+#include "entity.hpp"
+
+#ifdef GAL_DEBUG
+#include "expression_debug.hpp"
+#endif
 
 #include <cmath>
+#include <tuple>
 
 namespace gal
 {
-// An engine is used to execute the computation expressed in a multivector expression template.
-// The default engine evaluates the expression immediately on the CPU using a specified precision.
-// TODO: SPIR-V engine
-// TODO: SIMD engine
-// TODO: constraint evaluation
-
-// Memoization trie used to store and retrieve results of subexpressions that repeat during a computation
-// The number of combinations possible of multiplications between N factors scales as the factorial of N, so it is
-// unreasonable to use a dense representation for memoized products. However, a total ordering exists between the
-// generators so intermediate products are amenable to storage in a trie-like structure.
-
-// TODO: AT THE MOMENT (10/06/2019) this optimization does not yet seem necessary because the compiler correctly
-// memoizes results, even without -ffast-math. However, depending on benchmarks, this may need to be revisted in the
-// feature.
-template <typename... T>
-struct mem_trie
-{};
-
 namespace detail
 {
+    template <typename D, typename... Ds, typename... Out, uint ID>
+    [[nodiscard]] constexpr static auto ies(std::tuple<Out...> out, std::integral_constant<uint, ID> id) noexcept
+    {
+        if constexpr (sizeof...(Ds) == 0)
+        {
+            return std::tuple_cat(out, std::make_tuple(expr<expr_op::identity, D, decltype(id)>{}));
+        }
+        else
+        {
+            return ies<Ds...>(std::tuple_cat(out, std::make_tuple(expr<expr_op::identity, D, decltype(id)>{})),
+                              std::integral_constant<uint, ID + D::ind_count()>{});
+        }
+    }
+
+    template <typename... Out>
+    [[nodiscard]] constexpr static auto ies(std::tuple<Out...> out) noexcept
+    {
+        return out;
+    }
+
     template <typename T>
     struct is_tuple
     {
@@ -41,102 +48,232 @@ namespace detail
     template <typename T>
     inline constexpr bool is_tuple_v = is_tuple<T>::value;
 
-} // namespace detail
+    template <auto const& ie, int num, int den, width_t Offset, typename Seq>
+    struct ie_tree_mon
+    {};
 
-enum class scalar_type
-{
-    single_precision,
-    double_precision,
-};
-
-// F := field over which computation is done (i.e. float)
-template <typename F = float>
-class engine
-{
-public:
-    template <typename L, typename... Data>
-    [[nodiscard]] inline constexpr static auto compute(L&& lambda, Data const&... source_data) noexcept
+    template <auto const& ie, int num, int den, width_t Offset, size_t... I>
+    struct ie_tree_mon<ie, num, den, Offset, std::index_sequence<I...>>
     {
-        std::array<base_entity const*, sizeof...(Data)> const data{&source_data...};
-        std::array<scalar_type, sizeof...(Data)> const type_sizes{
-            (std::is_same_v<typename std::decay_t<decltype(source_data)>::value_t, float>
-                 ? scalar_type::single_precision
-                 : scalar_type::double_precision)...};
+        constexpr static rat q{num, den};
+        constexpr static auto inds
+            = std::make_tuple(std::make_pair(std::integral_constant<width_t, ie.inds[Offset + I].id>{},
+                                             std::integral_constant<int, ie.inds[Offset + I].degree>{})...);
+    };
 
-        constexpr auto inputs = types<Data...>(std::make_index_sequence<sizeof...(Data)>{});
+    template <auto const& ie, size_t Offset, typename Seq>
+    struct ie_tree_term
+    {};
 
-        // It is important that this lambda NOT be explicitly invoked as it is a constexpr lambda
-        using result_t = std::decay_t<decltype(std::apply(std::forward<L>(lambda), inputs))>;
+    template <auto const& ie, size_t Offset, size_t... I>
+    struct ie_tree_term<ie, Offset, std::index_sequence<I...>>
+    {
+        constexpr static std::tuple<ie_tree_mon<ie,
+                                                ie.mons[Offset + I].q.num,
+                                                ie.mons[Offset + I].q.den,
+                                                ie.mons[Offset + I].ind_offset,
+                                                std::make_index_sequence<ie.mons[Offset + I].count>>...>
+            children{};
+    };
 
-        if constexpr (detail::is_tuple_v<result_t>)
+    template <typename T, int D>
+    [[nodiscard]] T maybe_exponentiate(T const& v, std::integral_constant<int, D>) noexcept
+    {
+        if constexpr (D == 0)
         {
-            return reify_entities(data, type_sizes, std::make_index_sequence<std::tuple_size_v<result_t>>{}, result_t{});
+            return {1};
+        }
+        else if constexpr (D == 1)
+        {
+            return v;
+        }
+        else if constexpr (D == -1)
+        {
+            return T{1} / v;
+        }
+        else if constexpr (D == 2)
+        {
+            return v * v;
+        }
+        else if constexpr (D == 3)
+        {
+            return v * v * v;
+        }
+        else if constexpr (D == 4)
+        {
+            auto v2 = v * v;
+            return v2 * v2;
+        }
+        else if constexpr (D == 5)
+        {
+            auto v2 = v * v;
+            return v2 * v2 * v;
+        }
+        else if constexpr (D == 6)
+        {
+            auto v2 = v * v;
+            return v2 * v2 * v2;
         }
         else
         {
-            return reify_entity(data, type_sizes, result_t{});
+            // TODO: use compile time recursion to unroll this (possibly using SX method)
+            return std::pow(v, D);
         }
     }
 
-private:
-    template <typename Data, typename E, typename Sizes, size_t... I>
-    [[nodiscard]] inline constexpr static auto
-    reify_entities(Data const& data, Sizes const& sizes, std::index_sequence<I...>, E) noexcept
+    // Data := flattened array of inputs
+    template <auto const& ie, typename F, typename A, typename Data, size_t... I>
+    [[nodiscard]] static auto compute_entity(Data const& data, std::index_sequence<I...>) noexcept
     {
-        return std::make_tuple(reify_entity(data, sizes, std::tuple_element_t<I, E>{})...);
+        using entity_t = entity<A, F, ie.terms[I].element...>;
+        // NOTE: this should be flattened to arrays of constant size ideally
+        constexpr std::tuple<ie_tree_term<ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>...> tree{};
+        return std::apply(
+            [&data](auto&&... t) {
+                return entity_t{std::apply(
+                    [&](auto&&... m) {
+                        if constexpr (sizeof...(m) == 0)
+                        {
+                            return F{0};
+                        }
+                        else
+                        {
+                            return ((static_cast<F>(m.q)
+                                     * std::apply(
+                                         [&](auto&&... i) {
+                                             if constexpr (sizeof...(i) == 0)
+                                             {
+                                                 return F{1};
+                                             }
+                                             else
+                                             {
+                                                 return (maybe_exponentiate(*data[i.first], i.second) * ...);
+                                             }
+                                         },
+                                         m.inds))
+                                    + ...);
+                        }
+                    },
+                    t.children)...};
+            },
+            tree);
     }
 
-    template <typename Data, typename Sizes, typename E>
-    [[nodiscard]] inline constexpr static auto reify_entity(Data const& data, Sizes const& sizes, E) noexcept
+    // The indeterminate value is either a pointer to an entity's value or an evaluated expression
+    template <typename T>
+    struct ind_value
     {
-        using entity_t = typename detail::entity_type<F, E>::type;
-        entity_t out;
-
-        using reifier          = detail::reifier<entity_t, E>;
-        size_t monomial_index  = 0;
-        size_t generator_index = 0;
-
-        for (size_t i = 0; i != reifier::monomial_counts.size(); ++i)
+        union
         {
-            auto const monomial_count = reifier::monomial_counts[i];
-            F accum{0};
+            T const* pointer;
+            T value;
+        };
+        
+        bool is_value;
 
-            for (size_t j = monomial_index; j != monomial_index + monomial_count; ++j)
-            {
-                auto const generator_count = reifier::generator_counts[j];
-                auto const rational        = reifier::rationals[j];
-                F product                  = static_cast<F>(rational.first) / static_cast<F>(rational.second);
+        [[nodiscard]] constexpr T operator*() const noexcept
+        {
+            return is_value ? value : *pointer;
+        }
+    };
 
-                for (size_t k = generator_index; k != generator_index + generator_count; ++k)
-                {
-                    auto const generator = reifier::generators[k];
-                    auto const id        = std::get<0>(generator);
-                    auto const index     = std::get<1>(generator);
-                    auto const degree    = std::get<2>(generator);
-                    auto const& datum    = *data[id];
-                    // TODO: come up with a more robust way of negotiating the scalar types here
-                    auto const& gen = sizes[id] == scalar_type::single_precision
-                                          ? *(reinterpret_cast<float const*>(&datum) + index)
-                                          : *(reinterpret_cast<double const*>(&datum) + index);
-
-                    product *= std::pow(gen, degree);
-                }
-                accum += product;
-
-                generator_index += generator_count;
-            }
-
-            out[i] = accum;
-            monomial_index += monomial_count;
+    template <typename T, typename D, typename... Ds>
+    constexpr static void fill(T* out, D const& datum, Ds const&... data) noexcept
+    {
+        for (size_t i = 0; i != D::size(); ++i)
+        {
+            auto& iv    = *(out + i);
+            iv.pointer  = &datum[i];
+            iv.is_value = false;
         }
 
-        return out;
+        for (size_t i = D::size(); i != D::ind_count(); ++i)
+        {
+            auto& iv    = *(out + i);
+            iv.value    = datum.get(i);
+            iv.is_value = true;
+        }
+
+        if constexpr (sizeof...(Ds) > 0)
+        {
+            fill(out + D::ind_count(), data...);
+        }
     }
 
-    template <typename... Data, size_t... IDs>
-    [[nodiscard]] inline constexpr static auto types(std::index_sequence<IDs...>) noexcept
+    template <typename A, typename V, typename T, typename D>
+    [[nodiscard]] static auto finalize_entity(D const& data)
     {
-        return std::tuple<typename Data::template type<IDs>...>();
+        constexpr static auto reified = reify<T>();
+        if constexpr (detail::uses_null_basis<A>)
+        {
+            constexpr static auto null_conversion = detail::to_null_basis(reified);
+            return compute_entity<null_conversion, V, A>(
+                data, std::make_index_sequence<null_conversion.size.term>());
+        }
+        else
+        {
+            return compute_entity<reified, V, A>(data, std::make_index_sequence<reified.size.term>());
+        }
     }
+} // namespace detail
+
+template <typename... Data>
+struct evaluate
+{
+    template <typename L>
+    [[nodiscard]] constexpr auto operator()(L&& lambda) noexcept
+    {
+        constexpr auto ies = detail::ies<Data...>(std::tuple<>{}, std::integral_constant<uint, 0>{});
+        using ie_result_t  = decltype(std::apply(lambda, ies));
+        return reify<ie_result_t>();
+    }
+
+#ifdef GAL_DEBUG
+    // Non-constexpr variant of the main evaluation operator for runtime debugging
+    template <typename L>
+    [[nodiscard]] auto debug(L&& lambda) noexcept
+    {
+        static auto ies        = detail::ies<Data...>(std::tuple<>{}, std::integral_constant<uint, 0>{});
+        static auto expression = std::apply(lambda, ies);
+        using ie_result_t      = decltype(std::apply(lambda, ies));
+        return debug_reify<ie_result_t>();
+    }
+#endif
 };
+
+template <typename L, typename... Data>
+[[nodiscard]] static auto compute(L&& lambda, Data const&... input) noexcept
+{
+    constexpr auto ies = detail::ies<Data...>(std::tuple<>{}, std::integral_constant<uint, 0>{});
+    using ie_result_t  = decltype(std::apply(lambda, ies));
+    // Produce a lookup table keyed to the indeterminate id mapping to a union containing either an entity property or
+    // an evaluated property
+    if constexpr (detail::is_tuple_v<ie_result_t>)
+    {
+        if constexpr (std::tuple_size_v<ie_result_t> > 0)
+        {
+            using value_t   = typename std::tuple_element_t<0, ie_result_t>::value_t;
+            using algebra_t = typename std::tuple_element_t<0, ie_result_t>::algebra_t;
+
+            std::array<detail::ind_value<value_t>, (Data::ind_count() + ...)> data{};
+            detail::fill(data.data(), input...);
+
+            return std::apply(
+                [&](auto&&... args) {
+                    return std::make_tuple(
+                        detail::finalize_entity<algebra_t, value_t, std::decay_t<decltype(args)>>(data)...);
+                },
+                ie_result_t{});
+        }
+    }
+    else
+    {
+        using value_t   = typename ie_result_t::value_t;
+        using algebra_t = typename ie_result_t::algebra_t;
+
+        std::array<detail::ind_value<value_t>, (Data::ind_count() + ...)> data{};
+        detail::fill(data.data(), input...);
+        return detail::finalize_entity<algebra_t, value_t, ie_result_t>(data);
+    }
+}
 } // namespace gal

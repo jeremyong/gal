@@ -1,235 +1,266 @@
-#include <doctest/doctest.h>
-
-#include <gal/finite_algebra.hpp>
-#include <gal/formatters.hpp>
-
 #include "test_util.hpp"
+
+#include <doctest/doctest.h>
+#include <fmt/core.h>
+#include <gal/engine.hpp>
 
 using namespace gal;
 
 TEST_SUITE_BEGIN("finite-algebra");
 
-// The majority of these tests are actually compile-time tests (compilation and correctness are equivalent)
-TEST_CASE("rational-perturbation")
+TEST_CASE("multivector-arithmetic")
 {
-    SUBCASE("small-undisturbed")
+    using S = scalar<void, float>;
+
+    SUBCASE("scalar-sum")
     {
-        constexpr auto q = detail::overflow_gate(rational<1, 128>{});
-        static_assert(q.num == 1);
-        static_assert(q.den == 128);
+        S s1{1};
+        S s2{2};
+
+        auto sum = compute([](auto const& s1, auto const& s2) { return s1 + s2; }, s1, s2);
+        CHECK_EQ(sum[0], doctest::Approx(3.0));
     }
 
-    SUBCASE("perturb-irreducible-rationals")
+    SUBCASE("scalar-negation")
     {
-        // TODO: Ensure accuracy of rational mediant approximation
+        S s{2};
+        auto negation = compute([](auto const& s) { return -s; }, s);
+        CHECK_EQ(negation[0], doctest::Approx(-2));
+    }
+
+    SUBCASE("scalar-sum-cancellation")
+    {
+        S s{1};
+
+        auto sum = compute([](auto const& s) { return s + -s; }, s);
+        CHECK_EQ(sum.size(), 0);
+    }
+
+    SUBCASE("scalar-subtraction")
+    {
+        S s1{1};
+        S s2{2};
+
+        auto diff = compute([](auto const& s1, auto const& s2) { return s1 - s2; }, s1, s2);
+        // auto diff = compute_rt<([](auto const& s1, auto const& s2) { return s1 - s2; })>(s1, s2);
+        CHECK_EQ(diff[0], doctest::Approx(-1.0));
+
+        auto diff2 = compute([](auto const& s1, auto const& s2) { return s2 - s1 + s1; }, s1, s2);
+        CHECK_EQ(diff2[0], doctest::Approx(2.0));
+    }
+
+    SUBCASE("independent-term-sum")
+    {
+        using e1_t = entity<void, float, 1>;
+        e1_t e1{1.0};
+        S s1{1.0};
+        auto sum = compute([](auto s1, auto e1) { return s1 + e1; }, s1, e1);
+        CHECK_EQ(sum[0], doctest::Approx(1.0));
+        CHECK_EQ(sum[1], doctest::Approx(1.0));
+    }
+
+    SUBCASE("coincident-term-sum")
+    {
+        using e1_t = entity<void, float, 0b0, 0b1>;
+        auto sum   = evaluate<e1_t, e1_t>{}([](auto v1, auto v2) { return v1 + v2; });
+        CHECK_EQ(sum.inds[0].id, 0);
+        CHECK_EQ(sum.inds[1].id, 2);
+        CHECK_EQ(sum.inds[2].id, 1);
+        CHECK_EQ(sum.inds[3].id, 3);
+        CHECK_EQ(sum.mons[0].count, 1);
+        CHECK_EQ(sum.mons[1].count, 1);
+        CHECK_EQ(sum.mons[2].count, 1);
+        CHECK_EQ(sum.mons[3].count, 1);
+        CHECK_EQ(sum.terms[0].element, 0);
+        CHECK_EQ(sum.terms[0].count, 2);
+        CHECK_EQ(sum.terms[0].mon_offset, 0);
+        CHECK_EQ(sum.terms[1].element, 1);
+        CHECK_EQ(sum.terms[1].count, 2);
+        CHECK_EQ(sum.terms[1].mon_offset, 2);
+    }
+
+    SUBCASE("coincident-term-sum-with-scalar")
+    {
+        using e1_t = entity<void, float, 0b0, 0b1>;
+        auto sum   = evaluate<e1_t, e1_t>{}([](auto v1, auto v2) { return frac<1> + v1 + v2; });
+        CHECK_EQ(sum.inds[0].id, 0);
+        CHECK_EQ(sum.inds[1].id, 2);
+        CHECK_EQ(sum.inds[2].id, 1);
+        CHECK_EQ(sum.inds[3].id, 3);
+        CHECK_EQ(sum.mons[0].q.num, 1);
+        CHECK_EQ(sum.mons[0].q.den, 1);
+        CHECK_EQ(sum.mons[0].count, 0);
+        CHECK_EQ(sum.mons[1].count, 1);
+        CHECK_EQ(sum.mons[1].ind_offset, 0);
+        CHECK_EQ(sum.mons[2].count, 1);
+        CHECK_EQ(sum.mons[3].count, 1);
+        CHECK_EQ(sum.mons[4].count, 1);
+        CHECK_EQ(sum.terms[0].element, 0);
+        CHECK_EQ(sum.terms[0].count, 3);
+        CHECK_EQ(sum.terms[0].mon_offset, 0);
+        CHECK_EQ(sum.terms[1].element, 1);
+        CHECK_EQ(sum.terms[1].count, 2);
+        CHECK_EQ(sum.terms[1].mon_offset, 3);
+    }
+
+    SUBCASE("noncoincident-term-sum-with-scalar")
+    {
+        using e1_t = entity<void, float, 0b1, 0b10>;
+        auto sum   = evaluate<e1_t>{}([](auto v) { return frac<2> + v; });
+        CHECK_EQ(sum.inds[0].id, 0);
+        CHECK_EQ(sum.inds[1].id, 1);
+        CHECK_EQ(sum.mons[0].q.num, 2);
+        CHECK_EQ(sum.mons[0].q.den, 1);
+        CHECK_EQ(sum.mons[0].count, 0);
+        CHECK_EQ(sum.mons[1].count, 1);
+        CHECK_EQ(sum.mons[1].ind_offset, 0);
+        CHECK_EQ(sum.mons[2].count, 1);
+        CHECK_EQ(sum.mons[2].ind_offset, 1);
+        CHECK_EQ(sum.terms[0].element, 0);
+        CHECK_EQ(sum.terms[0].count, 1);
+        CHECK_EQ(sum.terms[0].mon_offset, 0);
+        CHECK_EQ(sum.terms[1].element, 1);
+        CHECK_EQ(sum.terms[1].count, 1);
+        CHECK_EQ(sum.terms[1].mon_offset, 1);
+        CHECK_EQ(sum.terms[2].element, 2);
+        CHECK_EQ(sum.terms[2].count, 1);
+        CHECK_EQ(sum.terms[2].mon_offset, 2);
     }
 }
 
-TEST_CASE("term-arithmetic")
+// Simple algebra that operates only on scalar quantities
+struct sa
 {
-    SUBCASE("different-degree-and-generator")
+    [[nodiscard]] constexpr static std::pair<uint8_t, int> product(uint8_t g1, uint8_t g2)
     {
-        term<element<1>, monomial<one, generator<tag<1>, degree<1>>>> t1;
-        term<element<1>, monomial<rational<2>, generator<tag<2>, degree<2>>>> t2;
-        constexpr auto t12 = t1 + t2;
-        static_assert(decltype(t12)::size == 2);
-        static_assert(decltype(t12)::first_t::rational_t::num == 1);
-        static_assert(decltype(t12)::subsequent_t::first_t::rational_t::num == 2);
+        return {0, 1};
     }
+};
 
-    SUBCASE("term-cancellation")
-    {
-        term<element<1>, monomial<one, generator<tag<1>, degree<1>>>> t1;
-        term<element<1>, monomial<rational<-1>, generator<tag<1>, degree<1>>>> t2;
-        constexpr auto t12 = t1 + t2;
-        static_assert(decltype(t12)::size == 0);
-    }
+using gal::detail::product;
 
-    SUBCASE("term-addition")
-    {
-        term<element<1>, monomial<rational<-2>, generator<tag<4>, degree<1>>>,
-             monomial<one, generator<tag<1>, degree<1>>, generator<tag<3>, degree<2>>>>
-            t1;
-        term<element<1>, monomial<rational<2>, generator<tag<4>, degree<1>>>,
-             monomial<rational<-1>, generator<tag<1>, degree<1>>, generator<tag<3>, degree<2>>>>
-            t2;
-        constexpr auto t12 = t1 + t2;
-        static_assert(decltype(t12)::size == 0);
-    }
-
-    SUBCASE("successive-addition")
-    {
-        term<element<1>, monomial<one, generator<tag<1>, degree<1>>>> t1;
-        constexpr auto t111 = t1 + t1 + t1;
-        static_assert(decltype(t111)::size == 1);
-        static_assert(decltype(t111)::first_t::rational_t::num == 3);
-    }
-
-    SUBCASE("different-monomial-addition")
-    {
-        term<element<1>, monomial<rational<-2>, generator<tag<4>, degree<1>>>, monomial<one, generator<tag<1>, degree<1>>, generator<tag<3>, degree<2>>>> t1;
-        term<element<1>, monomial<rational<2>, generator<tag<4>, degree<1>>>, monomial<one, generator<tag<1>, degree<1>>, generator<tag<3>, degree<2>>>> t2;
-        term<element<1>, monomial<rational<2>, generator<tag<4>, degree<2>>>, monomial<one, generator<tag<1>, degree<1>>, generator<tag<3>, degree<2>>>> t3;
-        constexpr auto t12 = t1 + t2;
-        static_assert(decltype(t12)::size == 1);
-        static_assert(
-            std::is_same<monomial<rational<2>, generator<tag<1>, degree<1>>, generator<tag<3>, degree<2>>>, typename decltype(t12)::first_t>::value);
-
-        constexpr auto t13 = t1 + t3;
-        static_assert(t13.size == 3);
-        static_assert(std::is_same<monomial<rational<-2>, generator<tag<4>, degree<1>>>, typename decltype(t13)::first_t>::value);
-        static_assert(std::is_same<monomial<rational<2>, generator<tag<4>, degree<2>>>, typename decltype(t13)::subsequent_t::first_t>::value);
-        static_assert(std::is_same<monomial<rational<2>, generator<tag<1>, degree<1>>, generator<tag<3>, degree<2>>>,
-                                   typename decltype(t13)::subsequent_t::subsequent_t::first_t>::value);
-    }
-}
-
-TEST_CASE("multivector-addition")
+TEST_CASE("polynomial-expansion")
 {
-    SUBCASE("single-term-addition")
+    SUBCASE("binomial-expansion")
     {
-        multivector<void, term<element<1>, monomial<one, generator<tag<1>, degree<1>>>>> v1;
-        multivector<void, term<element<1>, monomial<rational<2>, generator<tag<2>, degree<2>>>>> v2;
-        auto v12 = v1 + v2;
-        static_assert(v12.size == 1);
-        static_assert(
-            std::is_same<term<element<1>, monomial<one, generator<tag<1>, degree<1>>>, monomial<rational<2>, generator<tag<2>, degree<2>>>>,
-                         decltype(v12)::first_t>::value);
-
-        multivector<void, term<element<1>, monomial<rational<2>, generator<tag<1>, degree<1>>>>> v3;
-        auto v13 = v1 + v3;
-        static_assert(v13.size == 1);
-        static_assert(std::is_same<term<element<1>, monomial<rational<3>, generator<tag<1>, degree<1>>>>, decltype(v13)::first_t>::value);
+        mv<void, 2, 2, 1> b1{
+            mv_size{2, 2, 1},
+            {ind{0, 1}, ind{1, 2}},
+            {mon{one, 1, 0}, mon{one, 1, 1, 2}},
+            {term{2, 0, 0}}
+        };
+        mv<void, 2, 2, 1> b2{
+            mv_size{2, 2, 1},
+            {ind{2, 1}, ind{3, 1}},
+            {mon{one, 1, 0}, mon{one, 1, 1}},
+            {term{2, 0, 0}}
+        };
+        auto b12 = product(sa{}, b1, b2);
+        CHECK_EQ(b12.size.term, 1);
+        CHECK_EQ(b12.size.mon, 4);
+        CHECK_EQ(b12.size.ind, 8);
+        CHECK_EQ(b12.inds[0].id, 0);
+        CHECK_EQ(b12.inds[1].id, 2);
+        CHECK_EQ(b12.inds[2].id, 0);
+        CHECK_EQ(b12.inds[3].id, 3);
+        CHECK_EQ(b12.inds[4].id, 1);
+        CHECK_EQ(b12.inds[4].degree, 2);
+        CHECK_EQ(b12.inds[5].id, 2);
+        CHECK_EQ(b12.inds[6].id, 1);
+        CHECK_EQ(b12.inds[6].degree, 2);
+        CHECK_EQ(b12.inds[7].id, 3);
+        CHECK_EQ(b12.mons[1].ind_offset, 2);
+        CHECK_EQ(b12.mons[1].degree, 2);
+        CHECK_EQ(b12.mons[2].count, 2);
+        CHECK_EQ(b12.mons[2].degree, 3);
+        CHECK_EQ(b12.mons[3].count, 2);
+        CHECK_EQ(b12.mons[3].degree, 3);
+        CHECK_EQ(b12.terms[0].count, 4);
+        CHECK_EQ(b12.terms[0].mon_offset, 0);
     }
 
-    SUBCASE("multiple-term-addition")
+    SUBCASE("difference-of-squares")
     {
-        multivector<void, term<element<1>, monomial<one, generator<tag<1>, degree<1>>>>> v1;
-        multivector<void, term<element<2>, monomial<one, generator<tag<1>, degree<1>>>>> v2;
-        auto v12 = v1 + v2;
-        static_assert(v12.size == 2);
-        static_assert(std::is_same<term<element<1>, monomial<one, generator<tag<1>, degree<1>>>>, decltype(v12)::first_t>::value);
-        static_assert(
-            std::is_same<term<element<2>, monomial<one, generator<tag<1>, degree<1>>>>, decltype(v12)::subsequent_t::first_t>::value);
-
-        multivector<void, term<element<1>, monomial<one, generator<tag<1>, degree<1>>>>, term<element<2>, monomial<one, generator<tag<1>, degree<1>>>>> v3;
-        auto v13 = v1 + v3;
-        static_assert(v13.size == 2);
-        static_assert(std::is_same<term<element<1>, monomial<rational<2>, generator<tag<1>, degree<1>>>>, decltype(v13)::first_t>::value);
-        static_assert(
-            std::is_same<term<element<2>, monomial<one, generator<tag<1>, degree<1>>>>, decltype(v13)::subsequent_t::first_t>::value);
-
-        multivector<void, term<element<2>, monomial<one, generator<tag<1>, degree<1>>>>, term<element<3>, monomial<one, generator<tag<1>, degree<1>>>>> v4;
-        auto v14 = v1 + v4;
-        static_assert(v14.size == 3);
-        static_assert(std::is_same<term<element<1>, monomial<one, generator<tag<1>, degree<1>>>>, decltype(v14)::first_t>::value);
-        static_assert(
-            std::is_same<term<element<2>, monomial<one, generator<tag<1>, degree<1>>>>, decltype(v14)::subsequent_t::first_t>::value);
-        static_assert(
-            std::is_same<term<element<3>, monomial<one, generator<tag<1>, degree<1>>>>, decltype(v14)::subsequent_t::subsequent_t::first_t>::value);
+        mv<void, 2, 2, 1> b1{
+            mv_size{2, 2, 1},
+            {ind{0, 1}, ind{1, 1}},
+            {mon{one, 1, 0}, mon{one, 1, 1}},
+            {term{2, 0, 0}}
+        };
+        mv<void, 2, 2, 1> b2{
+            mv_size{2, 2, 1},
+            {ind{0, 1}, ind{1, 1}},
+            {mon{one, 1, 0}, mon{minus_one, 1, 1}},
+            {term{2, 0, 0}}
+        };
+        auto b12 = product(sa{}, b1, b2);
+        CHECK_EQ(b12.size.term, 1);
+        CHECK_EQ(b12.size.mon, 2);
+        CHECK_EQ(b12.size.ind, 2);
+        CHECK_EQ(b12.inds[0].id, 0);
+        CHECK_EQ(b12.inds[0].degree, 2);
+        CHECK_EQ(b12.inds[1].id, 1);
+        CHECK_EQ(b12.inds[1].degree, 2);
+        CHECK_EQ(b12.mons[0].count, 1);
+        CHECK_EQ(b12.mons[0].ind_offset, 0);
+        CHECK_EQ(b12.mons[0].degree, 2);
+        CHECK_EQ(b12.mons[1].count, 1);
+        CHECK_EQ(b12.mons[1].ind_offset, 1);
+        CHECK_EQ(b12.mons[1].degree, 2);
     }
 
-    SUBCASE("term-cancellation")
+    SUBCASE("monomial-term-cancellation")
     {
-        multivector<void, term<element<1>, monomial<one, generator<tag<1>, degree<1>>>>> v1;
-        multivector<void, term<element<1>, monomial<rational<-1>, generator<tag<1>, degree<1>>>>> v2;
-        auto v12 = v1 + v2;
-        static_assert(v12.size == 0);
-
-        multivector<void, term<element<1>, monomial<one, generator<tag<2>, degree<1>>>>> v3;
-        multivector<void, term<element<1>, monomial<rational<-1>, generator<tag<1>, degree<1>>>, monomial<rational<-1>, generator<tag<2>, degree<1>>>>> v4;
-        auto v134 = v1 + v3 + v4;
-        static_assert(v134.size == 0);
-    }
-}
-
-TEST_CASE("term-multiplication")
-{
-    SUBCASE("generator-product")
-    {
-        monomial<one, generator<tag<1>, degree<1>>> f1;
-        monomial<one, generator<tag<2>, degree<1>>> f2;
-        static_assert(std::is_same<monomial<one, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>>, decltype(f1 * f2)>::value);
-
-        monomial<one, generator<tag<1>, degree<2>>> f3;
-        static_assert(std::is_same<monomial<one, generator<tag<1>, degree<3>>>, decltype(f1 * f3)>::value);
-    }
-
-    SUBCASE("monomial-product")
-    {
-        monomial<one, generator<tag<1>, degree<1>>> m1;
-        monomial<rational<2>, generator<tag<2>, degree<1>>> m2;
-        auto m12 = m1 * m2;
-        static_assert(
-            std::is_same<monomial<rational<2>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>>, decltype(m12)>::value);
-        // monomial multiplication commutes (order should be the same)
-        static_assert(
-            std::is_same<monomial<rational<2>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>>, decltype(m2 * m1)>::value);
-
-        monomial<rational<3>, generator<tag<1>, degree<2>>> m3;
-        auto m13 = m1 * m3;
-        static_assert(std::is_same<monomial<rational<3>, generator<tag<1>, degree<3>>>, decltype(m13)>::value);
-
-        monomial<one, generator<tag<1>, degree<2>>, generator<tag<3>, degree<1>>, generator<tag<5>, degree<3>>> m4;
-        auto m124 = m1 * m2 * m4;
-        static_assert(std::is_same<monomial<rational<2>, generator<tag<1>, degree<3>>, generator<tag<2>, degree<1>>,
-                                            generator<tag<3>, degree<1>>, generator<tag<5>, degree<3>>>,
-                                   decltype(m124)>::value);
-        static_assert(std::is_same<decltype(m1 * m4 * m2), decltype(m124)>::value);
-        static_assert(std::is_same<decltype(m2 * m1 * m4), decltype(m124)>::value);
-        static_assert(std::is_same<decltype(m4 * m1 * m2), decltype(m124)>::value);
-        static_assert(std::is_same<decltype(m4 * m2 * m1), decltype(m124)>::value);
-
-        monomial<rational<2>> m5;
-        auto m15 = m1 * m5;
-        static_assert(std::is_same<monomial<rational<2>, generator<tag<1>, degree<1>>>, decltype(m15)>::value);
-        monomial<one> m6;
-        auto m16 = m1 * m6;
-        static_assert(std::is_same<monomial<one, generator<tag<1>, degree<1>>>, decltype(m16)>::value);
+        mv<void, 1, 1, 1> m1{
+            mv_size{1, 1, 1},
+            {ind{0, 1}},
+            {mon{one, 1, 0}},
+            {term{1, 0, 0}}
+        };
+        mv<void, 1, 1, 1> m2{
+            mv_size{1, 1, 1},
+            {ind{0, -1}},
+            {mon{one, 1, 0}},
+            {term{1, 0, 0}}
+        };
+        auto m12 = product(sa{}, m1, m2);
+        CHECK_EQ(m12.size.term, 1);
+        CHECK_EQ(m12.size.mon, 1);
+        CHECK_EQ(m12.size.ind, 0);
+        CHECK_EQ(m12.mons[0].count, 0);
+        CHECK_EQ(m12.mons[0].degree, 0);
+        CHECK_EQ(m12.mons[0].q.num, 1);
+        CHECK_EQ(m12.mons[0].q.den, 1);
+        CHECK_EQ(m12.terms[0].count, 1);
+        CHECK_EQ(m12.terms[0].mon_offset, 0);
     }
 
-    SUBCASE("term-product")
+    SUBCASE("monomial-term-multiplication")
     {
-        // Single term product
-        term<element<1>, monomial<one, generator<tag<1>, degree<1>>>> t1;
-        term<element<1>, monomial<rational<2>, generator<tag<2>, degree<2>>>> t2;
-        auto t12 = t1 * t2;
-        static_assert(std::is_same<term<element<1>, monomial<rational<2>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<2>>>>, decltype(t12)>::value);
-
-        // One term into two
-        term<element<1>, monomial<rational<-2>, generator<tag<4>, degree<1>>>, monomial<one, generator<tag<1>, degree<1>>, generator<tag<3>, degree<2>>>> t3;
-        auto t13 = t1 * t3;
-        static_assert(
-            std::is_same<term<element<1>, monomial<rational<-2>, generator<tag<1>, degree<1>>, generator<tag<4>, degree<1>>>,
-                              monomial<one, generator<tag<1>, degree<2>>, generator<tag<3>, degree<2>>>>,
-                         decltype(t13)>::value);
-
-        // Binomial product
-        term<element<1>, monomial<rational<3>, generator<tag<2>, degree<2>>>, monomial<rational<2>, generator<tag<2>, degree<1>>, generator<tag<4>, degree<2>>>> t4;
-        auto t34 = t3 * t4;
-        static_assert(
-            std::is_same<term<element<1>, monomial<rational<-6>, generator<tag<2>, degree<2>>, generator<tag<4>, degree<1>>>,
-                              monomial<rational<-4>, generator<tag<2>, degree<1>>, generator<tag<4>, degree<3>>>,
-                              monomial<rational<3>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<2>>, generator<tag<3>, degree<2>>>,
-                              monomial<rational<2>, generator<tag<1>, degree<1>>, generator<tag<2>, degree<1>>,
-                                       generator<tag<3>, degree<2>>, generator<tag<4>, degree<2>>>>,
-                         decltype(t34)>::value);
-        static_assert(std::is_same<decltype(t4 * t3), decltype(t34)>::value);
-
-        // Term cancellation
-        term<element<2>, monomial<one, generator<tag<1>, degree<1>>>, monomial<one, generator<tag<2>, degree<1>>>> t5;
-        term<element<2>, monomial<one, generator<tag<1>, degree<1>>>, monomial<rational<-1>, generator<tag<2>, degree<1>>>> t6;
-        auto t56 = t5 * t6;
-        static_assert(
-            std::is_same<term<element<2>, monomial<one, generator<tag<1>, degree<2>>>, monomial<rational<-1>, generator<tag<2>, degree<2>>>>,
-                         decltype(t56)>::value);
-        static_assert(std::is_same<decltype(t6 * t5), decltype(t56)>::value);
-
-        // Permutation test
-        static_assert(std::is_same<decltype(t1 * t2 * t3 * t4), decltype(t4 * t3 * t2 * t1)>::value);
-        static_assert(std::is_same<decltype(t1 * t3 * t2 * t4), decltype(t4 * t2 * t3 * t1)>::value);
-        static_assert(std::is_same<decltype(t3 * t3 * t4), decltype(t4 * t3 * t3)>::value);
-        static_assert(std::is_same<decltype(t3 * t3 * t4), decltype(t3 * t4 * t3)>::value);
+        mv<void, 1, 1, 1> m1{
+            mv_size{1, 1, 1},
+            {ind{1, 1}},
+            {mon{one, 1, 0}},
+            {term{1, 0, 0}}
+        };
+        mv<void, 1, 1, 1> m2{
+            mv_size{1, 1, 1},
+            {ind{1, 2}},
+            {mon{one, 1, 0}},
+            {term{1, 0, 0}}
+        };
+        auto m12 = product(sa{}, m1, m2);
+        CHECK_EQ(m12.size.term, 1);
+        CHECK_EQ(m12.size.mon, 1);
+        CHECK_EQ(m12.size.ind, 1);
+        CHECK_EQ(m12.inds[0].id, 1);
+        CHECK_EQ(m12.inds[0].degree, 3);
+        CHECK_EQ(m12.mons[0].count, 1);
+        CHECK_EQ(m12.mons[0].degree, 3);
+        CHECK_EQ(m12.mons[0].q.num, 1);
+        CHECK_EQ(m12.mons[0].q.den, 1);
+        CHECK_EQ(m12.terms[0].count, 1);
+        CHECK_EQ(m12.terms[0].mon_offset, 0);
     }
 }
 

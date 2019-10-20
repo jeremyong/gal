@@ -1,6 +1,7 @@
 #pragma once
 
-#include "ga.hpp"
+#include "entity.hpp"
+#include "geometric_algebra.hpp"
 
 namespace gal
 {
@@ -9,198 +10,148 @@ namespace cga2
     // The "Compass Ruler Algebra"
 
     // The metric is defined here as the standard Minkowski spacetime. To extract the conformal representations,
-    // a change of basis is required where o = 1/2 * (e2 + e3) and inf = e3 - e2.
-    // The element e3 here is the added unit norm basis element and the elements e0 and e2 correspond to
-    // the canonical Euclidean R3 basis representation.
-    struct cga_metric
+    // a change of basis is required where o = 1/2 * (e + e-) and inf = e- - e.
+    // The element e0 here is the added unit norm basis element and the elements e1 and e2 correspond to
+    // the canonical Euclidean R2 basis representation.
+    using cra_metric = gal::metric<3, 1, 0>;
+
+    // The CRA is a graded algebra with 16 basis elements
+    using cra_algebra = gal::algebra<cra_metric>;
+
+    // 0b1 => e+ extension
+    // 0b1000 => e- extension
+    namespace detail
     {
-        using base_metric                 = metric<3, 1, 0>;
-        constexpr static bool is_diagonal = false;
-        constexpr static size_t p         = 3;
-        constexpr static size_t v         = 1;
-        constexpr static size_t r         = 0;
-        constexpr static size_t dimension = p + v + r;
+        // These tags are needed to provide unique specializations for the expressions for e_o and e_inf
+        template <typename T>
+        struct e_o_tag
+        {};
 
-        [[nodiscard]] constexpr static bool multi_term_gp(size_t lhs, size_t rhs) noexcept
-        {
-            bool lhs_off_diag = lhs & 0b1100;
-            bool rhs_off_diag = rhs & 0b1100;
-            return lhs_off_diag && rhs_off_diag;
-        }
+        template <typename T>
+        struct e_inf_tag
+        {};
+    } // namespace detail
+} // namespace cga2
 
-        template <typename E, typename... M>
-        [[nodiscard]] constexpr static auto diagonalize(term<E, M...>) noexcept
-        {
-            if constexpr ((E::value & 0b1100) > 0)
-            {
-                if constexpr (((E::value & 0b1000) > 0) && ((E::value & 0b100) > 0))
-                {
-                    // e_o ^ e_inf = -1 + e_3 ^ e_4
-                    return multivector<void, term<element<E::value & 0b11>, monomial<minus_one>>, term<E, M...>>{};
-                }
-                else if constexpr ((E::value & 0b1000) > 0)
-                {
-                    // e_inf = e_4 - e_3
-                    constexpr size_t e = E::value ^ 0b1100;
-                    return multivector<void, decltype(minus_one{} * term<element<e>, M...>{}), term<E, M...>>{};
-                }
-                else
-                {
-                    // e_0 = 1/2 * (e_3 + e_4)
-                    constexpr size_t e = E::value ^ 0b1100;
-                    return multivector<void,
-                                       decltype(one_half{} * term<E, M...>{}),
-                                       decltype(one_half{} * term<element<e>, M...>{})>{};
-                }
-            }
-            else
-            {
-                return multivector<void, term<E, M...>>{};
-            }
-        }
 
-        template <typename... T>
-        [[nodiscard]] constexpr static auto undiagonalize(multivector<void, T...>) noexcept
-        {
-            if constexpr (sizeof...(T) == 0)
-            {
-                return multivector<void>{};
-            }
-            else
-            {
-                return (undiagonalize(T{}) + ...);
-            }
-        }
+template <typename T>
+struct expr<expr_op::identity, mv<cga2::cra_algebra, 0, 2, 2>, cga2::detail::e_o_tag<T>>
+{
+    using value_t               = T;
+    using algebra_t             = cga2::cra_algebra;
+    constexpr static expr_op op = expr_op::identity;
+    constexpr static mv<cra_algebra, 0, 2, 2> lhs{mv_size{0, 2, 2},
+                                                  {},
+                                                  {mon{one_half, 0, 0}, mon{one_half, 0, 0}},
+                                                  {term{1, 0, 0b1}, term{1, 1, 0b1000}}};
+};
 
-        template <typename E, typename... M>
-        [[nodiscard]] constexpr static auto undiagonalize(term<E, M...>) noexcept
-        {
-            if constexpr ((E::value & 0b1100) > 0)
-            {
-                if constexpr (((E::value & 0b1000) > 0) && ((E::value & 0b100) > 0))
-                {
-                    // e_3 ^ e_4 = e_o ^ e_inf
-                    return multivector<void, term<E, M...>>{};
-                }
-                else if constexpr (E::value & 0b1000 > 0)
-                {
-                    // e_4 = e_o + 1/2 * e_inf
-                    constexpr size_t e = E::value ^ 0b1100;
-                    return multivector<void, term<element<e>, M...>, decltype(one_half{} * term<E, M...>{})>{};
-                }
-                else
-                {
-                    // e_3 = e_o - 1/2 * e_inf
-                    constexpr size_t e = E::value ^ 0b1100;
-                    return multivector<void, term<E, M...>, decltype(minus_one_half{} * term<element<e>, M...>{})>{};
-                }
-            }
-            else
-            {
-                return multivector<void, term<E, M...>>{};
-            }
-        }
+template <typename T>
+struct expr<expr_op::identity, mv<cga2::cra_algebra, 0, 2, 2>, cga2::detail::e_inf_tag<T>>
+{
+    using value_t               = T;
+    using algebra_t             = cga2::cra_algebra;
+    constexpr static expr_op op = expr_op::identity;
+    constexpr static mv<cra_algebra, 0, 2, 2> lhs{mv_size{0, 2, 2},
+                                                  {},
+                                                  {mon{minus_one, 0, 0}, mon{one, 0, 0}},
+                                                  {term{1, 0, 0b1}, term{1, 1, 0b1000}}};
+};
 
-        [[nodiscard]] constexpr static std::pair<int, int> intercept(size_t e, size_t blade) noexcept
-        {
-            // This is the implementation for a diagonal Cayley table
-            if (e == 2)
-            {
-                if (blade & (1 << 3))
-                {
-                    return {3, -1};
-                }
-                else
-                {
-                    return {-1, 0};
-                }
-            }
-            else if (e == 3)
-            {
-                if (blade & (1 << 2))
-                {
-                    return {2, -1};
-                }
-                else
-                {
-                    return {-1, 0};
-                }
-            }
-            else if (blade & (1 << e))
-            {
-                return {e, 1};
-            }
-            else
-            {
-                return {-1, 0};
-            }
-        }
-    };
-
-    // The CGA is a graded algebra with 32 basis elements
-    using cga_algebra = ga::algebra<cga_metric>;
-
-    inline multivector<void, term<element<0>, monomial<one>>> e;
-    inline multivector<void, term<element<0b1>, monomial<one>>> e_x;
-    inline multivector<void, term<element<0b10>, monomial<one>>> e_y;
-    inline multivector<void, term<element<0b100>, monomial<one>>> e_o;
-    inline multivector<void, term<element<0b1000>, monomial<one>>> e_inf;
-
-    GAL_OPERATORS(algebra);
-
-    template <int X, int Y>
-    using point_t = multivector<void,
-                                term<element<0b1>, monomial<rational<X>>>,
-                                term<element<0b10>, monomial<rational<Y>>>,
-                                term<element<0b100>, monomial<one>>,
-                                term<element<0b1000>, monomial<rational<X * X + Y * Y, 2>>>>;
+namespace cga2
+{
+    template <typename T = float>
+    constexpr inline expr<expr_op::identity, mv<cra_algebra, 0, 2, 2>, detail::e_o_tag<T>> e_o;
 
     template <typename T = float>
-    struct point : public entity<T, point<T>, 0b1, 0b10>
+    constexpr inline expr<expr_op::identity, mv<cra_algebra, 0, 2, 2>, detail::e_inf_tag<T>> e_inf;
+
+    template <typename T = float>
+    union point
     {
-        template <size_t ID>
-        using type = multivector<void,
-                                 term<element<0b1>, monomial<one, generator<tag<ID, 0>>>>,
-                                 term<element<0b10>, monomial<one, generator<tag<ID, 1>>>>,
-                                 term<element<0b100>, monomial<one>>,
-                                 term<element<0b1000>,
-                                      monomial<one_half, generator<tag<ID, 0>, degree<2>>>,
-                                      monomial<one_half, generator<tag<ID, 1>, degree<2>>>>>;
+        using algebra_t = cga_algebra;
+        using value_t   = T;
+
+        std::array<T, 2> data;
+        struct
+        {
+            union
+            {
+                T x;
+                T u;
+            };
+
+            union
+            {
+                T y;
+                T v;
+            };
+        };
+
+        constexpr point(T a, T b) noexcept
+            : x{a}
+            , y{b}
+        {}
+
+        template <uint8_t... E>
+        constexpr point(entity<algebra_t, T, E...> in) noexcept
+            : data{in.template select<0b10, 0b100>()}
+        {}
+
+        [[nodiscard]] constexpr static mv<algebra_t, 4, 6, 4> ie(uint32_t id) noexcept
+        {
+            return {mv_size{4, 6, 4},
+                    {
+                        ind{3, 1}, // ind3 = p^2
+                        ind{0, 1}, // ind0 = p_x
+                        ind{1, 1}, // ind1 = p_y
+                        ind{3, 1}  // ind3 = p^2
+                    },
+                    {
+                        mon{one_half, 0, 0, 0},       // 1/2
+                        mon{minus_one_half, 1, 0, 1}, // -1/2 p^2
+                        mon{one, 1, 1, 1},            // p_x
+                        mon{one, 1, 2, 1},            // p_y
+                        mon{one_half, 0, 0, 0},       // 1/2
+                        mon{one_half, 1, 3, 1}        // 1/2 p^2
+                    },
+                    {
+                        term{2, 0, 0b1},   // (1/2 - 1/2 p^2) e
+                        term{1, 2, 0b10},  // p_x
+                        term{1, 3, 0b100}, // p_y
+                        term{2, 4, 0b1000} // (1/2 + 1/2 p^2) e-
+                    }};
+        }
 
         [[nodiscard]] constexpr static size_t size() noexcept
         {
             return 2;
         }
 
-        point(T x, T y)
-            : x{x}
-            , y{y}
-        {}
-
-        // WARNING: This implicit conversion from an entity does not check if the weight is 0
-        template <typename T1, size_t... E>
-        point(entity<T1, void, E...> const& other)
+        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
         {
-            auto weight_inv = T{1} / static_cast<T>(other.template get_by_element<0b100>);
-            x               = static_cast<T>(other.template get_by_element<0b1>()) * weight_inv;
-            y               = static_cast<T>(other.template get_by_element<0b10>()) * weight_inv;
+            return 3;
         }
 
-        union
+        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
         {
-            T x;
-            T u;
-            T s;
-        };
+            return data[index];
+        }
 
-        union
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
         {
-            T y;
-            T v;
-            T t;
-        };
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T get(size_t i) const noexcept
+        {
+            if (i == 3)
+            {
+                return x * x + y * y;
+            }
+            return {};
+        }
     };
-
     // TODO: provide representations for planes, spheres, flats, etc.
 } // namespace cga2
 } // namespace gal

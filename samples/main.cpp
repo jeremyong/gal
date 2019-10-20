@@ -1,8 +1,11 @@
-#include <gal/formatters.hpp>
+#include <gal/ega.hpp>
+#include <gal/engine.hpp>
+
+using namespace gal::ega;
+using gal::compute;
 
 int main(int argc, char** argv)
 {
-    fmt::print("IMPLEMENT ME\n");
-
+    // TODO
     return 0;
 }

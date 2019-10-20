@@ -1,7 +1,7 @@
 #pragma once
 
-#include "finite_algebra.hpp"
-#include "ga.hpp"
+#include "entity.hpp"
+#include "geometric_algebra.hpp"
 
 #include <cmath>
 
@@ -9,182 +9,244 @@
 
 namespace gal
 {
-namespace pga2
+namespace pga
 {
     // NOTE: the inner product of e0 can be set to +1 or -1 without any change in the algebra's geometric
     // interpretation. Here, we opt to define e0^2 := 1 by convention
-    using metric = gal::metric<2, 0, 1>;
+    using pga_metric = ::gal::metric<2, 0, 1>;
 
-    using algebra = ga::algebra<metric>;
+    // PGA2 is a graded algebra with 8 basis elements
+    using pga_algebra = gal::algebra<pga_metric>;
 
-    GAL_OPERATORS(algebra);
-
-    inline multivector<void, term<element<0>, monomial<one>>> e;
-    inline multivector<void, term<element<0b1>, monomial<one>>> e0;
-    inline multivector<void, term<element<0b10>, monomial<one>>> e1;
-    inline multivector<void, term<element<0b100>, monomial<one>>> e2;
-    inline multivector<void, term<element<0b11>, monomial<one>>> e01;
-    inline multivector<void, term<element<0b101>, monomial<one>>> e02;
-    inline multivector<void, term<element<0b110>, monomial<one>>> e12;
-    inline multivector<void, term<element<0b111>, monomial<one>>> e012;
-
-    // Point at (x, y)
-    template <int X, int Y>
-    using point_t = multivector<void,
-                                term<element<0b11>, monomial<rational<Y>>>,
-                                term<element<0b101>, monomial<rational<-X>>>,
-                                term<element<0b110>, monomial<one>>>;
+    constexpr inline auto e    = gal::e<pga_algebra, 0>;
+    constexpr inline auto e0   = gal::e<pga_algebra, 0b1>;
+    constexpr inline auto e1   = gal::e<pga_algebra, 0b10>;
+    constexpr inline auto e2   = gal::e<pga_algebra, 0b100>;
+    constexpr inline auto e01  = gal::e<pga_algebra, 0b11>;
+    constexpr inline auto e02  = gal::e<pga_algebra, 0b101>;
+    constexpr inline auto e12  = gal::e<pga_algebra, 0b110>;
+    constexpr inline auto e012 = gal::e<pga_algebra, 0b111>;
 
     template <typename T = float>
-    struct point : public entity<T, point<T>, 0b11, 0b101, 0b110>
+    union line
     {
-        using value_t = T;
+        using algebra_t               = pga_algebra;
+        using value_t                 = T;
+        constexpr static bool is_dual = true;
 
-        template <size_t ID>
-        using type = multivector<void,
-                                 term<element<0b11>, monomial<one, generator<tag<ID, 1>>>>,        // y
-                                 term<element<0b101>, monomial<minus_one, generator<tag<ID, 0>>>>, // -x
-                                 term<element<0b110>, monomial<one>>>;
-
-        [[nodiscard]] constexpr static size_t size() noexcept
+        std::array<T, 3> data;
+        // Line coordinates in PGA2 satisfy the equation 0 = ax + by + c = 0
+        struct
         {
-            return 2;
-        }
-
-        point(T x, T y)
-            : x{x}
-            , y{y}
-        {}
-
-        // WARNING: This implicit conversion from an entity does not check if the weight is 0
-        template <typename T1, size_t... E>
-        point(entity<T1, void, E...> const& other)
-        {
-            auto c_inv = T{1} / static_cast<T>(other.template get_by_element<0b110>);
-            x          = -static_cast<T>(other.template get_by_element<0b101>()) * c_inv;
-            y          = static_cast<T>(other.template get_by_element<0b11>()) * c_inv;
-        }
-
-        union
-        {
+            T d;
             T x;
-            T u;
-            T s;
-        };
-
-        union
-        {
             T y;
-            T v;
-            T t;
         };
-    };
 
-    // Line with equation ax + by + c = 0
-    template <int A, int B, int C>
-    using line_t = multivector<void,
-                               term<element<0b1>, monomial<rational<C>>>,
-                               term<element<0b10>, monomial<rational<A>>>,
-                               term<element<0b100>, monomial<rational<B>>>>;
-
-    template <typename T = float>
-    struct line : public entity<T, line<T>, 0b1, 0b10, 0b100>
-    {
-        using value_t = T;
-
-        template <size_t ID>
-        using type = multivector<void,
-                                 term<element<0b1>, monomial<one, generator<tag<ID, 2>>>>,
-                                 term<element<0b10>, monomial<one, generator<tag<ID, 0>>>>,
-                                 term<element<0b100>, monomial<one, generator<tag<ID, 1>>>>>;
+        [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
+        {
+            return detail::construct_ie<algebra_t>(
+                id, std::make_integer_sequence<width_t, 4>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100>{});
+        }
 
         [[nodiscard]] constexpr static size_t size() noexcept
         {
             return 3;
         }
 
-        line(T a, T b, T c)
-            : a{a}
-            , b{b}
-            , c{c}
-        {}
-
-        template <typename T1, size_t... E>
-        line(entity<T1, void, E...> const& other)
+        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
         {
-            a = static_cast<T>(other.template get_by_element<0b10>());
-            b = static_cast<T>(other.template get_by_element<0b100>());
-            c = static_cast<T>(other.template get_by_element<0b1>());
+            return 3;
         }
 
-        T a;
-        T b;
-        T c;
+        constexpr line(T d, T x, T y) noexcept
+            : d{a}
+            , x{b}
+            , y{c}
+        {}
+
+        template <uint8_t... E>
+        constexpr line(entity<pga_algebra, T, E...> in) noexcept
+            : data{in.template select<0b1, 0b10, 0b100>()}
+        {}
+
+        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T get(size_t i) const noexcept
+        {
+            // Unused
+            return NAN;
+        }
     };
 
-    // Direction pointing toward (x, y) aka an ideal point
-    template <int X, int Y>
-    using direction_t
-        = multivector<void, term<element<0b11>, monomial<rational<Y>>>, term<element<0b101>, monomial<rational<-X>>>>;
-
-    template <typename T>
-    struct alignas(16) direction : public entity<T, direction<T>, 0b11, 0b101>
+    template <typename T = float>
+    union point
     {
-        template <size_t ID>
-        using type = multivector<void,
-                                 term<element<0b11>, monomial<minus_one, generator<tag<ID, 1>>>>, // y
-                                 term<element<0b101>, monomial<one, generator<tag<ID, 0>>>>>;     // -x
+        using algebra_t               = pga_algebra;
+        using value_t                 = T;
+        constexpr static bool is_dual = true;
+
+        std::array<T, 2> data;
+        struct
+        {
+            union
+            {
+                T x;
+                T u;
+                T s;
+            };
+
+            union
+            {
+                T y;
+                T v;
+                T t;
+            };
+        };
+
+        // Like planes, points are represented dually as the intersection of three planes
+        [[nodiscard]] constexpr static mv<algebra_t, 2, 3, 3> ie(uint32_t id) noexcept
+        {
+            return {mv_size{2, 3, 3},
+                    {
+                        ind{id + 1, 1}, // y
+                        ind{id, 1}      // -x
+                    },
+                    {mon{one, 1, 0, 1},       // y
+                     mon{minus_one, 1, 1, 1}, // -x
+                     mon{one, 0, 0, 0}},      // point at origin
+                    {
+                        term{1, 0, 0b11},  // y * e01
+                        term{1, 1, 0b101}, // -x * e02
+                        term{1, 2, 0b110}  // e12
+                    }};
+        }
 
         [[nodiscard]] constexpr static size_t size() noexcept
         {
             return 2;
         }
 
-        direction(T x, T y)
+        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
+        {
+            return 2;
+        }
+
+        constexpr point(T x, T y) noexcept
             : x{x}
             , y{y}
         {}
 
-        template <typename T1, size_t... E>
-        direction(entity<T1, void, E...> const& other)
+        template <uint8_t... E>
+        constexpr point(entity<pga_algebra, T, E...> in) noexcept
         {
-            x = -static_cast<T>(other.template get_by_element<0b101>());
-            y = static_cast<T>(other.template get_by_element<0b11>());
+            auto input = in.template select<0b11, 0b101, 0b110>();
+            auto w_inv = T{1} / input[2];
+            x          = -input[1] * c_inv;
+            y          = input[0] * c_inv;
         }
 
-        T x;
-        T y;
+        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T get(size_t i) const noexcept
+        {
+            // Unused
+            return NAN;
+        }
     };
 
-    // TODO add rotor and translator
-
-    // Additional helper functions for plane geometry and result verification
-    template <typename... T>
-    [[nodiscard]] constexpr auto line_slope(multivector<void, T...> line) noexcept
+    template <typename T = float>
+    union vector
     {
-        constexpr auto x = extract<0b10>(line);
-        constexpr auto y = extract<0b100>(line);
-        // For now this only works on compile time multivectors over a finite field
-        static_assert(decltype(x)::size == 1);
-        static_assert(decltype(y)::size == 1);
-        return -typename decltype(x)::first_t::rational_t{} / typename decltype(y)::first_t::rational_t{};
-    }
+        using algebra_t               = pga_algebra;
+        using value_t                 = T;
+        constexpr static bool is_dual = true;
 
-    template <typename... T>
-    [[nodiscard]] constexpr auto cartesian_point(multivector<void, T...> point) noexcept
-    {
-        constexpr auto x    = -extract<0b101>(point);
-        constexpr auto y    = extract<0b11>(point);
-        constexpr auto sign = extract<0b110>(point);
+        std::array<T, 3> data;
+        struct
+        {
+            T x;
+            T y;
+            T z;
+        };
 
-        // For now this only works on compile time multivectors over a finite field
-        static_assert(decltype(x)::size == 1);
-        static_assert(decltype(y)::size == 1);
-        static_assert(decltype(sign)::size == 1);
+        // Like planes, points are represented dually as the intersection of three planes
+        [[nodiscard]] constexpr static mv<algebra_t, 3, 3, 3> ie(uint32_t id) noexcept
+        {
+            return {mv_size{3, 4, 4},
+                    {
+                        ind{id + 2, 1}, // -z
+                        ind{id + 1, 1}, // y
+                        ind{id, 1}      // -x
+                    },
+                    {
+                        mon{minus_one, 1, 0, 1}, // -z
+                        mon{one, 1, 1, 1},       // y
+                        mon{minus_one, 1, 2, 1}  // -x
+                    },
+                    {
+                        term{1, 0, 0b111},  // -z * e012
+                        term{1, 1, 0b1011}, // y * e013
+                        term{1, 2, 0b1101}  // x * e023
+                    }};
+        }
 
-        return std::make_pair(
-            typename decltype(x)::first_t::rational_t{} / typename decltype(sign)::first_t::rational_t{},
-            typename decltype(y)::first_t::rational_t{} / typename decltype(sign)::first_t::rational_t{});
-    }
-} // namespace pga2
+        [[nodiscard]] constexpr static size_t size() noexcept
+        {
+            return 3;
+        }
+
+        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
+        {
+            return 3;
+        }
+
+        constexpr vector(T x, T y, T z) noexcept
+            : x{x}
+            , y{y}
+            , z{z}
+        {}
+
+        template <uint8_t... E>
+        constexpr vector(entity<pga_algebra, T, E...> in) noexcept
+        {
+            auto input = in.template select<0b111, 0b1011, 0b1101>();
+            z          = -input[0];
+            y          = input[1];
+            x          = -input[2];
+        }
+
+        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T get(size_t i) const noexcept
+        {
+            // Unused
+            return NAN;
+        }
+    };
+} // namespace pga
 } // namespace gal

@@ -1,6 +1,0 @@
-[requires]
-doctest/2.3.4@bincrafters/stable
-fmt/6.0.0
-
-[generators]
-cmake

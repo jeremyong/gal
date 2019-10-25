@@ -812,10 +812,9 @@ namespace detail
         return in;
     }
 
-    template <typename A>
-    [[nodiscard]] std::pair<uint32_t, int> poincare_complement(uint32_t element)
+    [[nodiscard]] constexpr std::pair<uint32_t, int> poincare_complement(uint8_t element, uint8_t dim) noexcept
     {
-        uint32_t complement = ((1 << A::metric_t::dimension) - 1) ^ element;
+        uint32_t complement = ((1 << dim) - 1) ^ element;
 
         uint32_t swaps = 0;
         uint32_t grade = pop_count(element);
@@ -833,41 +832,6 @@ namespace detail
         }
 
         return {complement, swaps % 2 == 0 ? 1 : -1};
-    }
-
-    template <typename T>
-    [[nodiscard]] constexpr auto poincare_dual(T const& in) noexcept
-    {
-        // Because the dual is not order preserving, we write the contents to a new multivector
-        T out{};
-        out.size = in.size;
-
-        // Under the poincare dual map, the order of the terms will reverse
-        auto out_term_it = out.terms.rbegin() + (in.term_capacity() - in.size.term);
-        auto out_mon_it  = out.mons.begin();
-        auto out_ind_it  = out.inds.begin();
-
-        for (auto it = in.cbegin(); it != in.cend(); ++it)
-        {
-            if (it->element == 0)
-            {
-                *out_term_it++ = *it;
-            }
-            else
-            {
-                auto [g, parity] = poincare_complement(it->element);
-                *out_term_it     = term{it->count, out_mon_it - out.mons.begin(), g};
-                for (auto mon_it = it.cbegin(); mon_it != it.cend(); ++mon_it)
-                {
-                    *out_mon_it++ = mon{parity * mon_it->q, mon_it->count, out_ind_it - out.inds.begin(), mon_it->degree};
-                    for (auto const& ind : mon_it)
-                    {
-                        *out_ind_it++ = ind;
-                    }
-                }
-            }
-        }
-        return out;
     }
 
     [[nodiscard]] constexpr auto collate(term* const start,
@@ -964,6 +928,56 @@ namespace detail
                            static_cast<width_t>(out_mons_it - out_mons_begin),
                            static_cast<width_t>(out_terms_it - out_terms_begin)};
     }
+
+    template <typename T>
+    [[nodiscard]] constexpr auto poincare_dual(T const& in) noexcept
+    {
+        // Because the dual is not order preserving, we write the contents to a new multivector
+        T out{};
+        out.size = in.size;
+
+        // Under the poincare dual map, the order of the terms will reverse
+        auto out_term_it = out.terms.begin();
+        auto out_mon_it  = out.mons.begin();
+        auto out_ind_it  = out.inds.begin();
+
+        for (auto it = in.cbegin(); it != in.cend(); ++it)
+        {
+            auto [g, parity] = poincare_complement(it->element, T::algebra_t::metric_t::dimension);
+            *out_term_it++   = term{it->count, static_cast<width_t>(out_mon_it - out.mons.begin()), g};
+            for (auto mon_it = it.cbegin(); mon_it != it.cend(); ++mon_it)
+            {
+                *out_mon_it++ = mon{parity * mon_it->q,
+                                    mon_it->count,
+                                    static_cast<width_t>(out_ind_it - out.inds.begin()),
+                                    mon_it->degree};
+                for (auto ind_it = mon_it.cbegin(); ind_it != mon_it.cend(); ++ind_it)
+                {
+                    *out_ind_it++ = *ind_it;
+                }
+            }
+        }
+
+        std::array<mon_view, T::mon_capacity()> mon_views;
+        for (width_t i = 0; i != out.size.mon; ++i)
+        {
+            mon_views[i] = mon_view{out.mons[i], out.inds.begin()};
+        }
+
+        sort(out.terms.begin(), out.terms.begin() + out.size.term);
+
+        T collated{};
+        collate(out.terms.begin(),
+                out.terms.begin() + out.size.term,
+                mon_views.begin(),
+                out.inds.begin(),
+                collated.terms.begin(),
+                collated.mons.begin(),
+                collated.inds.begin(),
+                collated.size);
+        return collated;
+    }
+
 
     // Given a specified product operation, compute the product between the lhs and the rhs.
     // If the size is not yet initialized, compute the size that would result from the multiplication.

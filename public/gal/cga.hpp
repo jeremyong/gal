@@ -11,7 +11,10 @@ namespace cga
 {
     // The metric is defined here as the standard Minkowski spacetime. To extract the conformal representations,
     // a change of basis is required where o = 1/2 * (e + e-) and inf = e- - e.
-
+    //
+    // Internally, the change of basis will occur from the null basis to the natural basis before and after expression
+    // evaluation. The elements are ordered such that no and ni (null-basis-origin and null-basis-infinity) come at the
+    // end such that the parity of all terms of all blades is unchanged after the change of basis.
     using cga_metric = gal::metric<4, 1, 0>;
 
     // The CGA is a graded algebra with 32 basis elements
@@ -21,7 +24,7 @@ namespace cga
     // 0b10000 => e- extension
     namespace detail
     {
-        // These tags are needed to provide unique specializations for the expressions for e_o and e_inf
+        // These tags are needed to provide unique specializations for the expressions for n_o and n_i
         template <typename T>
         struct n_o_tag
         {};
@@ -144,8 +147,8 @@ namespace cga
                         ind{id + 1, 1}, // ind1 = p_y
                         ind{id + 2, 1}, // ind2 = p_z
                         ind{id, 2},     // ind3 = p_x^2
-                        ind{id + 1, 2}, // ind3 = p_y^2
-                        ind{id + 2, 2}, // ind3 = p_z^2
+                        ind{id + 1, 2}, // ind4 = p_y^2
+                        ind{id + 2, 2}, // ind5 = p_z^2
                     },
                     {
                         mon{one, 1, 0, 1},      // p_x

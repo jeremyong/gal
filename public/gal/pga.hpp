@@ -368,9 +368,8 @@ namespace pga
             T z;
         };
 
-        constexpr rotor(T theta, T x, T y, T z) noexcept
-            : cos_theta{std::cos(T{0.5} * theta)}
-            , sin_theta{std::sin(T{0.5} * theta)}
+        constexpr translator(T d, T x, T y, T z) noexcept
+            : d{d}
             , x{x}
             , y{y}
             , z{z}

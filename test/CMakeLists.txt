@@ -15,7 +15,8 @@ add_executable(gal_test
     test_algorithm.cpp
     test_cga.cpp
     test_ega.cpp
-    test_ik.cpp)
+    test_pga.cpp)
+    #test_ik.cpp)
 
 target_link_libraries(gal_test PRIVATE gal doctest)
 target_compile_definitions(gal_test PRIVATE
@@ -25,7 +26,13 @@ target_compile_definitions(gal_test PRIVATE
     DOCTEST_CONFIG_INCLUDE_TYPE_TRAITS # enable doctest::Approx() to take any argument explicitly convertible to a double
     )
 # Uncomment for profiling with clang
-# target_compile_options(gal_test PRIVATE -ftime-report -ftime-report-details -Q)
+if (GAL_PROFILE_COMPILATION_ENABLED)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(gal_test PRIVATE -ftime-trace)
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(gal_test PRIVATE -ftime-report -ftime-report-details -Q)
+    endif()
+endif()
 
 include(doctest)
 

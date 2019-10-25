@@ -327,8 +327,10 @@ template <typename exp_t>
         else if constexpr (exp_t::op == expr_op::regressive)
         {
             // TODO: check if both lhs and rhs are dual
-            constexpr auto out = detail::product(typename decltype(lhs)::algebra_t::exterior{}, lhs, rhs);
-            return out.template shrink<out.size.ind, out.size.mon, out.size.term>();
+            constexpr auto lhs_dual = detail::poincare_dual(lhs);
+            constexpr auto rhs_dual = detail::poincare_dual(rhs);
+            constexpr auto out = detail::product(typename decltype(lhs)::algebra_t::exterior{}, lhs_dual, rhs_dual);
+            return detail::poincare_dual(out.template shrink<out.size.ind, out.size.mon, out.size.term>());
         }
         else if constexpr (exp_t::op == expr_op::contract)
         {

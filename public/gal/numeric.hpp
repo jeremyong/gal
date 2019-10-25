@@ -7,6 +7,36 @@
 
 namespace gal
 {
+// right-to-left binary exponentiation
+template <typename T, int exponent>
+[[nodiscard]] constexpr T pow(T s, std::integral_constant<int, exponent>) noexcept
+{
+    if constexpr (exponent < 0)
+    {
+        return T{1} / pow(s, std::integral_constant<int, -exponent>{});
+    }
+    else if constexpr (exponent == 1)
+    {
+        return s;
+    }
+    else 
+    {
+        int e = exponent;
+        T temp1{1};
+        T temp2{s};
+        while (e > 1)
+        {
+            if ((e & 1) == 1)
+            {
+                temp1 *= temp2;
+            }
+            temp2 *= temp2;
+            e = e >> 1;
+        }
+        return temp1 * temp2;
+    }
+}
+
 template <typename T>
 [[nodiscard]] constexpr T next_pow_2(T s) noexcept
 {

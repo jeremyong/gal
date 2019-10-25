@@ -76,51 +76,6 @@ namespace detail
             children{};
     };
 
-    template <typename T, int D>
-    [[nodiscard]] T maybe_exponentiate(T const& v, std::integral_constant<int, D>) noexcept
-    {
-        if constexpr (D == 0)
-        {
-            return {1};
-        }
-        else if constexpr (D == 1)
-        {
-            return v;
-        }
-        else if constexpr (D == -1)
-        {
-            return T{1} / v;
-        }
-        else if constexpr (D == 2)
-        {
-            return v * v;
-        }
-        else if constexpr (D == 3)
-        {
-            return v * v * v;
-        }
-        else if constexpr (D == 4)
-        {
-            auto v2 = v * v;
-            return v2 * v2;
-        }
-        else if constexpr (D == 5)
-        {
-            auto v2 = v * v;
-            return v2 * v2 * v;
-        }
-        else if constexpr (D == 6)
-        {
-            auto v2 = v * v;
-            return v2 * v2 * v2;
-        }
-        else
-        {
-            // TODO: use compile time recursion to unroll this (possibly using SX method)
-            return std::pow(v, D);
-        }
-    }
-
     // Data := flattened array of inputs
     template <auto const& ie, typename F, typename A, typename Data, size_t... I>
     [[nodiscard]] static auto compute_entity(Data const& data, std::index_sequence<I...>) noexcept
@@ -147,7 +102,7 @@ namespace detail
                                              }
                                              else
                                              {
-                                                 return (maybe_exponentiate(*data[i.first], i.second) * ...);
+                                                 return (::gal::pow(*data[i.first], i.second) * ...);
                                              }
                                          },
                                          m.inds))

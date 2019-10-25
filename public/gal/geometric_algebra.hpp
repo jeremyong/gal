@@ -27,9 +27,9 @@ namespace gal
 template <size_t P, size_t V, size_t R>
 struct metric
 {
-    constexpr static size_t p         = P;
-    constexpr static size_t v         = V;
-    constexpr static size_t r         = R;
+    constexpr static size_t p = P;
+    constexpr static size_t v = V;
+    constexpr static size_t r = R;
 
     // The dimension of the metric corresponds to the total number of basis elements represented.
     // Note that the metric can induce a larger dimension in an algebra if the multivector space
@@ -93,7 +93,7 @@ struct algebra
 
     struct geometric
     {
-        [[nodiscard]] constexpr static std::pair<uint, int> product(uint g1, uint g2) noexcept
+        [[nodiscard]] constexpr static std::pair<uint8_t, int> product(uint8_t g1, uint8_t g2) noexcept
         {
             if (g1 == 0)
             {
@@ -105,14 +105,14 @@ struct algebra
             }
             else
             {
-                uint g     = g1 ^ g2;
-                uint swaps = 0;
+                uint8_t g     = g1 ^ g2;
+                uint8_t swaps = 0;
 
                 // The geometric product contracts incident generators based on the metric signature and produces
                 // higher-grade tensor products for non-incident generators.
                 while (g1 > 0)
                 {
-                    auto lhs_g = leading_set_index(g1);
+                    auto lhs_g        = leading_set_index(g1);
                     auto [index, dot] = metric_t::intercept(lhs_g, g2);
                     if (index == -1)
                     {
@@ -144,7 +144,7 @@ struct algebra
 
     struct exterior
     {
-        [[nodiscard]] constexpr static std::pair<uint, int> product(uint g1, uint g2) noexcept
+        [[nodiscard]] constexpr static std::pair<uint8_t, int> product(uint8_t g1, uint8_t g2) noexcept
         {
             if (g1 == 0)
             {
@@ -156,15 +156,15 @@ struct algebra
             }
             else
             {
-                uint intersection = g1 & g2;
+                uint8_t intersection = g1 & g2;
                 if (intersection != 0)
                 {
                     return {0, 0};
                 }
                 else
                 {
-                    uint g     = g1 | g2;
-                    uint swaps = 0;
+                    uint8_t g     = g1 | g2;
+                    uint8_t swaps = 0;
 
                     while (g1 > 0)
                     {
@@ -181,7 +181,7 @@ struct algebra
 
     struct contract
     {
-        [[nodiscard]] constexpr static std::pair<uint, int> product(uint g1, uint g2) noexcept
+        [[nodiscard]] constexpr static std::pair<uint8_t, int> product(uint8_t g1, uint8_t g2) noexcept
         {
             if (g1 == 0)
             {
@@ -193,11 +193,11 @@ struct algebra
             }
             else
             {
-                uint swaps = 0;
+                uint8_t swaps = 0;
 
                 while (g1 > 0)
                 {
-                    auto lhs_g = gal::leading_set_index(g1);
+                    auto lhs_g        = gal::leading_set_index(g1);
                     auto [index, dot] = metric_t::intercept(lhs_g, g2);
                     if (index == -1 || dot == 0)
                     {
@@ -222,7 +222,7 @@ struct algebra
 
     struct symmetric_inner
     {
-        [[nodiscard]] constexpr static std::pair<uint, int> product(uint g1, uint g2) noexcept
+        [[nodiscard]] constexpr static std::pair<uint8_t, int> product(uint8_t g1, uint8_t g2) noexcept
         {
             if (g1 == 0 || g2 == 0)
             {
@@ -238,7 +238,7 @@ struct algebra
 
                 int grade1       = static_cast<int>(pop_count(g1));
                 int grade2       = static_cast<int>(pop_count(g2));
-                int target_grade = std::abs(grade1 - grade2);
+                int target_grade = ::gal::detail::abs(grade1 - grade2);
                 int grade        = static_cast<int>(pop_count(g));
 
                 if (grade == target_grade)

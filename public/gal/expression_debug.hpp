@@ -15,7 +15,14 @@ template <typename exp_t>
     // Base case
     if constexpr (exp_t::op == expr_op::identity)
     {
-        return exp_t::lhs;
+        if constexpr (detail::uses_null_basis<typename exp_t::algebra_t>)
+        {
+            return detail::to_natural_basis(exp_t::lhs);
+        }
+        else
+        {
+            return exp_t::lhs;
+        }
     }
     else if constexpr (exp_t::op == expr_op::negate)
     {
@@ -41,6 +48,14 @@ template <typename exp_t>
     else if constexpr (exp_t::op == expr_op::scalar_product)
     {
         return detail::scalar_product(exp_t::rhs_t::q(), debug_reify<typename exp_t::lhs_t>());
+    }
+    else if constexpr (exp_t::op == expr_op::extract)
+    {
+        return detail::extract(reify<typename exp_t::lhs_t>(), exp_t::elements);
+    }
+    else if constexpr (exp_t::op == expr_op::select)
+    {
+        // TODO: implement me
     }
     else
     {
@@ -74,7 +89,10 @@ template <typename exp_t>
         else if constexpr (exp_t::op == expr_op::regressive)
         {
             // TODO: check if both lhs and rhs are dual
-            return detail::product(typename decltype(lhs)::algebra_t::exterior{}, lhs, rhs);
+            auto lhs_dual = detail::poincare_dual(lhs);
+            auto rhs_dual = detail::poincare_dual(rhs);
+            auto out = detail::product(typename decltype(lhs)::algebra_t::exterior{}, lhs_dual, rhs_dual);
+            return detail::poincare_dual(out);
         }
         else if constexpr (exp_t::op == expr_op::contract)
         {
@@ -83,14 +101,6 @@ template <typename exp_t>
         else if constexpr (exp_t::op == expr_op::symmetric_inner)
         {
             return detail::product(typename decltype(lhs)::algebra_t::symmetric_inner{}, lhs, rhs);
-        }
-        else if constexpr (exp_t::op == expr_op::extract)
-        {
-            // TODO: implement me
-        }
-        else if constexpr (exp_t::op == expr_op::select)
-        {
-            // TODO: implement me
         }
     }
 }

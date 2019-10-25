@@ -152,6 +152,7 @@ namespace pga
 
         template <uint8_t... E>
         constexpr point(entity<pga_algebra, T, E...> in) noexcept
+            : data{}
         {
             auto input = in.template select<0b111, 0b1011, 0b1101, 0b1110>();
             auto w_inv = T{1} / input[3];
@@ -231,6 +232,7 @@ namespace pga
 
         template <uint8_t... E>
         constexpr vector(entity<pga_algebra, T, E...> in) noexcept
+            : data{}
         {
             auto input = in.template select<0b111, 0b1011, 0b1101>();
             z = -input[0];

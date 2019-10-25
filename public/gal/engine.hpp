@@ -78,7 +78,7 @@ namespace detail
 
     // Data := flattened array of inputs
     template <auto const& ie, typename F, typename A, typename Data, size_t... I>
-    [[nodiscard]] static auto compute_entity(Data const& data, std::index_sequence<I...>) noexcept
+    [[nodiscard]] constexpr static auto compute_entity_typed(Data const& data, std::index_sequence<I...>) noexcept
     {
         using entity_t = entity<A, F, ie.terms[I].element...>;
         // NOTE: this should be flattened to arrays of constant size ideally
@@ -114,6 +114,45 @@ namespace detail
             tree);
     }
 
+    template <auto const& dmv, typename F, typename A, typename Data, size_t... I>
+    [[nodiscard]] constexpr static auto compute_entity(Data const& data, std::index_sequence<I...>) noexcept
+    {
+        using entity_t = entity<A, F, dmv.data[I].first.element...>;
+        // NOTE: this should be flattened to arrays of constant size ideally
+        return std::apply(
+            [&data](auto&&... t) {
+                return entity_t{std::apply(
+                    [&](auto&&... m) {
+                        if constexpr (sizeof...(m) == 0)
+                        {
+                            return F{0};
+                        }
+                        else
+                        {
+                            return ((m.first.q.num == 0
+                                         ? 0
+                                         : (static_cast<F>(m.first.q)
+                                            * std::apply(
+                                                [&](auto&&... i) {
+                                                    if constexpr (sizeof...(i) == 0)
+                                                    {
+                                                        return F{1};
+                                                    }
+                                                    else
+                                                    {
+                                                        return ((i.id == ~0u ? 1 : ::gal::pow(*data[i.id], i.degree))
+                                                                * ...);
+                                                    }
+                                                },
+                                                m.second)))
+                                    + ...);
+                        }
+                    },
+                    t.second)...};
+            },
+            dmv.data);
+    }
+
     // The indeterminate value is either a pointer to an entity's value or an evaluated expression
     template <typename T>
     struct ind_value
@@ -123,7 +162,7 @@ namespace detail
             T const* pointer;
             T value;
         };
-        
+
         bool is_value;
 
         [[nodiscard]] constexpr T operator*() const noexcept
@@ -156,18 +195,37 @@ namespace detail
     }
 
     template <typename A, typename V, typename T, typename D>
-    [[nodiscard]] static auto finalize_entity(D const& data)
+    [[nodiscard]] static auto finalize_entity_typed(D const& data)
     {
         constexpr static auto reified = reify<T>();
         if constexpr (detail::uses_null_basis<A>)
         {
             constexpr static auto null_conversion = detail::to_null_basis(reified);
-            return compute_entity<null_conversion, V, A>(
-                data, std::make_index_sequence<null_conversion.size.term>());
+            return compute_entity_typed<null_conversion, V, A>(data, std::make_index_sequence<null_conversion.size.term>());
         }
         else
         {
-            return compute_entity<reified, V, A>(data, std::make_index_sequence<reified.size.term>());
+            return compute_entity_typed<reified, V, A>(data, std::make_index_sequence<reified.size.term>());
+        }
+    }
+
+    template <typename A, typename V, typename T, typename D>
+    [[nodiscard]] static auto finalize_entity(D const& data)
+    {
+        constexpr auto reified = reify<T>();
+        if constexpr (detail::uses_null_basis<A>)
+        {
+            constexpr auto null_conversion = detail::to_null_basis(reified);
+            constexpr auto extent          = null_conversion.extent();
+            constexpr static auto regularized
+                = null_conversion.template regularize<extent.ind, extent.mon, extent.term>();
+            return compute_entity<regularized, V, A>(data, std::make_index_sequence<null_conversion.size.term>());
+        }
+        else
+        {
+            constexpr auto extent             = reified.extent();
+            constexpr static auto regularized = reified.template regularize<extent.ind, extent.mon, extent.term>();
+            return compute_entity<regularized, V, A>(data, std::make_index_sequence<reified.size.term>());
         }
     }
 } // namespace detail
@@ -205,7 +263,7 @@ template <typename L, typename... Data>
     // an evaluated property
     if constexpr (detail::is_tuple_v<ie_result_t>)
     {
-        if constexpr (std::tuple_size_v<ie_result_t> > 0)
+        if constexpr (std::tuple_size_v<ie_result_t>> 0)
         {
             using value_t   = typename std::tuple_element_t<0, ie_result_t>::value_t;
             using algebra_t = typename std::tuple_element_t<0, ie_result_t>::algebra_t;
@@ -216,7 +274,7 @@ template <typename L, typename... Data>
             return std::apply(
                 [&](auto&&... args) {
                     return std::make_tuple(
-                        detail::finalize_entity<algebra_t, value_t, std::decay_t<decltype(args)>>(data)...);
+                        detail::finalize_entity_typed<algebra_t, value_t, std::decay_t<decltype(args)>>(data)...);
                 },
                 ie_result_t{});
         }
@@ -228,7 +286,7 @@ template <typename L, typename... Data>
 
         std::array<detail::ind_value<value_t>, (Data::ind_count() + ...)> data{};
         detail::fill(data.data(), input...);
-        return detail::finalize_entity<algebra_t, value_t, ie_result_t>(data);
+        return detail::finalize_entity_typed<algebra_t, value_t, ie_result_t>(data);
     }
 }
 } // namespace gal

@@ -247,7 +247,7 @@ template <typename exp_t>
         if constexpr (detail::uses_null_basis<typename exp_t::algebra_t>)
         {
             constexpr auto out = detail::to_natural_basis(exp_t::lhs);
-            return out.template shrink<out.size.ind, out.size.mon, out.size.term>();
+            return out.template resize<out.size.ind, out.size.mon, out.size.term>();
         }
         else
         {
@@ -282,7 +282,7 @@ template <typename exp_t>
     else if constexpr (exp_t::op == expr_op::extract)
     {
         constexpr auto out = detail::extract(reify<typename exp_t::lhs_t>(), exp_t::elements);
-        return out.template shrink<out.size.ind, out.size.mon, out.size.term>();
+        return out.template resize<out.size.ind, out.size.mon, out.size.term>();
     }
     else if constexpr (exp_t::op == expr_op::select)
     {
@@ -296,18 +296,18 @@ template <typename exp_t>
         if constexpr (exp_t::op == expr_op::sum)
         {
             constexpr auto out = detail::sum(lhs, rhs);
-            return out.template shrink<out.size.ind, out.size.mon, out.size.term>();
+            return out.template resize<out.size.ind, out.size.mon, out.size.term>();
         }
         else if constexpr (exp_t::op == expr_op::difference)
         {
             constexpr auto n_rhs = detail::negate(rhs);
             constexpr auto out   = detail::sum(lhs, n_rhs);
-            return out.template shrink<out.size.ind, out.size.mon, out.size.term>();
+            return out.template resize<out.size.ind, out.size.mon, out.size.term>();
         }
         else if constexpr (exp_t::op == expr_op::geometric)
         {
             constexpr auto out = detail::product(typename decltype(lhs)::algebra_t::geometric{}, lhs, rhs);
-            return out.template shrink<out.size.ind, out.size.mon, out.size.term>();
+            return out.template resize<out.size.ind, out.size.mon, out.size.term>();
         }
         else if constexpr (exp_t::op == expr_op::sandwich)
         {
@@ -316,13 +316,13 @@ template <typename exp_t>
             constexpr auto temp  = detail::product(typename decltype(lhs)::algebra_t::geometric{}, lhs, rhs_reverse);
             constexpr auto temp2 = detail::product(typename decltype(lhs)::algebra_t::geometric{},
                                                    rhs,
-                                                   temp.template shrink<temp.size.ind, temp.size.mon, temp.size.term>());
-            return temp2.template shrink<temp2.size.ind, temp2.size.mon, temp2.size.term>();
+                                                   temp.template resize<temp.size.ind, temp.size.mon, temp.size.term>());
+            return temp2.template resize<temp2.size.ind, temp2.size.mon, temp2.size.term>();
         }
         else if constexpr (exp_t::op == expr_op::exterior)
         {
             constexpr auto out = detail::product(typename decltype(lhs)::algebra_t::exterior{}, lhs, rhs);
-            return out.template shrink<out.size.ind, out.size.mon, out.size.term>();
+            return out.template resize<out.size.ind, out.size.mon, out.size.term>();
         }
         else if constexpr (exp_t::op == expr_op::regressive)
         {
@@ -330,17 +330,17 @@ template <typename exp_t>
             constexpr auto lhs_dual = detail::poincare_dual(lhs);
             constexpr auto rhs_dual = detail::poincare_dual(rhs);
             constexpr auto out = detail::product(typename decltype(lhs)::algebra_t::exterior{}, lhs_dual, rhs_dual);
-            return detail::poincare_dual(out.template shrink<out.size.ind, out.size.mon, out.size.term>());
+            return detail::poincare_dual(out.template resize<out.size.ind, out.size.mon, out.size.term>());
         }
         else if constexpr (exp_t::op == expr_op::contract)
         {
             constexpr auto out = detail::product(typename decltype(lhs)::algebra_t::contract{}, lhs, rhs);
-            return out.template shrink<out.size.ind, out.size.mon, out.size.term>();
+            return out.template resize<out.size.ind, out.size.mon, out.size.term>();
         }
         else if constexpr (exp_t::op == expr_op::symmetric_inner)
         {
             constexpr auto out = detail::product(typename decltype(lhs)::algebra_t::symmetric_inner{}, lhs, rhs);
-            return out.template shrink<out.size.ind, out.size.mon, out.size.term>();
+            return out.template resize<out.size.ind, out.size.mon, out.size.term>();
         }
     }
 }

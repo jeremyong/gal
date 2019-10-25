@@ -22,9 +22,6 @@ using width_t = uint32_t;
 // order of "0" here, by convention, refers to an infinite order.
 struct ind
 {
-    // NOTE: the tag of ~0 - 1 is RESERVED by the library for the dual unit. This ensures that the
-    // dual unit (which has a high chance of extinguishing the monomial it's a factor of) comes
-    // first in the factor ordering.
     width_t id    = ~0u;
     int degree    = 0;
     uint8_t order = 0;
@@ -34,12 +31,12 @@ struct ind
 // If all indeterminates are identified (ID != ~0ull), the ordering becomes a total order.
 [[nodiscard]] constexpr bool operator==(ind lhs, ind rhs) noexcept
 {
-    return lhs.id == rhs.id && lhs.degree == rhs.degree && lhs.id != ~0u && rhs.id != ~0u;
+    return lhs.id == rhs.id && lhs.degree == rhs.degree;
 }
 
 [[nodiscard]] constexpr bool operator!=(ind lhs, ind rhs) noexcept
 {
-    return lhs.id != rhs.id || lhs.degree != rhs.degree || lhs.id == ~0u || rhs.id == ~0u;
+    return lhs.id != rhs.id || lhs.degree != rhs.degree;
 }
 
 [[nodiscard]] constexpr bool operator<(ind lhs, ind rhs) noexcept
@@ -428,6 +425,12 @@ struct const_term_it
     }
 };
 
+template <width_t IndMax, width_t MonMax, width_t TermMax>
+struct dense_mv
+{
+    std::array<std::pair<term, std::array<std::pair<mon, std::array<ind, IndMax>>, MonMax>>, TermMax> data;
+};
+
 // Multivector representation, intended to be a compile-time representation
 // A := Algebra
 // I := Indeterminate capacity
@@ -502,7 +505,7 @@ struct mv
     }
 
     template <width_t I2, width_t M2, width_t T2>
-    [[nodiscard]] constexpr auto shrink() const noexcept
+    [[nodiscard]] constexpr auto resize() const noexcept
     {
         if constexpr (I == I2 && M == M2 && T == T2)
         {
@@ -526,6 +529,59 @@ struct mv
             }
             return out;
         }
+    }
+
+    // Reshape the multivector to be fully dense in the arrays to simplify compilation of the final reduction
+    template <width_t IndMax, width_t MonMax, width_t TermMax>
+    [[nodiscard]] constexpr auto regularize() const noexcept
+    {
+        dense_mv<IndMax, MonMax, TermMax> out;
+
+        for (width_t i = 0; i != size.term; ++i)
+        {
+            auto const& term = terms[i];
+            auto& out_term   = out.data[i];
+            out_term.first   = term;
+
+            for (width_t j = term.mon_offset; j != term.mon_offset + term.count; ++j)
+            {
+                auto const& mon = mons[j];
+                auto& out_mon   = out_term.second[j - term.mon_offset];
+                out_mon.first   = mon;
+
+                for (width_t k = mon.ind_offset; k != mon.ind_offset + mon.count; ++k)
+                {
+                    out_mon.second[k - mon.ind_offset] = inds[k];
+                }
+            }
+        }
+
+        return out;
+    }
+
+    [[nodiscard]] constexpr mv_size extent() const noexcept
+    {
+        // Determine the maximum number of indeterminates across all monomials and the maximum number of monomials
+        // across all terms
+
+        width_t mon_count = 0;
+        width_t ind_count = 0;
+        for (auto term_it = cbegin(); term_it != cend(); ++term_it)
+        {
+            if (term_it->count > mon_count)
+            {
+                mon_count = term_it->count;
+            }
+
+            for (auto mon_it = term_it.cbegin(); mon_it != term_it.cend(); ++mon_it)
+            {
+                if (mon_it->count > ind_count)
+                {
+                    ind_count = mon_it->count;
+                }
+            }
+        }
+        return {ind_count, mon_count, size.term};
     }
 
     [[nodiscard]] constexpr const_term_it cbegin() const noexcept

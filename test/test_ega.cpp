@@ -3,6 +3,7 @@
 #include <doctest/doctest.h>
 #include <gal/ega.hpp>
 #include <gal/engine.hpp>
+#include <gal/format.hpp>
 
 #include <cstdio>
 
@@ -118,6 +119,10 @@ TEST_CASE("rotors")
             r1,
             r2,
             v1);
+        auto r = gal::evaluate<rotor<float>, rotor<float>, vector<float>>{}.debug([](auto r1, auto r2, auto v1) {
+            auto r = r1 * r2;
+            return v1 % r;
+        });
         CHECK_EQ(rotated.x, doctest::Approx(0.0));
         CHECK_EQ(rotated.y, doctest::Approx(1.0));
         CHECK_EQ(rotated.z, doctest::Approx(0.0));

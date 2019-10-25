@@ -8,20 +8,19 @@
 namespace gal
 {
 // right-to-left binary exponentiation
-template <typename T, int exponent>
-[[nodiscard]] constexpr T pow(T s, std::integral_constant<int, exponent>) noexcept
+template <typename T>
+[[nodiscard]] constexpr T pow(T s, int e) noexcept
 {
-    if constexpr (exponent < 0)
+    if (e < 0)
     {
-        return T{1} / pow(s, std::integral_constant<int, -exponent>{});
+        return T{1} / pow(s, -e);
     }
-    else if constexpr (exponent == 1)
+    else if (e == 1)
     {
         return s;
     }
-    else 
+    else
     {
-        int e = exponent;
         T temp1{1};
         T temp2{s};
         while (e > 1)
@@ -98,7 +97,7 @@ template <typename T>
 // overflows
 struct rat
 {
-    int num = 1;
+    int num = 0;
     int den = 1;
 
     [[nodiscard]] constexpr bool is_zero() const noexcept

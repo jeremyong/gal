@@ -55,7 +55,7 @@ struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, cga::detail::n_o_t
     using value_t               = T;
     using algebra_t             = cga::cga_algebra;
     constexpr static expr_op op = expr_op::identity;
-    constexpr static mv<cga::cga_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, 0, 0}}, {term{1, 0, 0b1000}}};
+    constexpr static mv<cga::cga_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 0, 0b1000}}};
 };
 
 template <typename T>
@@ -64,7 +64,7 @@ struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, cga::detail::n_i_t
     using value_t               = T;
     using algebra_t             = cga::cga_algebra;
     constexpr static expr_op op = expr_op::identity;
-    constexpr static mv<cga::cga_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, 0, 0}}, {term{1, 0, 0b10000}}};
+    constexpr static mv<cga::cga_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 0, 0b10000}}};
 };
 
 template <typename T>
@@ -138,26 +138,25 @@ namespace cga
             : data{in.template select<0b1, 0b10, 0b100>()}
         {}
 
-        [[nodiscard]] constexpr static mv<algebra_t, 6, 7, 5> ie(uint32_t id) noexcept
-        {
+        [[nodiscard]] constexpr static mv<algebra_t, 6, 7, 5> ie(uint32_t id) noexcept {
             // A CGA point is represented as no + p + 1/2 p^2 ni
             return {mv_size{6, 7, 5},
                     {
-                        ind{id, 1},     // ind0 = p_x
-                        ind{id + 1, 1}, // ind1 = p_y
-                        ind{id + 2, 1}, // ind2 = p_z
-                        ind{id, 2},     // ind3 = p_x^2
-                        ind{id + 1, 2}, // ind4 = p_y^2
-                        ind{id + 2, 2}, // ind5 = p_z^2
+                        ind{id, rat{1}},     // ind0 = p_x
+                        ind{id + 1, rat{1}}, // ind1 = p_y
+                        ind{id + 2, rat{1}}, // ind2 = p_z
+                        ind{id, rat{2}},     // ind3 = p_x^2
+                        ind{id + 1, rat{2}}, // ind4 = p_y^2
+                        ind{id + 2, rat{2}}, // ind5 = p_z^2
                     },
                     {
-                        mon{one, 1, 0, 1},      // p_x
-                        mon{one, 1, 1, 1},      // p_y
-                        mon{one, 1, 2, 1},      // p_z
-                        mon{one, 0, 0, 0},      // no
-                        mon{one_half, 1, 3, 2}, // 1/2 p_x^2
-                        mon{one_half, 1, 4, 2}, // 1/2 p_y^2
-                        mon{one_half, 1, 5, 2}, // 1/2 p_z^2
+                        mon{one, one, 1, 0},         // p_x
+                        mon{one, one, 1, 1},         // p_y
+                        mon{one, one, 1, 2},         // p_z
+                        mon{one, zero, 0, 0},        // no
+                        mon{one_half, rat{2}, 1, 3}, // 1/2 p_x^2
+                        mon{one_half, rat{2}, 1, 4}, // 1/2 p_y^2
+                        mon{one_half, rat{2}, 1, 5}, // 1/2 p_z^2
                     },
                     {
                         term{1, 0, 0b1},    // p_x

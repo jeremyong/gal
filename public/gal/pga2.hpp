@@ -120,9 +120,9 @@ namespace pga
                         ind{id + 1, 1}, // y
                         ind{id, 1}      // -x
                     },
-                    {mon{one, 1, 0, 1},       // y
-                     mon{minus_one, 1, 1, 1}, // -x
-                     mon{one, 0, 0, 0}},      // point at origin
+                    {mon{one, one, 0, 1},       // y
+                     mon{minus_one, one, 1, 1}, // -x
+                     mon{one, zero, 0, 0}},      // point at origin
                     {
                         term{1, 0, 0b11},  // y * e01
                         term{1, 1, 0b101}, // -x * e02
@@ -196,9 +196,9 @@ namespace pga
                         ind{id, 1}      // -x
                     },
                     {
-                        mon{minus_one, 1, 0, 1}, // -z
-                        mon{one, 1, 1, 1},       // y
-                        mon{minus_one, 1, 2, 1}  // -x
+                        mon{minus_one, one, 0, 1}, // -z
+                        mon{one, one, 1, 1},       // y
+                        mon{minus_one, one, 2, 1}  // -x
                     },
                     {
                         term{1, 0, 0b111},  // -z * e012

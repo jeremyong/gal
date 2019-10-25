@@ -23,9 +23,6 @@ namespace detail
     [[nodiscard]] constexpr auto to_null_basis(mv<A, I, M, T> const& in) noexcept
     {
         mv<A, I, M, T> lhs{};
-        auto lhs_inds_it = lhs.inds.begin();
-        auto lhs_mons_it = lhs.mons.begin();
-        auto lhs_terms_it = lhs.terms.begin();
 
         mv<A, 2 * I, 2 * M, 2 * T> temp{};
 
@@ -89,9 +86,6 @@ namespace detail
     [[nodiscard]] constexpr auto to_natural_basis(mv<A, I, M, T> const& in) noexcept
     {
         mv<A, I, M, T> lhs{};
-        auto lhs_inds_it = lhs.inds.begin();
-        auto lhs_mons_it = lhs.mons.begin();
-        auto lhs_terms_it = lhs.terms.begin();
 
         mv<A, 2 * I, 2 * M, 2 * T> temp{};
 

@@ -62,7 +62,7 @@ TEST_CASE("multivector-arithmetic")
     SUBCASE("coincident-term-sum")
     {
         using e1_t = entity<void, float, 0b0, 0b1>;
-        auto sum   = evaluate<e1_t, e1_t>{}([](auto v1, auto v2) { return v1 + v2; });
+        auto sum   = evaluate<e1_t, e1_t>{}.debug([](auto v1, auto v2) { return v1 + v2; });
         CHECK_EQ(sum.inds[0].id, 0);
         CHECK_EQ(sum.inds[1].id, 2);
         CHECK_EQ(sum.inds[2].id, 1);
@@ -82,7 +82,7 @@ TEST_CASE("multivector-arithmetic")
     SUBCASE("coincident-term-sum-with-scalar")
     {
         using e1_t = entity<void, float, 0b0, 0b1>;
-        auto sum   = evaluate<e1_t, e1_t>{}([](auto v1, auto v2) { return frac<1> + v1 + v2; });
+        auto sum   = evaluate<e1_t, e1_t>{}.debug([](auto v1, auto v2) { return frac<1> + v1 + v2; });
         CHECK_EQ(sum.inds[0].id, 0);
         CHECK_EQ(sum.inds[1].id, 2);
         CHECK_EQ(sum.inds[2].id, 1);
@@ -146,13 +146,13 @@ TEST_CASE("polynomial-expansion")
         mv<void, 2, 2, 1> b1{
             mv_size{2, 2, 1},
             {ind{0, 1}, ind{1, 2}},
-            {mon{one, 1, 0}, mon{one, 1, 1, 2}},
+            {mon{one, one, 1, 0}, mon{one, rat{2}, 1, 1}},
             {term{2, 0, 0}}
         };
         mv<void, 2, 2, 1> b2{
             mv_size{2, 2, 1},
             {ind{2, 1}, ind{3, 1}},
-            {mon{one, 1, 0}, mon{one, 1, 1}},
+            {mon{one, one, 1, 0}, mon{one, one, 1, 1}},
             {term{2, 0, 0}}
         };
         auto b12 = product(sa{}, b1, b2);
@@ -164,17 +164,17 @@ TEST_CASE("polynomial-expansion")
         CHECK_EQ(b12.inds[2].id, 0);
         CHECK_EQ(b12.inds[3].id, 3);
         CHECK_EQ(b12.inds[4].id, 1);
-        CHECK_EQ(b12.inds[4].degree, 2);
+        CHECK_EQ(b12.inds[4].degree.num, 2);
         CHECK_EQ(b12.inds[5].id, 2);
         CHECK_EQ(b12.inds[6].id, 1);
-        CHECK_EQ(b12.inds[6].degree, 2);
+        CHECK_EQ(b12.inds[6].degree.num, 2);
         CHECK_EQ(b12.inds[7].id, 3);
         CHECK_EQ(b12.mons[1].ind_offset, 2);
-        CHECK_EQ(b12.mons[1].degree, 2);
+        CHECK_EQ(b12.mons[1].degree.num, 2);
         CHECK_EQ(b12.mons[2].count, 2);
-        CHECK_EQ(b12.mons[2].degree, 3);
+        CHECK_EQ(b12.mons[2].degree.num, 3);
         CHECK_EQ(b12.mons[3].count, 2);
-        CHECK_EQ(b12.mons[3].degree, 3);
+        CHECK_EQ(b12.mons[3].degree.num, 3);
         CHECK_EQ(b12.terms[0].count, 4);
         CHECK_EQ(b12.terms[0].mon_offset, 0);
     }
@@ -184,13 +184,13 @@ TEST_CASE("polynomial-expansion")
         mv<void, 2, 2, 1> b1{
             mv_size{2, 2, 1},
             {ind{0, 1}, ind{1, 1}},
-            {mon{one, 1, 0}, mon{one, 1, 1}},
+            {mon{one, one, 1, 0}, mon{one, one, 1, 1}},
             {term{2, 0, 0}}
         };
         mv<void, 2, 2, 1> b2{
             mv_size{2, 2, 1},
             {ind{0, 1}, ind{1, 1}},
-            {mon{one, 1, 0}, mon{minus_one, 1, 1}},
+            {mon{one, one, 1, 0}, mon{minus_one, one, 1, 1}},
             {term{2, 0, 0}}
         };
         auto b12 = product(sa{}, b1, b2);
@@ -198,15 +198,15 @@ TEST_CASE("polynomial-expansion")
         CHECK_EQ(b12.size.mon, 2);
         CHECK_EQ(b12.size.ind, 2);
         CHECK_EQ(b12.inds[0].id, 0);
-        CHECK_EQ(b12.inds[0].degree, 2);
+        CHECK_EQ(b12.inds[0].degree.num, 2);
         CHECK_EQ(b12.inds[1].id, 1);
-        CHECK_EQ(b12.inds[1].degree, 2);
+        CHECK_EQ(b12.inds[1].degree.num, 2);
         CHECK_EQ(b12.mons[0].count, 1);
         CHECK_EQ(b12.mons[0].ind_offset, 0);
-        CHECK_EQ(b12.mons[0].degree, 2);
+        CHECK_EQ(b12.mons[0].degree.num, 2);
         CHECK_EQ(b12.mons[1].count, 1);
         CHECK_EQ(b12.mons[1].ind_offset, 1);
-        CHECK_EQ(b12.mons[1].degree, 2);
+        CHECK_EQ(b12.mons[1].degree.num, 2);
     }
 
     SUBCASE("monomial-term-cancellation")
@@ -214,13 +214,13 @@ TEST_CASE("polynomial-expansion")
         mv<void, 1, 1, 1> m1{
             mv_size{1, 1, 1},
             {ind{0, 1}},
-            {mon{one, 1, 0}},
+            {mon{one, one, 1, 0}},
             {term{1, 0, 0}}
         };
         mv<void, 1, 1, 1> m2{
             mv_size{1, 1, 1},
             {ind{0, -1}},
-            {mon{one, 1, 0}},
+            {mon{one, minus_one, 1, 0}},
             {term{1, 0, 0}}
         };
         auto m12 = product(sa{}, m1, m2);
@@ -228,7 +228,7 @@ TEST_CASE("polynomial-expansion")
         CHECK_EQ(m12.size.mon, 1);
         CHECK_EQ(m12.size.ind, 0);
         CHECK_EQ(m12.mons[0].count, 0);
-        CHECK_EQ(m12.mons[0].degree, 0);
+        CHECK_EQ(m12.mons[0].degree.num, 0);
         CHECK_EQ(m12.mons[0].q.num, 1);
         CHECK_EQ(m12.mons[0].q.den, 1);
         CHECK_EQ(m12.terms[0].count, 1);
@@ -240,13 +240,13 @@ TEST_CASE("polynomial-expansion")
         mv<void, 1, 1, 1> m1{
             mv_size{1, 1, 1},
             {ind{1, 1}},
-            {mon{one, 1, 0}},
+            {mon{one, one, 1, 0}},
             {term{1, 0, 0}}
         };
         mv<void, 1, 1, 1> m2{
             mv_size{1, 1, 1},
             {ind{1, 2}},
-            {mon{one, 1, 0}},
+            {mon{one, rat{2}, 1, 0}},
             {term{1, 0, 0}}
         };
         auto m12 = product(sa{}, m1, m2);
@@ -254,9 +254,9 @@ TEST_CASE("polynomial-expansion")
         CHECK_EQ(m12.size.mon, 1);
         CHECK_EQ(m12.size.ind, 1);
         CHECK_EQ(m12.inds[0].id, 1);
-        CHECK_EQ(m12.inds[0].degree, 3);
+        CHECK_EQ(m12.inds[0].degree.num, 3);
         CHECK_EQ(m12.mons[0].count, 1);
-        CHECK_EQ(m12.mons[0].degree, 3);
+        CHECK_EQ(m12.mons[0].degree.num, 3);
         CHECK_EQ(m12.mons[0].q.num, 1);
         CHECK_EQ(m12.mons[0].q.den, 1);
         CHECK_EQ(m12.terms[0].count, 1);

@@ -13,18 +13,8 @@ namespace detail
         constexpr size_t count         = sizeof...(E);
 
         return mv<A, count, count, count>{
-            mv_size{count, count, count}, {ind{id + N, 1, 0}...}, {mon{one, 1, N, 1}...}, {term{1, N, E}...}};
+            mv_size{count, count, count}, {ind{id + N, rat{1}}...}, {mon{one, one, 1, N}...}, {term{1, N, E}...}};
     }
-
-    template <uint8_t T, uint8_t... E>
-    [[nodiscard]] constexpr uint8_t index_of()
-    {
-        // This is ONE-indexed to distinguish between identifying the zero-th element versus not finding the element.
-        constexpr uint8_t result = 1 + ((T < E ? 1 : 0) + ...);
-        static_assert(result > 0, "Attempted to select a component of an entity that does not exist!");
-        return result - 1;
-    }
-
 } // namespace detail
 
 // All entities are expected to provide a static function to retrieve the entity's indeterminate expression given an
@@ -59,7 +49,19 @@ struct entity
     template <uint8_t... S>
     [[nodiscard]] constexpr std::array<T, sizeof...(S)> select() noexcept
     {
-        return {data_[detail::index_of<S, E...>()]...};
+        return {select(S)...};
+    }
+
+    [[nodiscard]] constexpr T select(uint8_t e) noexcept
+    {
+        for (uint8_t i = 0; i != elements.size(); ++i)
+        {
+            if (elements[i] == e)
+            {
+                return data_[i];
+            }
+        }
+        return {};
     }
 
     [[nodiscard]] constexpr T const* data() const noexcept
@@ -113,7 +115,7 @@ struct scalar
     // NOTE: in GAL code, `ie` refers always to "indeterminate expression"
     [[nodiscard]] constexpr static mv<A, 1, 1, 1> ie(uint32_t id) noexcept
     {
-        return {mv_size{1, 1, 1}, {ind{id, 1}}, {mon{one, 1, 0, 1}}, {term{1, 0, 0}}};
+        return {mv_size{1, 1, 1}, {ind{id, one}}, {mon{one, 1, 0, 1}}, {term{1, 0, 0}}};
     }
 
     [[nodiscard]] constexpr T const* data() const noexcept

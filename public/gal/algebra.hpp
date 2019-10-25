@@ -22,9 +22,8 @@ using width_t = uint32_t;
 // order of "0" here, by convention, refers to an infinite order.
 struct ind
 {
-    width_t id    = ~0u;
-    int degree    = 0;
-    uint8_t order = 0;
+    width_t id = ~0u;
+    rat degree;
 };
 
 // The indeterminates that make up a monomial are weakly ordered based on the source identifiers.
@@ -46,7 +45,7 @@ struct ind
 
 [[nodiscard]] constexpr ind operator^(ind lhs, int rhs) noexcept
 {
-    lhs.degree *= rhs;
+    lhs.degree *= rat{rhs};
     return lhs;
 }
 
@@ -56,9 +55,9 @@ struct ind
 struct mon
 {
     rat q;
+    rat degree; // Sum of all exponents of indeterminates
     width_t count      = 0;
     width_t ind_offset = 0;
-    int degree         = 0; // Sum of all exponents of indeterminates
 };
 
 // Temporal structure useful for sorting monomials in place
@@ -828,7 +827,7 @@ namespace detail
     template <typename A, width_t I, width_t M, width_t T>
     [[nodiscard]] constexpr auto scalar_sum(rat lhs, mv<A, I, M, T> const& rhs) noexcept
     {
-        mv<A, 0, 1, 1> addend{mv_size{0, 1, 1}, {}, {mon{lhs, 0, 0, 0}}, {term{1, 0, 0}}};
+        mv<A, 0, 1, 1> addend{mv_size{0, 1, 1}, {}, {mon{lhs, zero, 0, 0}}, {term{1, 0, 0}}};
         return sum(rhs, addend);
     }
 
@@ -956,7 +955,7 @@ namespace detail
                 {
                     // CAREFUL! The mon_writer above may overwrite what mon_it points to
                     *mon_writer++
-                        = mon{q, mon_it->count, static_cast<width_t>(out_inds_it - out_inds_begin), mon_it->degree};
+                        = mon{q, mon_it->degree, mon_it->count, static_cast<width_t>(out_inds_it - out_inds_begin)};
 
                     // Copy over indeterminates referenced by the monomial
                     for (auto ind_it = ind_start + current_mon.m.ind_offset;
@@ -1004,9 +1003,9 @@ namespace detail
             for (auto mon_it = it.cbegin(); mon_it != it.cend(); ++mon_it)
             {
                 *out_mon_it++ = mon{parity * mon_it->q,
+                                    mon_it->degree,
                                     mon_it->count,
-                                    static_cast<width_t>(out_ind_it - out.inds.begin()),
-                                    mon_it->degree};
+                                    static_cast<width_t>(out_ind_it - out.inds.begin())};
                 for (auto ind_it = mon_it.cbegin(); ind_it != mon_it.cend(); ++ind_it)
                 {
                     *out_ind_it++ = *ind_it;
@@ -1082,7 +1081,7 @@ namespace detail
                             auto rhs_ind_it  = rhs_mon.cbegin();
                             auto rhs_ind_end = rhs_mon.cend();
                             auto ind_cursor  = temp_inds_it;
-                            int degree       = 0;
+                            rat degree;
 
                             while (true)
                             {
@@ -1107,12 +1106,12 @@ namespace detail
                                     auto const& rhs_ind = *rhs_ind_it;
                                     if (lhs_ind.id == rhs_ind.id)
                                     {
-                                        int next_degree = lhs_ind.degree + rhs_ind.degree;
+                                        rat next_degree = lhs_ind.degree + rhs_ind.degree;
                                         degree += next_degree;
                                         if (next_degree != 0)
                                         {
                                             // TODO: handle dual numbers
-                                            *temp_inds_it++ = ind{lhs_ind.id, next_degree, lhs_ind.order};
+                                            *temp_inds_it++ = ind{lhs_ind.id, next_degree};
                                         }
                                         ++lhs_ind_it;
                                         ++rhs_ind_it;
@@ -1133,9 +1132,9 @@ namespace detail
                             }
 
                             *temp_mons_it++ = mon_view{mon{rat{multiplier * lhs_mon->q * rhs_mon->q},
+                                                           degree,
                                                            static_cast<width_t>(temp_inds_it - ind_cursor),
-                                                           static_cast<width_t>(ind_cursor - temp_inds.begin()),
-                                                           degree},
+                                                           static_cast<width_t>(ind_cursor - temp_inds.begin())},
                                                        ind_cursor};
                         }
                     }
@@ -1189,10 +1188,19 @@ namespace detail
             }
         }
     }
+
+    template <typename A, width_t I, width_t M, width_t T>
+    [[nodiscard]] constexpr auto fast_exp(mv<A, I, M, T> const& in)
+    {
+        auto in_2 = product(typename A::geometric{}, in, in);
+        // For a bivector, in^2 will be in the form s + pI
+        // auto s_term = in_2.terms[0];
+        // TODO
+    }
 } // namespace detail
 
 // Convenience template variable for making basis elements
 template <typename A, uint32_t G>
-constexpr inline mv<A, 0, 1, 1> e{mv_size{0, 1, 1}, {}, {mon{one, 0, 0, 0}}, {term{1, 0, G}}};
+constexpr inline mv<A, 0, 1, 1> e{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 0, G}}};
 
 } // namespace gal

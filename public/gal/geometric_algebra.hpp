@@ -80,12 +80,12 @@ struct algebra
     using metric_t = Metric;
     constexpr static mv<algebra<Metric>, 0, 1, 1> pseudoscalar{mv_size{0, 1, 1},
                                                                {},
-                                                               {mon{one, 0, 0, 0}},
+                                                               {mon{one, zero, 0, 0}},
                                                                {term{1, 0, (1 << metric_t::dimension) - 1}}};
     constexpr static mv<algebra<Metric>, 0, 1, 1> pseudoscalar_inv{
         mv_size{0, 1, 1},
         {},
-        {mon{((metric_t::dimension * (metric_t::dimension - 1) / 2 + metric_t::v) % 2 == 0 ? one : minus_one), 0, 0, 0}},
+        {mon{((metric_t::dimension * (metric_t::dimension - 1) / 2 + metric_t::v) % 2 == 0 ? one : minus_one), zero, 0, 0}},
         {term{1, 0, (1 << metric_t::dimension) - 1}}};
 
     // For each operation, the static product function returns a generator id and multiplier given two generators.

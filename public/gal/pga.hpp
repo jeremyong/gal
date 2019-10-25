@@ -118,14 +118,14 @@ namespace pga
         {
             return {mv_size{3, 4, 4},
                     {
-                        ind{id + 2, 1}, // -z
-                        ind{id + 1, 1}, // y
-                        ind{id, 1}      // -x
+                        ind{id + 2, one}, // -z
+                        ind{id + 1, one}, // y
+                        ind{id, one}      // -x
                     },
-                    {mon{minus_one, 1, 0, 1}, // -z
-                     mon{one, 1, 1, 1},       // y
-                     mon{minus_one, 1, 2, 1}, // -x
-                     mon{one, 0, 0, 0}},
+                    {mon{minus_one, one, 1, 0}, // -z
+                     mon{one, one, 1, 1},       // y
+                     mon{minus_one, one, 1, 2}, // -x
+                     mon{one, zero, 0, 0}},
                     {
                         term{1, 0, 0b111},  // -z * e012
                         term{1, 1, 0b1011}, // y * e013
@@ -198,14 +198,14 @@ namespace pga
         {
             return {mv_size{3, 4, 4},
                     {
-                        ind{id + 2, 1}, // -z
-                        ind{id + 1, 1}, // y
-                        ind{id, 1}      // -x
+                        ind{id + 2, one}, // -z
+                        ind{id + 1, one}, // y
+                        ind{id, one}      // -x
                     },
                     {
-                        mon{minus_one, 1, 0, 1}, // -z
-                        mon{one, 1, 1, 1},       // y
-                        mon{minus_one, 1, 2, 1}  // -x
+                        mon{minus_one, one, 1, 0}, // -z
+                        mon{one, one, 1, 1},       // y
+                        mon{minus_one, one, 1, 2}  // -x
                     },
                     {
                         term{1, 0, 0b111},  // -z * e012
@@ -260,8 +260,94 @@ namespace pga
     // Lines in P^3 are defined using Plücker coordinates: https://en.wikipedia.org/wiki/Plücker_coordinates
     // The lines e01, e02, and e03 are the ideal lines representing the intersections of e1, e2, and e3 with the ideal
     // plane respectively. The lines e23, e31, and e12 are lines through the origin in the x, y, and z directions
-    // respectively. We opt not to provide a 6 coordinate representation for now (join points to construct a line or
-    // meet planes)
+    // respectively.
+    template <typename T = float>
+    union line
+    {
+        using algebra_t = pga_algebra;
+        using value_t = T;
+        constexpr static bool is_dual = true;
+
+        std::array<T, 6> data;
+        struct
+        {
+            T dx;
+            T dy;
+            T dz;
+            T mx;
+            T my;
+            T mz;
+        };
+
+        [[nodiscard]] constexpr static mv<algebra_t, 6, 6, 6> ie(uint32_t id) noexcept
+        {
+            return {mv_size{6, 6, 6},
+                    {
+                        ind{id + 3, one}, // mx
+                        ind{id + 4, one}, // my
+                        ind{id + 5, one}, // mz
+                        ind{id + 2, one}, // dz
+                        ind{id + 1, one}, // dy
+                        ind{id, one}      // dx
+                    },
+                    {
+                        mon{one, one, 1, 0}, // mx
+                        mon{one, one, 1, 1}, // my
+                        mon{one, one, 1, 2}, // mz
+                        mon{one, one, 1, 3}, // dz
+                        mon{one, one, 1, 4}, // dy
+                        mon{one, one, 1, 5}  // dx
+                    },
+                    {
+                        term{1, 0, 0b11},   // e01
+                        term{1, 1, 0b101},  // e02
+                        term{1, 2, 0b1001}, // e03
+                        term{1, 3, 0b110},  // e12
+                        term{1, 4, 0b1010}, // e13
+                        term{1, 5, 0b1100}  // e23
+                    }};
+        }
+
+        [[nodiscard]] constexpr static size_t size() noexcept
+        {
+            return 6;
+        }
+
+        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
+        {
+            return 6;
+        }
+
+        constexpr line(T dx, T dy, T dz, T mx, T my, T mz) noexcept
+            : dx{dx}
+            , dy{dy}
+            , dz{dz}
+            , mx{mx}
+            , my{my}
+            , mz{mz}
+        {}
+
+        template <uint8_t... E>
+        constexpr line(entity<pga_algebra, T, E...> in) noexcept
+            : data{in.template select<0b11, 0b101, 0b1001, 0b110, 0b1010, 0b1100>()}
+        {}
+
+        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T get(size_t i) const noexcept
+        {
+            // Unused
+            return NAN;
+        }
+    };
 
     // TODO: It isn't great that we cache the cos and sin of the rotor since storing 5 elements prevents a more natural
     // tightly-packed alignment
@@ -318,14 +404,14 @@ namespace pga
         [[nodiscard]] constexpr static mv<pga_algebra, 8, 4, 4> ie(uint32_t id) noexcept
         {
             return {mv_size{7, 4, 4},
-                    {ind{id, 1},     // cos(t/2)
-                     ind{id + 1, 1}, // z * sin(t/2)
-                     ind{id + 4, 1},
-                     ind{id + 1, 1}, // -y * sin(t/2)
-                     ind{id + 3, 1},
-                     ind{id + 1, 1}, // x * sin(t/2)
-                     ind{id + 2, 1}},
-                    {mon{one, 1, 0, 1}, mon{one, 1, 1, 1}, mon{minus_one, 2, 2, 2}, mon{one, 2, 3, 2}},
+                    {ind{id, one},     // cos(t/2)
+                     ind{id + 1, one}, // z * sin(t/2)
+                     ind{id + 4, one},
+                     ind{id + 1, one}, // -y * sin(t/2)
+                     ind{id + 3, one},
+                     ind{id + 1, one}, // x * sin(t/2)
+                     ind{id + 2, one}},
+                    {mon{one, one, 1, 0}, mon{one, one, 1, 1}, mon{minus_one, rat{2}, 2, 2}, mon{one, rat{2}, 2, 3}},
                     {term{1, 0, 0b0}, term{1, 1, 0b110}, term{1, 2, 0b1010}, term{1, 3, 0b1100}}};
         }
 
@@ -391,17 +477,17 @@ namespace pga
         [[nodiscard]] constexpr static mv<pga_algebra, 6, 4, 4> ie(uint32_t id) noexcept
         {
             return {mv_size{6, 4, 4},
-                    {ind{id, 1}, // d * l_x
-                     ind{id + 1, 1},
-                     ind{id, 1}, // d * l_y
-                     ind{id + 1, 1},
-                     ind{id, 1}, // d * l_z
-                     ind{id + 2, 1}},
+                    {ind{id, one}, // d * l_x
+                     ind{id + 1, one},
+                     ind{id, one}, // d * l_y
+                     ind{id + 1, one},
+                     ind{id, one}, // d * l_z
+                     ind{id + 2, one}},
                     {
-                        mon{one, 0, 0, 0},            // 1
-                        mon{minus_one_half, 2, 1, 2}, // -1/2 * l_x
-                        mon{minus_one_half, 2, 2, 2}, // -1/2 * l_y
-                        mon{minus_one_half, 2, 3, 2}  // -1/2 * l_z
+                        mon{one, zero, 0, 0},            // 1
+                        mon{minus_one_half, rat{2}, 2, 1}, // -1/2 * l_x
+                        mon{minus_one_half, rat{2}, 2, 2}, // -1/2 * l_y
+                        mon{minus_one_half, rat{2}, 2, 3}  // -1/2 * l_z
                     },
                     {term{1, 0, 0b0}, term{1, 1, 0b11}, term{1, 2, 0b101}, term{1, 3, 0b1001}}};
         }

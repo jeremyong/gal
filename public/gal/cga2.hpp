@@ -53,7 +53,7 @@ struct expr<expr_op::identity, mv<cga2::cga2_algebra, 0, 1, 1>, cga2::detail::n_
     using value_t               = T;
     using algebra_t             = cga2::cga2_algebra;
     constexpr static expr_op op = expr_op::identity;
-    constexpr static mv<cga2::cga2_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, 0, 0}}, {term{1, 0, 0b1000}}};
+    constexpr static mv<cga2::cga2_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 0, 0b1000}}};
 };
 
 template <typename T>
@@ -62,7 +62,7 @@ struct expr<expr_op::identity, mv<cga2::cga2_algebra, 0, 1, 1>, cga2::detail::n_
     using value_t               = T;
     using algebra_t             = cga2::cga2_algebra;
     constexpr static expr_op op = expr_op::identity;
-    constexpr static mv<cga2::cga2_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, 0, 0}}, {term{1, 1, 0b1000}}};
+    constexpr static mv<cga2::cga2_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 1, 0b1000}}};
 };
 
 template <typename T>
@@ -133,17 +133,17 @@ namespace cga2
         {
             return {mv_size{4, 5, 4},
                     {
-                        ind{0, 1}, // ind0 = p_x
-                        ind{1, 1}, // ind1 = p_y
-                        ind{0, 2}  // ind3 = p_x^2
-                        ind{1, 2}, // ind3 = p_y^2
+                        ind{0, one},    // ind0 = p_x
+                        ind{1, one},    // ind1 = p_y
+                        ind{0, rat{2}}  // ind3 = p_x^2
+                        ind{1, rat{2}}, // ind3 = p_y^2
                     },
                     {
-                        mon{one, 1, 0, 1},      // p_x
-                        mon{one, 1, 1, 1},      // p_y
-                        mon{one, 0, 0, 0},      // n_o
-                        mon{one_half, 1, 2, 2}, // 1/2 p_x^2
-                        mon{one_half, 1, 3, 2}  // 1/2 p_y^2
+                        mon{one, one, 1, 0},         // p_x
+                        mon{one, one, 1, 1},         // p_y
+                        mon{one, zero, 0, 0, 0},     // n_o
+                        mon{one_half, rat{2}, 1, 2}, // 1/2 p_x^2
+                        mon{one_half, rat{2}, 1, 3}  // 1/2 p_y^2
                     },
                     {
                         term{1, 0, 0b1},   // p_x

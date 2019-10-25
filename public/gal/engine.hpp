@@ -57,8 +57,9 @@ namespace detail
     {
         constexpr static rat q{num, den};
         constexpr static auto inds
-            = std::make_tuple(std::make_pair(std::integral_constant<width_t, ie.inds[Offset + I].id>{},
-                                             std::integral_constant<int, ie.inds[Offset + I].degree>{})...);
+            = std::make_tuple(std::make_tuple(std::integral_constant<width_t, ie.inds[Offset + I].id>{},
+                                              std::integral_constant<int, ie.inds[Offset + I].degree.num>{},
+                                              std::integral_constant<int, ie.inds[Offset + I].degree.den>{})...);
     };
 
     template <auto const& ie, size_t Offset, typename Seq>
@@ -102,7 +103,7 @@ namespace detail
                                              }
                                              else
                                              {
-                                                 return (::gal::pow(*data[i.first], i.second) * ...);
+                                                 return (::gal::pow(*data[std::get<0>(i)], std::get<1>(i), std::get<2>(i)) * ...);
                                              }
                                          },
                                          m.inds))
@@ -140,7 +141,9 @@ namespace detail
                                                     }
                                                     else
                                                     {
-                                                        return ((i.id == ~0u ? 1 : ::gal::pow(*data[i.id], i.degree))
+                                                        return ((i.id == ~0u
+                                                                     ? 1
+                                                                     : ::gal::pow(*data[i.id], i.degree.num, i.degree.den))
                                                                 * ...);
                                                     }
                                                 },

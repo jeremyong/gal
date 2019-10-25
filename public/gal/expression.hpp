@@ -46,6 +46,12 @@ enum class expr_op
     // Projection operators
     extract, // Extract a single multivector term corresponding to a variadic list of basis elements
     select,  // Select all terms corresponding to a specified grade
+
+    ///////////////////////////////////
+    // Special non-linear operations //
+    ///////////////////////////////////
+
+    fast_exp, // Closed form exponential
 };
 
 template <int num, int den = 1>
@@ -99,14 +105,26 @@ struct expr<expr_op::extract, T, std::integer_sequence<uint8_t, N...>>
     constexpr static std::array<uint8_t, sizeof...(N)> elements = {N...};
 };
 
+struct fast_exp_tag
+{};
+
 template <typename T>
-struct expr<expr_op::select, T, void>
+struct expr<expr_op::fast_exp, T, fast_exp_tag>
 {
     using value_t               = typename T::value_t;
     using algebra_t             = typename T::algebra_t;
-    constexpr static expr_op op = expr_op::select;
+    constexpr static expr_op op = expr_op::fast_exp;
     using lhs_t                 = T;
-    uint32_t grade;
+};
+
+template <typename T, uint8_t G>
+struct expr<expr_op::select, T, std::integral_constant<uint8_t, G>>
+{
+    using value_t                  = typename T::value_t;
+    using algebra_t                = typename T::algebra_t;
+    constexpr static expr_op op    = expr_op::select;
+    using lhs_t                    = T;
+    constexpr static uint8_t grade = G;
 };
 
 // TODO: Support scaling operation by a constant
@@ -219,6 +237,14 @@ template <expr_op O1, typename T1, typename T2, expr_op O2, typename S1, typenam
     return expr<expr_op::symmetric_inner, expr<O1, T1, T2>, expr<O2, S1, S2>>{};
 }
 
+// This operation is ONLY well defined for bivectors and implements a closed form solution by decomposing the bivector
+// into a euclidean and ideal line in order to normalize properly
+template <expr_op O, typename T1, typename T2>
+[[nodiscard]] constexpr auto fast_exp(expr<O, T1, T2>) noexcept
+{
+    return expr<expr_op::fast_exp, expr<O, T1, T2>, fast_exp_tag>{};
+}
+
 template <uint8_t... E>
 struct extract
 {
@@ -288,7 +314,12 @@ template <typename exp_t>
     {
         // TODO: implement me
     }
-    else
+    else if constexpr (exp_t::op == expr_op::fast_exp)
+    {
+        constexpr auto out = detail::fast_exp(reify<typename exp_t::lhs_t>());
+        return out.template resize<out.size.ind, out.size.mon, out.size.term>();
+    }
+    else // Binary operation
     {
         constexpr auto lhs = reify<typename exp_t::lhs_t>();
         constexpr auto rhs = reify<typename exp_t::rhs_t>();

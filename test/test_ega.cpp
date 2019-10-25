@@ -45,8 +45,8 @@ TEST_CASE("rotors")
                                 ind{1, 1}, // sin(t/2)
                             },
                             {
-                                mon{one, 1, 0, 1}, // cos(t/2)
-                                mon{one, 1, 1, 1}, // sin(t/2)
+                                mon{one, one, 1, 0}, // cos(t/2)
+                                mon{one, one, 1, 1}, // sin(t/2)
                             },
                             {
                                 term{1, 0, 0},   // cos(t/2)
@@ -54,7 +54,7 @@ TEST_CASE("rotors")
                             }};
 
         // Vector oriented in the +x direction
-        mv<void, 0, 1, 1> v{mv_size{0, 1, 1}, {}, {mon{one, 0, 0, 1}}, {term{1, 0, 0b1}}};
+        mv<void, 0, 1, 1> v{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 0, 0b1}}};
 
         auto rr   = gal::detail::reverse(r);
         auto vrr  = gal::detail::product(gp, v, rr);
@@ -66,25 +66,25 @@ TEST_CASE("rotors")
         CHECK_EQ(rvrr.size.mon, 3);
         CHECK_EQ(rvrr.size.term, 2);
         CHECK_EQ(rvrr.inds[0].id, 0);
-        CHECK_EQ(rvrr.inds[0].degree, 2);
+        CHECK_EQ(rvrr.inds[0].degree.num, 2);
         CHECK_EQ(rvrr.inds[1].id, 1);
-        CHECK_EQ(rvrr.inds[1].degree, 2);
+        CHECK_EQ(rvrr.inds[1].degree.num, 2);
         CHECK_EQ(rvrr.inds[2].id, 0);
-        CHECK_EQ(rvrr.inds[2].degree, 1);
+        CHECK_EQ(rvrr.inds[2].degree.num, 1);
         CHECK_EQ(rvrr.inds[3].id, 1);
-        CHECK_EQ(rvrr.inds[3].degree, 1);
+        CHECK_EQ(rvrr.inds[3].degree.num, 1);
         CHECK_EQ(rvrr.mons[0].q.num, 1);
         CHECK_EQ(rvrr.mons[0].count, 1);
         CHECK_EQ(rvrr.mons[0].ind_offset, 0);
-        CHECK_EQ(rvrr.mons[0].degree, 2);
+        CHECK_EQ(rvrr.mons[0].degree.num, 2);
         CHECK_EQ(rvrr.mons[1].q.num, -1);
         CHECK_EQ(rvrr.mons[1].count, 1);
         CHECK_EQ(rvrr.mons[1].ind_offset, 1);
-        CHECK_EQ(rvrr.mons[1].degree, 2);
+        CHECK_EQ(rvrr.mons[1].degree.num, 2);
         CHECK_EQ(rvrr.mons[2].q.num, -2);
         CHECK_EQ(rvrr.mons[2].count, 2);
         CHECK_EQ(rvrr.mons[2].ind_offset, 2);
-        CHECK_EQ(rvrr.mons[2].degree, 2);
+        CHECK_EQ(rvrr.mons[2].degree.num, 2);
         CHECK_EQ(rvrr.terms[0].count, 2);
         CHECK_EQ(rvrr.terms[0].mon_offset, 0);
         CHECK_EQ(rvrr.terms[0].element, 1);

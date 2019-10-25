@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -9,11 +10,15 @@ namespace gal
 {
 // right-to-left binary exponentiation
 template <typename T>
-[[nodiscard]] constexpr T pow(T s, int e) noexcept
+[[nodiscard]] constexpr T pow(T s, int e, int d) noexcept
 {
-    if (e < 0)
+    if (d > 1)
     {
-        return T{1} / pow(s, -e);
+        return std::pow(s, e/d);
+    }
+    else if (e < 0)
+    {
+        return T{1} / ::gal::pow(s, -e, 1);
     }
     else if (e == 1)
     {
@@ -113,6 +118,49 @@ struct rat
     [[nodiscard]] constexpr rat negation() const noexcept
     {
         return {-num, den};
+    }
+
+    constexpr rat& operator*=(rat other) noexcept
+    {
+        num *= other.num;
+        den *= other.den;
+        if (num == 0)
+        {
+            den = 1;
+        }
+        else if (den > 1)
+        {
+            auto gcd = std::gcd(num, den);
+            if (gcd > 1)
+            {
+                num /= gcd;
+                den /= gcd;
+            }
+        }
+        return *this;
+    }
+
+    constexpr rat& operator+=(rat other) noexcept
+    {
+        num = num * other.den + other.num * den;
+        if (num == 0)
+        {
+            den = 1;
+        }
+        else
+        {
+            den = den * other.den;
+            if (den > 1)
+            {
+                auto gcd = std::gcd(num, den);
+                if (gcd > 1)
+                {
+                    num /= gcd;
+                    den /= gcd;
+                }
+            }
+        }
+        return *this;
     }
 
     template <typename T>
@@ -239,6 +287,26 @@ namespace detail
     auto gcd1 = std::gcd(lhs.num, lhs.den);
     auto gcd2 = std::gcd(rhs.den, rhs.den);
     return lhs.num / gcd1 == rhs.num / gcd2 && lhs.den / gcd1 == rhs.den / gcd2;
+}
+
+[[nodiscard]] constexpr bool operator!=(rat lhs, int rhs) noexcept
+{
+    return lhs.den != 1 || lhs.num != rhs;
+}
+
+[[nodiscard]] constexpr bool operator!=(rat lhs, rat rhs) noexcept
+{
+    return lhs.num != rhs.num || lhs.den != rhs.den;
+}
+
+[[nodiscard]] constexpr bool operator<(rat lhs, rat rhs) noexcept
+{
+    return (lhs.num * rhs.den) < (rhs.num * lhs.den);
+}
+
+[[nodiscard]] constexpr bool operator>(rat lhs, rat rhs) noexcept
+{
+    return (lhs.num * rhs.den) > (rhs.num * lhs.den);
 }
 
 [[nodiscard]] constexpr rat operator-(rat in) noexcept

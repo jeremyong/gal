@@ -157,16 +157,17 @@ namespace ega
         // z := ID 4
         [[nodiscard]] constexpr static mv<ega_algebra, 8, 4, 4> ie(uint32_t id) noexcept
         {
-            return {mv_size{7, 4, 4},
-                    {ind{id, 1},     // cos(t/2)
-                     ind{id + 1, 1}, // z * sin(t/2)
-                     ind{id + 4, 1},
-                     ind{id + 1, 1}, // -y * sin(t/2)
-                     ind{id + 3, 1},
-                     ind{id + 1, 1}, // x * sin(t/2)
-                     ind{id + 2, 1}},
-                    {mon{one, 1, 0, 1}, mon{minus_one, 2, 1, 2}, mon{one, 2, 3, 2}, mon{minus_one, 2, 5, 2}},
-                    {term{1, 0, 0}, term{1, 1, 0b11}, term{1, 2, 0b101}, term{1, 3, 0b110}}};
+            return {
+                mv_size{7, 4, 4},
+                {ind{id, one},     // cos(t/2)
+                 ind{id + 1, one}, // z * sin(t/2)
+                 ind{id + 4, one},
+                 ind{id + 1, one}, // -y * sin(t/2)
+                 ind{id + 3, one},
+                 ind{id + 1, one}, // x * sin(t/2)
+                 ind{id + 2, one}},
+                {mon{one, one, 1, 0}, mon{minus_one, rat{2}, 2, 1}, mon{one, rat{2}, 2, 3}, mon{minus_one, rat{2}, 2, 5}},
+                {term{1, 0, 0}, term{1, 1, 0b11}, term{1, 2, 0b101}, term{1, 3, 0b110}}};
         }
 
         [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept

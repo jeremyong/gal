@@ -146,7 +146,7 @@ namespace detail
     compute_entity(std::array<ind_value<F>, N> const& data, std::index_sequence<I...>) noexcept
     {
         using entity_t = entity<A, F, ie.terms[I].element...>;
-        return entity_t{cterm<F, ie, I, std::make_index_sequence<ie.terms[I].count>>::value(data)...};
+        return entity_t{cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(data)...};
     }
 
     template <typename A, typename V, typename T, typename D>

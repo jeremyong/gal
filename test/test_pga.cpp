@@ -23,6 +23,15 @@ TEST_CASE("incidence")
 
         std::cout << to_string(line) << std::endl;
     }
+
+    SUBCASE("plane-construction")
+    {
+        point<> p1{1, 0, 0};
+        point<> p2{0, 1, 0};
+        point<> p3{0, 0, 1};
+        plane<> p = compute([](auto pl1, auto pl2, auto pl3) { return pl1 & pl2 & pl3; }, p1, p2, p3);
+        std::printf("plane: %f + %f*x + %f*y + %fz)\n", p.d, p.x, p.y, p.z);
+    }
 }
 
 TEST_CASE("motors")

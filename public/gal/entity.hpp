@@ -13,7 +13,7 @@ namespace detail
         constexpr size_t count         = sizeof...(E);
 
         return mv<A, count, count, count>{
-            mv_size{count, count, count}, {ind{id + N, rat{1}}...}, {mon{one, one, 1, N}...}, {term{1, N, E}...}};
+            mv_size{count, count, count}, {ind{id + N, one}...}, {mon{one, one, 1, N}...}, {term{1, N, E}...}};
     }
 
     template <typename T>

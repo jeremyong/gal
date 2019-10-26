@@ -3,6 +3,7 @@
 #include <doctest/doctest.h>
 #include <gal/ega.hpp>
 #include <gal/engine.hpp>
+#include <gal/expression_debug.hpp>
 #include <gal/format.hpp>
 
 #include <cstdio>
@@ -26,6 +27,7 @@ TEST_CASE("rotors")
         auto result = gal::detail::product(ega_algebra::geometric{}, ie1, ie2);
         auto reverse = gal::detail::reverse(ie1);
 
+        auto r       = gal::evaluate<vector<>, vector<>>{}.debug([](auto v1, auto v2) { return v1 % v2; });
         auto reflect = compute([](auto v1, auto v2) { return v1 % v2; }, v1, v2);
         CHECK_EQ(reflect[0], doctest::Approx(1));
         CHECK_EQ(reflect[1], doctest::Approx(-1));

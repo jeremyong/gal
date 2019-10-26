@@ -11,7 +11,7 @@
     <link rel="img/favicon.ico">
 
     
-    <title>Home - GAL</title>
+    <title>Quick Start - GAL</title>
     
 
     <link rel="stylesheet" href="//use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
@@ -88,7 +88,7 @@
                 
                 
                     <li class="active">
-                        <a href=".">Home</a>
+                        <a href=".">Quick Start</a>
                     </li>
                 
                 
@@ -151,7 +151,7 @@
 
 <h1 id="gal">GAL</h1>
 <p><a href="https://github.com/jeremyong/gal">GAL</a> is a realtime suitable C++17 library designed to be simultaneously competitive with and complementary to traditional methods for computing geometry (e.g. linear algebra, vector spaces, quaternions, dual quaternions). As the majority of its work is done at compile-time, the library is naturally "header-only" due to the implicit inlining requirements.</p>
-<p>For computing in 3D, Geometric Algebra (henceforth, just "GA") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a <em>uniform</em> between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).</p>
+<p>For computing in 3D, Geometric Algebra (henceforth, just "GA") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a <em>uniform</em> way between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).</p>
 <h2 id="getting-started">Getting Started</h2>
 <ul>
 <li><code>git clone git@github.com:jeremyong/gal.git</code> - Clone the <a href="https://github.com/jeremyong/gal">project</a> (directly, as a submodule in your project, via CMake's <a href="https://cmake.org/cmake/help/latest/module/FetchContent.html">FetchContent</a> module, etc)</li>
@@ -317,7 +317,7 @@ line&lt;&gt; l = compute([](auto p1, auto p2) { return p1 &amp; p2; }, p1, p2);
 // You can verify that l defines Plucker coordinates that pass through (1, 0, 0) and (0, 1, 1)
 </code></pre>
 
-<p>In the lambda (the first argument to compute), we do not capture variables, and we do not produce side-effects. The lambda itself is never actually evaluated (instead, <code>decltype</code> is used to compute the final result based solely on the type the lambda returns). In the body of the lambda, we shadow the outside variable names for convenience. The actual types that are passed to the lambda are building blocks of an template expression tree. Thus, operations that are supported in the body of a compute lambda are <em>not</em> supported outside the lambda.</p>
+<p>In the lambda (the first argument to compute), we do not capture variables, and we do not produce side-effects. The lambda itself is never actually evaluated (instead, <code>decltype</code> is used to compute the final result based solely on the type the lambda returns). In the body of the lambda, we shadow the outside variable names for convenience. The actual types that are passed to the lambda are building blocks of a template expression tree. Thus, operations that are supported in the body of a compute lambda are <em>not</em> supported outside the lambda.</p>
 <pre><code class="c++">point&lt;&gt; p1{1, 0, 0};
 point&lt;&gt; p2{0, 1, 1};
 
@@ -484,12 +484,12 @@ plane&lt;&gt; p123 = compute(
     }, p12, p3);
 </code></pre>
 
-<p>If needed, a custom multivector of can be easily created manually in the geometric model of your choosing. For example:</p>
+<p>If needed, a custom multivector can be easily created manually in the geometric model of your choosing. For example:</p>
 <pre><code class="c++">using algebra = gal::pga;
 entity&lt;algebra, double, 0b11, 0b101&gt; my_multivector{3.2, 1.2};
 </code></pre>
 
-<p>This creates the quantity (3.2e_{01} + 1.2_{02})\ and can be used in a compute context like any other entity (concrete or otherwise). The basis elements are expressed as a bitfield with lower indices corresponding with lesser significant bits. It is important that they be specified <em>in ascending order</em> as this is not currently checked. Internally, all multivectors, polynomials, and indeterminates are kept sorted to achieve optimal compiler throughput and many algorithms may break if this total ordering is not respected.</p>
+<p>This creates the quantity (3.2e_{01} + 1.2_{02})\ and can be used in a compute context like any other entity (concrete or otherwise). The basis elements are expressed as a bitfield with the lower indices corresponding to the least significant bits. It is important that they be specified <em>in ascending order</em> as this is not currently checked. Internally, all multivectors, polynomials, and indeterminates are kept sorted to achieve optimal compiler throughput and many algorithms may break if this total ordering is not respected.</p>
 <h2 id="roadmap">Roadmap</h2>
 <p>(not ordered)</p>
 <ul>
@@ -597,5 +597,5 @@ test/
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2019-10-26 12:50:09
+Build Date UTC : 2019-10-26 23:12:00
 -->

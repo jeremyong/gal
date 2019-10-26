@@ -1,15 +1,43 @@
 # GAL
 
-GAL is a realtime suitable C++17 library designed to be simultaneously competitive with and complementary to traditional methods for computing geometry (e.g. linear algebra, vector spaces, quaternions, dual quaternions).
+[GAL](https://github.com/jeremyong/gal) is a realtime suitable C++17 library designed to be simultaneously competitive with and complementary to traditional methods for computing geometry (e.g. linear algebra, vector spaces, quaternions, dual quaternions). As the majority of its work is done at compile-time, the library is naturally "header-only" due to the implicit inlining requirements.
 
 For computing in 3D, Geometric Algebra (henceforth, just "GA") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a *uniform* between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).
 
 ## Getting Started
 
-* `git clone git@github.com:jeremyong/gal.git` - Clone the project (directly, as a submodule in your project, via Cmake's [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) module, etc)
-* `gal` - Link the `gal` interface target if incorporating the library into your own code
+* `git clone git@github.com:jeremyong/gal.git` - Clone the [project](https://github.com/jeremyong/gal) (directly, as a submodule in your project, via CMake's [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) module, etc)
+* `gal` - Link the `gal` interface target if incorporating the library into your own code (will disable test and sample compilation)
 * `mkdir build && cd build && cmake .. -G Ninja && ninja` - Build the tests
 * `./bin/gal_test` - From the build folder, run the tests
+
+When building as a standalone project, the following CMake options are available:
+
+| Option | Default | Description
+--- | --- | ---
+`GAL_TESTS_ENABLED` | `ON` | Compiles the tests
+`GAL_SAMPLES_ENABLED` | `ON` | Compiles the samples (none as of yet, stay tuned!)
+`GAL_PROFILE_COMPILATION_ENABLED` | `OFF` | Enables timing data generation (traces if using clang, reports if using gcc)
+
+If using CMake to integrate GAL into your project, here's a quick snippet you can use (requires CMake 3.14 or above):
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+    gal
+    GIT_REPOSITORY https://github.com/jeremyong/gal.git
+    GIT_TAG master # or specific commit hash
+)
+FetchContent_MakeAvailable(gal)
+
+target_link_libraries(your_target PRIVATE gal)
+```
+
+## Requirements
+
+* A working C++17 compiler (currently gcc and clang are tested but MSVC will come soon)
+* [CMake](https://cmake.org) 3.14+ if building the tests
+* (optional) [Ninja](https://ninja-build.org/) Backend build system
 
 ## Usage
 
@@ -17,13 +45,13 @@ For computing in 3D, Geometric Algebra (henceforth, just "GA") promotes the fami
 
 To use GAL, you need to minimally include a single header corresponding to the model you wish to work with. The model defines the [metric signature](https://en.wikipedia.org/wiki/Metric_signature) as well as the dimensionality of the space you wish to represent. Typically, this will either be the Euclidean plane or the fundamental Euclidean 3-space. If you installed or linked to the library through conventional means, you would include things with the `gal` path prefix (as in, `#include <gal/pga.hpp>` for example).
 
-| Header | Space | Namespace
---- | --- | ---
-`gal/ega.hpp` | \(\mathbf{E}^3\) | `gal::ega`
-`gal/pga2.hpp` | \(\mathbf{P}(\mathbb{R}^*_{2, 0, 1})\) | `gal::pga2`
-`gal/pga.hpp` | \(\mathbf{P}(\mathbb{R}^*_{3, 0, 1})\) | `gal::pga`
-`gal/cga2.hpp` | \(\mathbf{C}(\mathbb{R}_{3, 1, 0})\) | `gal::cga2`
-`gal/cga.hpp` | \(\mathbf{C}(\mathbb{R}_{4, 1, 0})\) | `gal::cga`
+| Header | Space | Namespace | Description
+--- | --- | --- | ---
+`gal/ega.hpp` | \(\mathbb{R}_{3, 0, 0}\) | `gal::ega` | Canonical 3D Euclidean space
+`gal/pga2.hpp` | \(\mathbf{P}(\mathbb{R}^*_{2, 0, 1})\) | `gal::pga2` | Projectivized 2D Euclidean plane
+`gal/pga.hpp` | \(\mathbf{P}(\mathbb{R}^*_{3, 0, 1})\) | `gal::pga` | Projectivized 3D Euclidean space
+`gal/cga2.hpp` | \(\mathbf{C}(\mathbb{R}_{3, 1, 0})\) | `gal::cga2` | Conformalized 2D Euclidean plane
+`gal/cga.hpp` | \(\mathbf{C}(\mathbb{R}_{4, 1, 0})\) | `gal::cga` | Conformalized 3D Euclidean plane
 
 All functions and entities specific to the model will be defined in the namespace according to the table above. General functions and operations will be defined in the `gal` namespace.
 
@@ -46,9 +74,11 @@ All the entities above are representations of *Euclidean* entities and take on a
 
 All entities support initialization the way you'd expect. For example `point<double> p{0, 1, 2}` defines the point at \((0, 1, 2)\) when using any of the models that represent Euclidean 3-space. They also support indexed access (i.e. `p[1] == 1` will evaluate true) and in some cases, accessors are aliased using nested unions for convience. The point coordinates, for example, may be referred to via `u`, `v`, and `w`, or even `s` and `t` depending on the model dimensionality.
 
+Where appropriate, entities may support the `normalize` method, which mutates the entity as appropriate for its type. A divide-by-zero check is not performed. In all cases in fact, the library adopts the philosophy that the user should not pay for what the user does not use.
+
 Entities are stored sparsely regardless of the model they are in with *no additional overhead* for multivector basis-index bookkeeping. For example, `sizeof(point<float>)` is 12 (3 floats) regardless of whether you are working with CGA (where the point is represented as \(\mathbf{o} + p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z} + \frac{1}{2}p^2\boldsymbol\infty\)) or in EGA (where the point is simply \(p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z}\)).
 
-### Evaluate an expression
+### Evaluating expressions
 
 Expressions are evaluated lazily at compile-time in a manner that maximally promotes [CSE](https://en.wikipedia.org/wiki/Common_subexpression_elimination). Thus, we sacrifice a little bit of code-authorship convenience to gain a significant speedup at runtime.
 
@@ -155,6 +185,27 @@ plane<> p123 = compute(
         return p12 & p3;
     }, p12, p3);
 ```
+
+If needed, a custom multivector of can be easily created manually in the geometric model of your choosing. For example:
+
+```c++
+using algebra = gal::pga;
+entity<algebra, double, 0b11, 0b101> my_multivector{3.2, 1.2};
+```
+
+This creates the quantity \(3.2e_{01} + 1.2_{02})\ and can be used in a compute context like any other entity (concrete or otherwise). The basis elements are expressed as a bitfield with lower indices corresponding with lesser significant bits. It is important that they be specified *in ascending order* as this is not currently checked. Internally, all multivectors, polynomials, and indeterminates are kept sorted to achieve optimal compiler throughput and many algorithms may break if this total ordering is not respected.
+
+## Roadmap
+
+(not ordered)
+
+- Support MSVC
+- Support transcendental function usage in lazily evaluated contexts
+- Provide samples and visualization framework
+- Provide examples using dual and complex numbers as the field type
+- Provide more instructional documentation for newer practitioners of GA
+- Support much longer evaluation contexts (compile-time acceleration)
+- Integrate CI/automated testing
 
 ## Project layout
 

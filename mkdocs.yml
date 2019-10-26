@@ -1,16 +1,22 @@
-site_name: Porism
-site_author: Jeremy Ong
-
+site_name: GAL
 theme: cinder
+site_url: https://jeremyong.com/gal
+repo_url: https://github.com/jeremyong/gal
+repo_name: GitHub
+site_description: GAL - A fast C++17 geometric algebra library
+site_author: Jeremy Ong
+copyright: 'Jeremy Ong 2019'
+google_analytics: ['UA-10576233-1', 'jeremyong.com']
+
+plugins: []
 
 nav:
   - 'Home': 'index.md'
+  - 'Coding Conventions': 'coding-conventions'
   - 'About': 'about.md'
 
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-AMS-MML_HTMLorMML
-
-copyright: 'Jeremy Ong 2019'
 
 markdown_extensions:
   - mdx_math

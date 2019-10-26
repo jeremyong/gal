@@ -2,7 +2,7 @@
 
 [GAL](https://github.com/jeremyong/gal) is a realtime suitable C++17 library designed to be simultaneously competitive with and complementary to traditional methods for computing geometry (e.g. linear algebra, vector spaces, quaternions, dual quaternions). As the majority of its work is done at compile-time, the library is naturally "header-only" due to the implicit inlining requirements.
 
-For computing in 3D, Geometric Algebra (henceforth, just "GA") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a *uniform* between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).
+For computing in 3D, Geometric Algebra (henceforth, just "GA") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a *uniform* way between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).
 
 ## Getting Started
 
@@ -99,7 +99,7 @@ line<> l = compute([](auto p1, auto p2) { return p1 & p2; }, p1, p2);
 // You can verify that l defines Plucker coordinates that pass through (1, 0, 0) and (0, 1, 1)
 ```
 
-In the lambda (the first argument to compute), we do not capture variables, and we do not produce side-effects. The lambda itself is never actually evaluated (instead, `decltype` is used to compute the final result based solely on the type the lambda returns). In the body of the lambda, we shadow the outside variable names for convenience. The actual types that are passed to the lambda are building blocks of an template expression tree. Thus, operations that are supported in the body of a compute lambda are *not* supported outside the lambda.
+In the lambda (the first argument to compute), we do not capture variables, and we do not produce side-effects. The lambda itself is never actually evaluated (instead, `decltype` is used to compute the final result based solely on the type the lambda returns). In the body of the lambda, we shadow the outside variable names for convenience. The actual types that are passed to the lambda are building blocks of a template expression tree. Thus, operations that are supported in the body of a compute lambda are *not* supported outside the lambda.
 
 ```c++
 point<> p1{1, 0, 0};
@@ -186,14 +186,14 @@ plane<> p123 = compute(
     }, p12, p3);
 ```
 
-If needed, a custom multivector of can be easily created manually in the geometric model of your choosing. For example:
+If needed, a custom multivector can be easily created manually in the geometric model of your choosing. For example:
 
 ```c++
 using algebra = gal::pga;
 entity<algebra, double, 0b11, 0b101> my_multivector{3.2, 1.2};
 ```
 
-This creates the quantity \(3.2e_{01} + 1.2_{02})\ and can be used in a compute context like any other entity (concrete or otherwise). The basis elements are expressed as a bitfield with lower indices corresponding with lesser significant bits. It is important that they be specified *in ascending order* as this is not currently checked. Internally, all multivectors, polynomials, and indeterminates are kept sorted to achieve optimal compiler throughput and many algorithms may break if this total ordering is not respected.
+This creates the quantity \(3.2e_{01} + 1.2_{02})\ and can be used in a compute context like any other entity (concrete or otherwise). The basis elements are expressed as a bitfield with the lower indices corresponding to the least significant bits. It is important that they be specified *in ascending order* as this is not currently checked. Internally, all multivectors, polynomials, and indeterminates are kept sorted to achieve optimal compiler throughput and many algorithms may break if this total ordering is not respected.
 
 ## Roadmap
 

@@ -2,7 +2,6 @@
 
 #include <doctest/doctest.h>
 #include <gal/ega.hpp>
-#include <gal/engine.hpp>
 #include <gal/expression_debug.hpp>
 #include <gal/format.hpp>
 

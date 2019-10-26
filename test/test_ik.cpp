@@ -1,7 +1,6 @@
 #include "test_util.hpp"
 
 #include <gal/cga.hpp>
-#include <gal/engine.hpp>
 
 #include <doctest/doctest.h>
 

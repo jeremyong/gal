@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine.hpp"
 #include "entity.hpp"
 #include "geometric_algebra.hpp"
 

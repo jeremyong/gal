@@ -1,7 +1,6 @@
 #pragma once
 
 #include <gal/cga.hpp>
-#include <gal/engine.hpp>
 
 // SANITY TEST
 //

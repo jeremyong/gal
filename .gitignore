@@ -1,3 +1,8 @@
+# System
+# I don't use MacOS but in case someone else does...
+.DS_Store
+
 .vscode
 build
 build-clang
+site/

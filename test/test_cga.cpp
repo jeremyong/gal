@@ -2,7 +2,6 @@
 
 #include <doctest/doctest.h>
 #include <gal/cga.hpp>
-#include <gal/engine.hpp>
 
 using namespace gal;
 using namespace gal::cga;

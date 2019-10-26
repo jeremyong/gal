@@ -1,11 +1,6 @@
-
-<p align="left">
-    <img src="./doc/logo.png" alt="GAL" width="300">
-</p>
-
 # Geometric Algebra Library
 
-GAL is a C++17 expression compiler and engine for computing with geometric algebra. It focuses primarily on speed and customizability with the ambition for being suitable for use in production environments where real-time speed is a factor.
+[GAL](https://www.jeremyong.com/gal/) (project page link) is a C++17 expression compiler and engine for computing with geometric algebra. It focuses primarily on speed and customizability with the ambition for being suitable for use in production environments where real-time speed is a factor.
 
 Some things that make GAL unique are:
 
@@ -14,7 +9,7 @@ Some things that make GAL unique are:
 - GAL separates computation into three layers: data, algebraic expression evaluation, and computation. Each layer is customizable, and examples of why you might want to do so include supporting exotic metrics or number systems or generating shader ISA code (as opposed to CPU evaluation).
 - While GAL is template-heavy, fast compile times are a top priority for GAL, which leverages numerous modern C++17 techniques (C++2a soon) to improve compile times.
 
-GAL is in the early stages of development, so please stay tuned for more!
+For the most complete and up-to-date documentation, please refer to the project page [here](https://www.jeremyong.com/gal/). If you wish to learn more about the internals of the library, feel free to continue reading.
 
 ## Runtime and Compile-time performance
 
@@ -27,7 +22,7 @@ Runtime and compile time performance is achieved by using the following approach
 2. Expression inputs are entities that are encoded with flat representations (e.g. an R3 point is just 3 floats and not tied to a multivector representation).
 3. Prior to evaluation, expression inputs are expressed in indeterminate multivector form (parameters of each input are expressed via integral tags, not floating-point values). This is encoded using 3 flat compile-time arrays per multivector (storing intederminates, monomials, and polynomials) for fast simplification and evaluation.
 4. Expressions are expanded in indeterminate form using polynomial coefficients so that term arithmetic can happen exactly over the field of rationals. A number of techniques are used to put strict upper bounds on compile time memory and CPU usage whever possible.
-5. The final indeterminate form is evaluated coefficient by coefficient. For CSE, the compiler is relied on at this time, although future work in doing compile time multivariate polynomial reduction is possible.
+5. The final indeterminate form is evaluated coefficient by coefficient. For CSE, the compiler is relied on at this time, although future work in doing compile time multivariate polynomial reduction is possible. For maximal throughput, this does not rely on features like `std::tuple` which are known to have poor compilation performance where possible.
 6. The results are optionally cast back into the flat entity form which extracts multivector components and applies scaling as appropriate. This operation is also a compile time operation which may cause additional computation to drop out trivially.
 
 ## Usage
@@ -45,9 +40,6 @@ cd build
 cmake .. -G Ninja
 
 # ... or whichever (ideally multicore-friendly) build system you choose
-# CAREFUL currently this also builds an inverse-kinematics algorithm using a method that is pathologically
-# slower to compile. This implementation was chosen only to provide an apples to apples comparison to other
-# frameworks from ga-benchmark
 ninja
 
 # Run the tests
@@ -100,7 +92,6 @@ the compiler would be unable to optimize this as such in general. GAL makes the 
 
 ```c++
 #include <gal/cga.hpp>
-#include <gal/engine.hpp>
 
 using scalar = gal::cga::scalar<float>;
 using point  = gal::cga::point<float>;
@@ -133,6 +124,7 @@ completely!
 ## API
 
 The library is still under flux, but for now, the snippet below should give you a decent idea of how to use GAL.
+For more complete documentation, please refer to the [project page](https://jeremyong.com/gal).
 
 Example usage:
 

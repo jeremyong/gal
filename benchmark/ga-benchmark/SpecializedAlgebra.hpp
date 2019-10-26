@@ -5,7 +5,6 @@
 #if GABENCHMARK_CHECK_MODEL(ConformalModel)
 #if GABENCHMARK_D_DIMENSIONS == 2
 #include <gal/cga2.hpp>
-#include <gal/engine.hpp>
 namespace gabenchmark
 {
 using namespace gal;
@@ -13,7 +12,6 @@ using namespace gal::cga2;
 }
 #elif GABENCHMARK_D_DIMENSIONS == 3
 #include <gal/cga.hpp>
-#include <gal/engine.hpp>
 namespace gabenchmark
 {
 using namespace gal;

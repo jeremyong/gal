@@ -11,7 +11,7 @@
     <link rel="img/favicon.ico">
 
     
-    <title>Home - Porism</title>
+    <title>Home - GAL</title>
     
 
     <link rel="stylesheet" href="//use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
@@ -61,7 +61,7 @@
 
             <!-- Main title -->
 
-            <a class="navbar-brand" href=".">Porism</a>
+            <a class="navbar-brand" href=".">GAL</a>
         </div>
 
         <!-- Expanded navigation -->
@@ -112,12 +112,16 @@
         <li class="first-level active"><a href="#gal">GAL</a></li>
             <li class="second-level"><a href="#getting-started">Getting Started</a></li>
                 
+            <li class="second-level"><a href="#requirements">Requirements</a></li>
+                
             <li class="second-level"><a href="#usage">Usage</a></li>
                 
                 <li class="third-level"><a href="#pick-a-model">Pick A Model</a></li>
                 <li class="third-level"><a href="#create-some-entities">Create some entities</a></li>
-                <li class="third-level"><a href="#evaluate-an-expression">Evaluate an expression</a></li>
+                <li class="third-level"><a href="#evaluating-expressions">Evaluating expressions</a></li>
                 <li class="third-level"><a href="#reading-results">Reading results</a></li>
+            <li class="second-level"><a href="#roadmap">Roadmap</a></li>
+                
             <li class="second-level"><a href="#project-layout">Project layout</a></li>
                 
     </ul>
@@ -133,6 +137,11 @@
 <li><code>gal</code> - Link the <code>gal</code> interface target if incorporating the library into your own code</li>
 <li><code>mkdir build &amp;&amp; cd build &amp;&amp; cmake .. -G Ninja &amp;&amp; ninja</code> - Build the tests</li>
 <li><code>./bin/gal_test</code> - From the build folder, run the tests</li>
+</ul>
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li>A working C++17 compiler (currently gcc and clang are tested but MSVC will come soon)</li>
+<li>Cmake 3.14+ if building the tests</li>
 </ul>
 <h2 id="usage">Usage</h2>
 <h3 id="pick-a-model">Pick A Model</h3>
@@ -224,7 +233,7 @@
 <p>All the entities above are representations of <em>Euclidean</em> entities and take on a different shape internally (at compile-time) depending on the space and model you're working in.</p>
 <p>All entities support initialization the way you'd expect. For example <code>point&lt;double&gt; p{0, 1, 2}</code> defines the point at <script type="math/tex">(0, 1, 2)</script> when using any of the models that represent Euclidean 3-space. They also support indexed access (i.e. <code>p[1] == 1</code> will evaluate true) and in some cases, accessors are aliased using nested unions for convience. The point coordinates, for example, may be referred to via <code>u</code>, <code>v</code>, and <code>w</code>, or even <code>s</code> and <code>t</code> depending on the model dimensionality.</p>
 <p>Entities are stored sparsely regardless of the model they are in with <em>no additional overhead</em> for multivector basis-index bookkeeping. For example, <code>sizeof(point&lt;float&gt;)</code> is 12 (3 floats) regardless of whether you are working with CGA (where the point is represented as <script type="math/tex">\mathbf{o} + p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z} + \frac{1}{2}p^2\boldsymbol\infty</script>) or in EGA (where the point is simply <script type="math/tex">p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z}</script>).</p>
-<h3 id="evaluate-an-expression">Evaluate an expression</h3>
+<h3 id="evaluating-expressions">Evaluating expressions</h3>
 <p>Expressions are evaluated lazily at compile-time in a manner that maximally promotes <a href="https://en.wikipedia.org/wiki/Common_subexpression_elimination">CSE</a>. Thus, we sacrifice a little bit of code-authorship convenience to gain a significant speedup at runtime.</p>
 <p>A computation will take the form <code>compute([](...) { ... }, entities...)</code> where the first argument is a lambda and the second argument are the entities you created in the prior step.</p>
 <p>A simple calculation might look like:</p>
@@ -407,6 +416,16 @@ plane&lt;&gt; p123 = compute(
     }, p12, p3);
 </code></pre>
 
+<h2 id="roadmap">Roadmap</h2>
+<p>(not ordered)</p>
+<ul>
+<li>Support MSVC</li>
+<li>Support transcendental function usage in lazily evaluated contexts</li>
+<li>Provide samples and visualization framework</li>
+<li>Provide examples using dual and complex numbers as the field type</li>
+<li>Provide more instructional documentation for newer practitioners of GA</li>
+<li>Support much longer evaluation contexts (compile-time acceleration)</li>
+</ul>
 <h2 id="project-layout">Project layout</h2>
 <pre><code>docs/
     index.md  # This documentation homepage.
@@ -527,5 +546,5 @@ test/
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2019-10-26 11:05:33
+Build Date UTC : 2019-10-26 11:21:40
 -->

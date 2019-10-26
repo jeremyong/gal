@@ -815,7 +815,7 @@ namespace detail
     }
 
     template <typename A, width_t I, width_t M, width_t T>
-    [[nodiscard]] constexpr auto scalar_product(rat lhs, mv<A, I, M, T> rhs) noexcept
+    [[nodiscard]] constexpr auto scale(rat lhs, mv<A, I, M, T> rhs) noexcept
     {
         for (size_t i = 0; i != rhs.size.mon; ++i)
         {
@@ -825,7 +825,7 @@ namespace detail
     }
 
     template <typename A, width_t I, width_t M, width_t T>
-    [[nodiscard]] constexpr auto scalar_sum(rat lhs, mv<A, I, M, T> const& rhs) noexcept
+    [[nodiscard]] constexpr auto shift(rat lhs, mv<A, I, M, T> const& rhs) noexcept
     {
         mv<A, 0, 1, 1> addend{mv_size{0, 1, 1}, {}, {mon{lhs, zero, 0, 0}}, {term{1, 0, 0}}};
         return sum(rhs, addend);
@@ -1187,15 +1187,6 @@ namespace detail
                 out.push(term++, one, *element);
             }
         }
-    }
-
-    template <typename A, width_t I, width_t M, width_t T>
-    [[nodiscard]] constexpr auto fast_exp(mv<A, I, M, T> const& in)
-    {
-        auto in_2 = product(typename A::geometric{}, in, in);
-        // For a bivector, in^2 will be in the form s + pI
-        // auto s_term = in_2.terms[0];
-        // TODO
     }
 } // namespace detail
 

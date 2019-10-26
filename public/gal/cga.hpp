@@ -32,14 +32,6 @@ namespace cga
         template <typename T>
         struct n_i_tag
         {};
-
-        template <typename T>
-        struct pseudoscalar_tag
-        {};
-
-        template <typename T>
-        struct pseudoscalar_inv_tag
-        {};
     } // namespace detail
 } // namespace cga
 
@@ -68,7 +60,7 @@ struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, cga::detail::n_i_t
 };
 
 template <typename T>
-struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, cga::detail::pseudoscalar_tag<T>>
+struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, detail::pseudoscalar_tag<T>>
 {
     using value_t               = T;
     using algebra_t             = cga::cga_algebra;
@@ -77,7 +69,7 @@ struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, cga::detail::pseud
 };
 
 template <typename T>
-struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, cga::detail::pseudoscalar_inv_tag<T>>
+struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, detail::pseudoscalar_inv_tag<T>>
 {
     using value_t               = T;
     using algebra_t             = cga::cga_algebra;
@@ -94,10 +86,10 @@ namespace cga
     constexpr inline expr<expr_op::identity, mv<cga_algebra, 0, 1, 1>, detail::n_i_tag<T>> n_i;
 
     template <typename T = float>
-    constexpr inline expr<expr_op::identity, mv<cga_algebra, 0, 1, 1>, detail::pseudoscalar_tag<T>> ps;
+    constexpr inline expr<expr_op::identity, mv<cga_algebra, 0, 1, 1>, ::gal::detail::pseudoscalar_tag<T>> ps;
 
     template <typename T = float>
-    constexpr inline expr<expr_op::identity, mv<cga_algebra, 0, 1, 1>, detail::pseudoscalar_inv_tag<T>> ips;
+    constexpr inline expr<expr_op::identity, mv<cga_algebra, 0, 1, 1>, ::gal::detail::pseudoscalar_inv_tag<T>> ips;
 
     template <typename T = float>
     union point

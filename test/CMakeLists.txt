@@ -15,8 +15,8 @@ add_executable(gal_test
     test_algorithm.cpp
     test_cga.cpp
     test_ega.cpp
-    test_pga.cpp)
-    # test_ik.cpp)
+    test_pga.cpp
+    test_ik.cpp)
 
 target_link_libraries(gal_test PRIVATE gal doctest)
 target_compile_definitions(gal_test PRIVATE

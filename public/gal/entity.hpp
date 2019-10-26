@@ -15,6 +15,14 @@ namespace detail
         return mv<A, count, count, count>{
             mv_size{count, count, count}, {ind{id + N, rat{1}}...}, {mon{one, one, 1, N}...}, {term{1, N, E}...}};
     }
+
+    template <typename T>
+    struct pseudoscalar_tag
+    {};
+
+    template <typename T>
+    struct pseudoscalar_inv_tag
+    {};
 } // namespace detail
 
 // All entities are expected to provide a static function to retrieve the entity's indeterminate expression given an
@@ -47,18 +55,30 @@ struct entity
     }
 
     template <uint8_t... S>
-    [[nodiscard]] constexpr std::array<T, sizeof...(S)> select() noexcept
+    [[nodiscard]] constexpr std::array<T, sizeof...(S)> select() const noexcept
     {
         return {select(S)...};
     }
 
-    [[nodiscard]] constexpr T select(uint8_t e) noexcept
+    [[nodiscard]] constexpr T select(uint8_t e) const noexcept
     {
         for (uint8_t i = 0; i != elements.size(); ++i)
         {
             if (elements[i] == e)
             {
                 return data_[i];
+            }
+        }
+        return {};
+    }
+
+    [[nodiscard]] constexpr T* select(uint8_t e) noexcept
+    {
+        for (uint8_t i = 0; i != elements.size(); ++i)
+        {
+            if (elements[i] == e)
+            {
+                return &data_[i];
             }
         }
         return {};

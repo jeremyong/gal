@@ -41,13 +41,13 @@ template <typename exp_t>
         // TODO: implement me
         // return ::gal::clifford_conjugate(debug_reify(T1{}));
     }
-    else if constexpr (exp_t::op == expr_op::scalar_sum)
+    else if constexpr (exp_t::op == expr_op::shift)
     {
-        return detail::scalar_sum(exp_t::rhs_t::q(), debug_reify<typename exp_t::lhs_t>());
+        return detail::shift(exp_t::rhs_t::q(), debug_reify<typename exp_t::lhs_t>());
     }
-    else if constexpr (exp_t::op == expr_op::scalar_product)
+    else if constexpr (exp_t::op == expr_op::scale)
     {
-        return detail::scalar_product(exp_t::rhs_t::q(), debug_reify<typename exp_t::lhs_t>());
+        return detail::scale(exp_t::rhs_t::q(), debug_reify<typename exp_t::lhs_t>());
     }
     else if constexpr (exp_t::op == expr_op::extract)
     {

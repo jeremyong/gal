@@ -23,9 +23,9 @@ enum class expr_op
     // Binary operations //
     ///////////////////////
 
-    // Scalar operations
-    scalar_sum,
-    scalar_product,
+    // Add or multiply by a constant
+    shift,
+    scale,
 
     // Arithmetric
     sum,
@@ -42,16 +42,11 @@ enum class expr_op
     // Metric products
     contract,
     symmetric_inner,
+    scalar,
 
     // Projection operators
     extract, // Extract a single multivector term corresponding to a variadic list of basis elements
     select,  // Select all terms corresponding to a specified grade
-
-    ///////////////////////////////////
-    // Special non-linear operations //
-    ///////////////////////////////////
-
-    fast_exp, // Closed form exponential
 };
 
 template <int num, int den = 1>
@@ -105,18 +100,6 @@ struct expr<expr_op::extract, T, std::integer_sequence<uint8_t, N...>>
     constexpr static std::array<uint8_t, sizeof...(N)> elements = {N...};
 };
 
-struct fast_exp_tag
-{};
-
-template <typename T>
-struct expr<expr_op::fast_exp, T, fast_exp_tag>
-{
-    using value_t               = typename T::value_t;
-    using algebra_t             = typename T::algebra_t;
-    constexpr static expr_op op = expr_op::fast_exp;
-    using lhs_t                 = T;
-};
-
 template <typename T, uint8_t G>
 struct expr<expr_op::select, T, std::integral_constant<uint8_t, G>>
 {
@@ -156,43 +139,43 @@ template <expr_op O1, typename T1, typename T2, expr_op O2, typename S1, typenam
 template <expr_op O, typename T1, typename T2, int F1, int F2>
 [[nodiscard]] constexpr auto operator+(frac_t<F1, F2>, expr<O, T1, T2>)
 {
-    return expr<expr_op::scalar_sum, expr<O, T1, T2>, frac_t<F1, F2>>{};
+    return expr<expr_op::shift, expr<O, T1, T2>, frac_t<F1, F2>>{};
 }
 
 template <expr_op O, typename T1, typename T2, int F1, int F2>
 [[nodiscard]] constexpr auto operator+(expr<O, T1, T2>, frac_t<F1, F2>)
 {
-    return expr<expr_op::scalar_sum, expr<O, T1, T2>, frac_t<F1, F2>>{};
+    return expr<expr_op::shift, expr<O, T1, T2>, frac_t<F1, F2>>{};
 }
 
 template <expr_op O, typename T1, typename T2, int F1, int F2>
 [[nodiscard]] constexpr auto operator-(frac_t<F1, F2>, expr<O, T1, T2>)
 {
-    return expr<expr_op::scalar_sum, expr<expr_op::negate, expr<O, T1, T2>>, frac_t<F1, F2>>{};
+    return expr<expr_op::shift, expr<expr_op::negate, expr<O, T1, T2>>, frac_t<F1, F2>>{};
 }
 
 template <expr_op O, typename T1, typename T2, int F1, int F2>
 [[nodiscard]] constexpr auto operator-(expr<O, T1, T2>, frac_t<F1, F2>)
 {
-    return expr<expr_op::scalar_sum, expr<O, T1, T2>, frac_t<-F1, F2>>{};
+    return expr<expr_op::shift, expr<O, T1, T2>, frac_t<-F1, F2>>{};
 }
 
 template <expr_op O, typename T1, typename T2, int F1, int F2>
 [[nodiscard]] constexpr auto operator*(expr<O, T1, T2>, frac_t<F1, F2>)
 {
-    return expr<expr_op::scalar_product, expr<O, T1, T2>, frac_t<F1, F2>>{};
+    return expr<expr_op::scale, expr<O, T1, T2>, frac_t<F1, F2>>{};
 }
 
 template <expr_op O, typename T1, typename T2, int F1, int F2>
 [[nodiscard]] constexpr auto operator*(frac_t<F1, F2>, expr<O, T1, T2>)
 {
-    return expr<expr_op::scalar_product, expr<O, T1, T2>, frac_t<F1, F2>>{};
+    return expr<expr_op::scale, expr<O, T1, T2>, frac_t<F1, F2>>{};
 }
 
 template <expr_op O, typename T1, typename T2, int F1, int F2>
 [[nodiscard]] constexpr auto operator/(expr<O, T1, T2>, frac_t<F1, F2>)
 {
-    return expr<expr_op::scalar_product, expr<O, T1, T2>, frac_t<F2, F1>>{};
+    return expr<expr_op::scale, expr<O, T1, T2>, frac_t<F2, F1>>{};
 }
 
 template <expr_op O1, typename T1, typename T2, expr_op O2, typename S1, typename S2>
@@ -237,12 +220,10 @@ template <expr_op O1, typename T1, typename T2, expr_op O2, typename S1, typenam
     return expr<expr_op::symmetric_inner, expr<O1, T1, T2>, expr<O2, S1, S2>>{};
 }
 
-// This operation is ONLY well defined for bivectors and implements a closed form solution by decomposing the bivector
-// into a euclidean and ideal line in order to normalize properly
-template <expr_op O, typename T1, typename T2>
-[[nodiscard]] constexpr auto fast_exp(expr<O, T1, T2>) noexcept
+template <expr_op O1, typename T1, typename T2, expr_op O2, typename S1, typename S2>
+[[nodiscard]] constexpr auto scalar_product(expr<O1, T1, T2>, expr<O2, S1, S2>) noexcept
 {
-    return expr<expr_op::fast_exp, expr<O, T1, T2>, fast_exp_tag>{};
+    return expr<expr_op::scalar, expr<O1, T1, T2>, expr<O2, S1, S2>>{};
 }
 
 template <uint8_t... E>
@@ -297,13 +278,13 @@ template <typename exp_t>
         // TODO: implement me
         // return ::gal::clifford_conjugate(reify(T1{}));
     }
-    else if constexpr (exp_t::op == expr_op::scalar_sum)
+    else if constexpr (exp_t::op == expr_op::shift)
     {
-        return detail::scalar_sum(exp_t::rhs_t::q(), reify<typename exp_t::lhs_t>());
+        return detail::shift(exp_t::rhs_t::q(), reify<typename exp_t::lhs_t>());
     }
-    else if constexpr (exp_t::op == expr_op::scalar_product)
+    else if constexpr (exp_t::op == expr_op::scale)
     {
-        return detail::scalar_product(exp_t::rhs_t::q(), reify<typename exp_t::lhs_t>());
+        return detail::scale(exp_t::rhs_t::q(), reify<typename exp_t::lhs_t>());
     }
     else if constexpr (exp_t::op == expr_op::extract)
     {
@@ -313,11 +294,6 @@ template <typename exp_t>
     else if constexpr (exp_t::op == expr_op::select)
     {
         // TODO: implement me
-    }
-    else if constexpr (exp_t::op == expr_op::fast_exp)
-    {
-        constexpr auto out = detail::fast_exp(reify<typename exp_t::lhs_t>());
-        return out.template resize<out.size.ind, out.size.mon, out.size.term>();
     }
     else // Binary operation
     {
@@ -372,6 +348,13 @@ template <typename exp_t>
         {
             constexpr auto out = detail::product(typename decltype(lhs)::algebra_t::symmetric_inner{}, lhs, rhs);
             return out.template resize<out.size.ind, out.size.mon, out.size.term>();
+        }
+        else if constexpr (exp_t::op == expr_op::scalar)
+        {
+            // Compute the grade 0 element of the symmetric inner product
+            constexpr auto ip = detail::product(typename decltype(lhs)::algebra_t::symmetric_inner{}, lhs, rhs);
+            constexpr auto out = detail::extract(ip, {0});
+            return out.template resize<out.size.ind, out.size.mon, 1>();
         }
     }
 }

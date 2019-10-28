@@ -142,15 +142,21 @@
         
         <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
+        <li class="first-level active"><a href="#benchmarks">Benchmarks</a></li>
+            <li class="second-level"><a href="#runtime">Runtime</a></li>
+                
+            <li class="second-level"><a href="#compilation-time">Compilation time</a></li>
+                
     </ul>
 </div></div>
         <div class="col-md-9" role="main">
 
-<p># Benchmarks</p>
+<h1 id="benchmarks">Benchmarks</h1>
 <blockquote>
 <p>NOTE: The author isn't honestly a believer in benchmarks as a proxy for how fast <em>your</em> code will run. Use these timings only as a heuristic on which to base your judgement and please, please, benchmark your own code. If you find something isn't fast, please file an issue! Thanks :)</p>
 </blockquote>
 <p>These results were produced on October 28, 2019 for the <code>GABenchmark_AlgorithmInverseKinematics_ConformalModel_D3</code> benchmark provided by <a href="https://github.com/ga-developers/ga-benchmark/blob/master/AlgorithmInverseKinematics.cpp">gabenchmark</a> (all benchmarks compiled with <code>-O2 -mfma</code> using GCC 10). Prior to each benchmark, CPU scaling was turned off for consistent results.</p>
+<h2 id="runtime">Runtime</h2>
 <table>
 <thead>
 <tr>
@@ -190,6 +196,7 @@
 </tbody>
 </table>
 <p>This was tested on an Intel i9-9900K.</p>
+<h2 id="compilation-time">Compilation time</h2>
 <p>The compilation times for the same example are shown below:</p>
 <table>
 <thead>

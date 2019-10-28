@@ -7,11 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="GAL - A fast C++17 geometric algebra library">
     <meta name="author" content="Jeremy Ong">
-    <link rel="canonical" href="https://jeremyong.com/gal/coding-conventions/">
+    <link rel="canonical" href="https://jeremyong.com/gal/benchmarks/">
     <link rel="../img/favicon.ico">
 
     
-    <title>Coding Conventions - GAL</title>
+    <title>Benchmarks - GAL</title>
     
 
     <link rel="stylesheet" href="//use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
@@ -99,14 +99,14 @@
                 
                 
                 
-                    <li >
-                        <a href="../benchmarks/">Benchmarks</a>
+                    <li class="active">
+                        <a href="./">Benchmarks</a>
                     </li>
                 
                 
                 
-                    <li class="active">
-                        <a href="./">Coding Conventions</a>
+                    <li >
+                        <a href="../coding-conventions/">Coding Conventions</a>
                     </li>
                 
                 
@@ -120,17 +120,17 @@
 
             <ul class="nav navbar-nav navbar-right">
                     <li >
-                        <a rel="prev" href="../benchmarks/">
+                        <a rel="prev" href="../optimizations/">
                             <i class="fas fa-arrow-left"></i> Previous
                         </a>
                     </li>
                     <li >
-                        <a rel="next" href="../about/">
+                        <a rel="next" href="../coding-conventions/">
                             Next <i class="fas fa-arrow-right"></i>
                         </a>
                     </li>
                     <li>
-                        <a href="https://github.com/jeremyong/gal/edit/master/docs/coding-conventions.md"><i class="fab fa-github"></i> Edit on GitHub</a>
+                        <a href="https://github.com/jeremyong/gal/edit/master/docs/benchmarks.md"><i class="fab fa-github"></i> Edit on GitHub</a>
                     </li>
             </ul>
         </div>
@@ -142,41 +142,77 @@
         
         <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
-        <li class="first-level active"><a href="#coding-conventions">Coding Conventions</a></li>
-            <li class="second-level"><a href="#general-guidelines">General Guidelines</a></li>
-                
-            <li class="second-level"><a href="#notes-to-developers">Notes to Developers</a></li>
-                
     </ul>
 </div></div>
         <div class="col-md-9" role="main">
 
-<h1 id="coding-conventions">Coding Conventions</h1>
-<p>This document describes a number of patterns you should expect to encounter as either a user or a contributor of the library.</p>
-<h2 id="general-guidelines">General Guidelines</h2>
-<ul>
-<li>Like the STL, the canonical casing is <code>snake_case</code> for classes, structs, unions, and variables.</li>
-<li>GAL never allocates on the heap.</li>
-<li>No virtual dispatch is used.</li>
-<li>No inheritance is used.</li>
-<li>Don't-pay-for-what-you-don't-use is a manifest property and no <em>runtime</em> overhead is imposed unintentionally.<ul>
-<li>Zero-initialization is not provided for runtime types</li>
-<li>Division-by-zero is not checked (i.e. during normalization)</li>
-</ul>
-</li>
-<li>Every feature must have compile times taken into consideration.</li>
-<li>User facing APIs are in the <code>gal</code> namespace or in one of the model namespaces.</li>
-<li>Hidden functionality or implementation detail is contained in a nested <code>detail</code> namespace.</li>
-<li>Methods are decorated appropriately with attributes and qualifiers (<code>[[nodiscard]]</code>, <code>noexcept</code>, <code>const</code>).</li>
-</ul>
-<h2 id="notes-to-developers">Notes to Developers</h2>
-<ul>
-<li>The largely header-only aspect of the library is due to the heavy reliance on <code>constexpr</code> which implicitly inlines the function.</li>
-<li>Type names are often kept short and abbreviated to reduce parsing time. This isn't done unless profiling shows it to be necessary.</li>
-<li>The codegen of the final expression reification is extremely sensitive to changes in the code, so if operating in this area, a benchmark is necessary to verify no regression took place.</li>
-<li>When juggling templates, we endeavor (greatly!) to avoid template instantiations wherever possible. By the same token, we avoid relying on <code>std::tuple</code>, SFINAE, recursion, and other techniques known to have adverse effects on compile time wherever possible.</li>
-<li>GAL tiptoes around undefined behavior as much as possible, preferring to be standards conforming. The notable exception is the reliance of well-behaved alignment for structs and data members colocated within a union. This is a reasonable expectation for all modern compilers today.</li>
-</ul></div>
+<p># Benchmarks</p>
+<blockquote>
+<p>NOTE: The author isn't honestly a believer in benchmarks as a proxy for how fast <em>your</em> code will run. Use these timings only as a heuristic on which to base your judgement and please, please, benchmark your own code. If you find something isn't fast, please file an issue! Thanks :)</p>
+</blockquote>
+<p>These results were produced on October 28, 2019 for the <code>GABenchmark_AlgorithmInverseKinematics_ConformalModel_D3</code> benchmark provided by <a href="https://github.com/ga-developers/ga-benchmark/blob/master/AlgorithmInverseKinematics.cpp">gabenchmark</a> (all benchmarks compiled with <code>-O2 -mfma</code> using GCC 10). Prior to each benchmark, CPU scaling was turned off for consistent results.</p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Commit Hash</th>
+<th>Time</th>
+<th>Iterations</th>
+<th>Iterations/ns</th>
+<th>Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/wolftype/versor">Versor</a></td>
+<td><a href="https://github.com/wolftype/versor/commit/2c5b455187a162bd429a3acf6ffd2f06fb4732ab">2c5b455</a></td>
+<td>1138 ns</td>
+<td>608337</td>
+<td>535/ns</td>
+<td>1x</td>
+</tr>
+<tr>
+<td><a href="https://github.com/laffernandes/gatl">GATL</a></td>
+<td><a href="https://github.com/laffernandes/gatl/commit/c47ad5d13c18f0116797d1ea614557cca5e99bb3">c47ad5</a></td>
+<td>469 ns</td>
+<td>1505207</td>
+<td>3209/ns</td>
+<td>5.998x</td>
+</tr>
+<tr>
+<td><a href="https://github.com/jeremyong/gal">GAL</a></td>
+<td><a href="https://github.com/jeremyong/gal/commit/e3f49ae28680a89d328b2d37320fe61773c41b56">e3f49ae</a></td>
+<td>376 ns</td>
+<td>1873236</td>
+<td>4982/ns</td>
+<td>9.312x</td>
+</tr>
+</tbody>
+</table>
+<p>This was tested on an Intel i9-9900K.</p>
+<p>The compilation times for the same example are shown below:</p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Compile Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Versor</td>
+<td>5.50 s</td>
+</tr>
+<tr>
+<td>GATL</td>
+<td>20.38 s</td>
+</tr>
+<tr>
+<td>GAL</td>
+<td>12.30 s</td>
+</tr>
+</tbody>
+</table></div>
         
         
     </div>

@@ -1,0 +1,79 @@
+language: cpp
+dist: bionic
+os: linux
+
+git:
+  depth: 1
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+      env:
+        - CXX=g++-9
+        - CC=gcc-9
+        - BUILD_TYPE=Debug
+
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+      env:
+        - CXX=g++-9
+        - CC=gcc-9
+        - BUILD_TYPE=Release
+
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+            - clang-9
+      env:
+        - CXX=clang++-9
+        - CC=clang-9
+        - BUILD_TYPE=Debug
+
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+            - clang-9
+      env:
+        - CXX=clang++-9
+        - CC=clang-9
+        - BUILD_TYPE=Release
+
+before_script:
+  - mkdir $HOME/usr
+  - export PATH="$HOME/usr/bin:$PATH"
+  - export CMAKE_INSTALL_SCRIPT=cmake-3.15.4-Linux-x86_64.sh
+  - wget https://github.com/Kitware/CMake/releases/download/v3.15.4/${CMAKE_INSTALL_SCRIPT}
+  - chmod +x ${CMAKE_INSTALL_SCRIPT}
+  - ./${CMAKE_INSTALL_SCRIPT} --prefix=$HOME/usr --exclude-subdir --skip-license
+  - cd "${TRAVIS_BUILD_DIR}"
+  - mkdir build
+  - cd build
+  - $CXX --version
+  - $CC --version
+  - cmake --version
+  - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+script:
+  - cmake --build . -- -kj2
+  - ctest --output-on-failure -j2

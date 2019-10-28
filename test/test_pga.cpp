@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 #include <gal/pga.hpp>
 #include <gal/format.hpp>
+#include <gal/expression_debug.hpp>
 
 #include <iostream>
 
@@ -20,7 +21,7 @@ TEST_CASE("incidence")
 
         // auto l = evaluate<point<>, point<>>{}.debug([](auto p1, auto p2) { return p1 & p2; });
 
-        std::cout << to_string(line) << std::endl;
+        std::cout << "line: " <<  to_string(line) << std::endl;
     }
 
     SUBCASE("plane-construction")
@@ -33,29 +34,50 @@ TEST_CASE("incidence")
     }
 }
 
+TEST_CASE("bivector-norm")
+{
+    auto l2 = evaluate<line<>>{}.debug([](auto l){ return ((l | l) + (l ^ l)); });
+    CHECK_EQ(l2.size.term, 2);
+}
+
 TEST_CASE("motors")
 {
-    SUBCASE("line-exp")
+    SUBCASE("simple-motor")
     {
         // Join two points to create a line
-        point<> p1{1, 0, 1};
-        point<> p2{1, 4, 1};
-        // This will be a horizontal line in the +y direction passing through (1, 0, 1)
-        auto l = compute([](auto p1, auto p2) { return p1 & p2; }, p1, p2);
-        // motor<> axis{0, l[0], l[1], l[2], l[3], l[4], l[5], 0};
-        // motor<> m = exp(axis);
-        // Take the exponential to find a motor which should generate a rotation about the axis
-        motor<> m{1.09165, 0.362261, -0.360923, -0.210585, -0.190524, 0.284162, 0.00798034, -0.0545484};
-        std::cout << "m: " << to_string(m) << std::endl;
-        auto logm = log(m);
-        // std::cout << "logm: " << to_string(logm) << std::endl;
-        auto explogm = exp(logm);
-        std::cout << "m?: " << to_string(explogm) << std::endl;
+        point<> p1{0, 0, 0};
+        point<> p2{0, 0, M_PI / 4};
+        // This will be a vertical line in the +z direction through the origin (pi/2 rotation)
+        line<> l = compute([](auto p1, auto p2) { return p1 & p2; }, p1, p2);
+        motor<> m = exp(l);
 
-        line<> logm2{0.3214595, -0.3244836, -0.1841874, -0.1691257, 0.2522469, 0.0079841};
-        // std::cout << "logm2: " << to_string(m2) << std::endl;
-        auto expm2 = exp(logm2);
-        std::cout << "m2?: " << to_string(expm2) << std::endl;
+        point<> p3{1, 0, 0};
+
+        point<> p3_motor = compute([](auto p3, auto m) { return p3 % m; }, p3, m);
+        CHECK_EQ(p3_motor.x, doctest::Approx(0.0));
+        CHECK_EQ(p3_motor.y, doctest::Approx(1.0));
+        CHECK_EQ(p3_motor.z, doctest::Approx(0.0));
+
+        line<> l2 = log(m);
+        CHECK_EQ(l2.dz, doctest::Approx(M_PI / 4));
+    }
+
+    SUBCASE("line-exp")
+    {
+        // Random line :)
+        line<> l{3.234, -12.3, 4.2, 1.293, -3.58, -1.1};
+        motor<> m = exp(l);
+        line<> l2 = log(m);
+        motor<> m2 = exp(l2);
+        line<> l3 = log(m2);
+        for (size_t i = 0; i != 6; ++i)
+        {
+            CHECK_EQ(l2[i], doctest::Approx(l3[i]));
+        }
+        for (size_t i = 0; i != 8; ++i)
+        {
+            CHECK_EQ(m[i], doctest::Approx(m2[i]));
+        }
     }
 }
 

@@ -11,7 +11,8 @@ google_analytics: ['UA-10576233-1', 'jeremyong.com']
 plugins: []
 
 nav:
-  - 'Home': 'index.md'
+  - 'Quick Start': 'index.md'
+  - 'Optimizations': 'optimizations'
   - 'Coding Conventions': 'coding-conventions'
   - 'About': 'about.md'
 

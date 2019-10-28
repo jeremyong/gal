@@ -4,6 +4,8 @@
 
 For computing in 3D, Geometric Algebra (henceforth, just "GA") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a *uniform* way between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).
 
+***
+
 ## Getting Started
 
 * `git clone git@github.com:jeremyong/gal.git` - Clone the [project](https://github.com/jeremyong/gal) (directly, as a submodule in your project, via CMake's [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) module, etc)
@@ -139,6 +141,8 @@ The binary operations supported in the compute lambda are as follows:
 `+` | \(a + b\) | Multivector sum
 `-` | \(a + b\) | Multivector difference
 `scalar_product` | \(\langle ab\rangle_0\) | Scalar product
+
+> WARNING: Please *do* use parenthesis when using operators so as to avoid bugs associated with operator precedence.
 
 And the following table describes the unary operations
 

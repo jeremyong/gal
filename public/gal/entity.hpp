@@ -10,11 +10,36 @@ namespace detail
     [[nodiscard]] constexpr static auto
     construct_ie(uint32_t id, std::integer_sequence<width_t, N...>, std::integer_sequence<uint8_t, E...>) noexcept
     {
-        constexpr size_t count         = sizeof...(E);
+        constexpr size_t count = sizeof...(E);
 
         return mv<A, count, count, count>{
             mv_size{count, count, count}, {ind{id + N, one}...}, {mon{one, one, 1, N}...}, {term{1, N, E}...}};
     }
+
+    template <uint8_t E, int16_t I, uint8_t E1,  uint8_t... Es>
+    [[nodiscard]] constexpr int16_t indexof() noexcept
+    {
+        if constexpr (E == E1)
+        {
+            return I;
+        }
+        else if constexpr (sizeof...(Es) == 0)
+        {
+            return -1;
+        }
+        else
+        {
+            return indexof<E, I + 1, Es...>();
+        }
+    }
+
+    template <uint8_t... E, size_t... N>
+    [[nodiscard]] constexpr std::array<int16_t, sizeof...(N)>
+    construct_element_lut(std::index_sequence<N...>) noexcept
+    {
+        return {indexof<N, 0, E...>()...};
+    }
+
 
     template <typename T>
     struct pseudoscalar_tag
@@ -34,6 +59,8 @@ struct entity
     using algebra_t = A;
     using value_t   = T;
     constexpr static std::array<uint8_t, sizeof...(E)> elements{E...};
+    constexpr static std::array<int16_t, (1 << algebra_t::metric_t::dimension)> element_lut
+        = detail::construct_element_lut<E...>(std::make_index_sequence<(1 << algebra_t::metric_t::dimension)>{});
 
     std::array<T, sizeof...(E)> data_;
 
@@ -55,33 +82,28 @@ struct entity
     }
 
     template <uint8_t... S>
-    [[nodiscard]] constexpr std::array<T, sizeof...(S)> select() const noexcept
+    [[nodiscard]] constexpr auto select() const noexcept
     {
-        return {select(S)...};
+        if constexpr (sizeof...(S) == 1)
+        {
+            return select(S...);
+        }
+        else
+        {
+            return std::array<T, sizeof...(S)>{(element_lut[S] == -1 ? 0 : data_[element_lut[S]])...};
+        }
     }
 
     [[nodiscard]] constexpr T select(uint8_t e) const noexcept
     {
-        for (uint8_t i = 0; i != elements.size(); ++i)
-        {
-            if (elements[i] == e)
-            {
-                return data_[i];
-            }
-        }
-        return {};
+        auto index = element_lut[e];
+        return (index == -1 ? T{} : data_[index]);
     }
 
     [[nodiscard]] constexpr T* select(uint8_t e) noexcept
     {
-        for (uint8_t i = 0; i != elements.size(); ++i)
-        {
-            if (elements[i] == e)
-            {
-                return &data_[i];
-            }
-        }
-        return {};
+        auto index = element_lut[e];
+        return (index == -1 ? nullptr : &data_[index]);
     }
 
     [[nodiscard]] constexpr T const* data() const noexcept

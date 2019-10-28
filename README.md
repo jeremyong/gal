@@ -1,6 +1,6 @@
 # Geometric Algebra Library
 
-[GAL](https://www.jeremyong.com/gal/) (project page link) is a C++17 expression compiler and engine for computing with geometric algebra. It focuses primarily on speed and customizability with the ambition for being suitable for use in production environments where real-time speed is a factor.
+[**GAL**](https://www.jeremyong.com/gal/) (project page link) is a C++17 expression compiler and engine for computing with geometric algebra. It focuses primarily on speed and customizability with the ambition for being suitable for use in production environments where real-time speed is a factor.
 
 Some things that make GAL unique are:
 
@@ -93,7 +93,6 @@ the compiler would be unable to optimize this as such in general. GAL makes the 
 ```c++
 #include <gal/cga.hpp>
 
-using scalar = gal::cga::scalar<float>;
 using point  = gal::cga::point<float>;
 
 float point_norm(point p)
@@ -155,7 +154,7 @@ plane<float> p = compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3)
     // operator-        := Vector space subtraction
     // operator|        := Symmetric inner product
     // operator>>       := Left contraction
-    // conjugate(a, b)  := a ^ b ^ ~a
+    // operator%        := Sandwich operator (rhs ^ lhs ^ ~rhs)
 
     // Operations that are permitted are chosen because they respect associativity
     // in the way you would expect.

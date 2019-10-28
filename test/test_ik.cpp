@@ -1,6 +1,8 @@
 #include "test_util.hpp"
 
 #include <gal/cga.hpp>
+#include <gal/format.hpp>
+#include <iostream>
 
 #include <doctest/doctest.h>
 
@@ -45,8 +47,32 @@ TEST_CASE("cga-ik")
     auto ang4{deg_to_rad(66.9)};
     auto ang5{deg_to_rad(-42.0)};
     auto&& [R1, R2, R3, T2, R4, Rg, Jg_f] = gabenchmark::InverseKinematics(ang1, ang2, ang3, ang4, ang5);
+    std::cout << "CGA IK benchmark results\n"
+              << "R1: " << to_string(R1) << '\n'
+              << "R2: " << to_string(R2) << '\n'
+              << "R3: " << to_string(R3) << '\n'
+              << "T2: " << to_string(T2) << '\n'
+              << "R4: " << to_string(R4) << '\n'
+              << "Rg: " << to_string(Rg) << '\n'
+              << "Jg_f: " << to_string(Jg_f) << std::endl;
 
     CHECK_EQ(R1[0], doctest::Approx(0.992546).epsilon(0.01));
+    CHECK_EQ(R1[1], doctest::Approx(0.121869).epsilon(0.01));
+    CHECK_EQ(T2[0], doctest::Approx(1).epsilon(0.01));
+    CHECK_EQ(T2[1], doctest::Approx(-182.475).epsilon(0.01));
+    CHECK_EQ(T2[2], doctest::Approx(45.4961).epsilon(0.01));
+    CHECK_EQ(Rg[0], doctest::Approx(0.933654).epsilon(0.01));
+    CHECK_EQ(Rg[1], doctest::Approx(0.277405).epsilon(0.01));
+    CHECK_EQ(Rg[2], doctest::Approx(0.0937376).epsilon(0.01));
+    CHECK_EQ(Rg[3], doctest::Approx(-0.206198).epsilon(0.01));
+    CHECK_EQ(Rg[4], doctest::Approx(112.648).epsilon(0.01));
+    CHECK_EQ(Rg[5], doctest::Approx(-763.223).epsilon(0.01));
+    CHECK_EQ(Rg[6], doctest::Approx(-174.171).epsilon(0.01));
+    CHECK_EQ(Jg_f[0], doctest::Approx(1350.82).epsilon(0.01));
+    CHECK_EQ(Jg_f[1], doctest::Approx(-498.052).epsilon(0.01));
+    CHECK_EQ(Jg_f[2], doctest::Approx(2132.49).epsilon(0.01));
+    CHECK_EQ(Jg_f[3], doctest::Approx(0.99996).epsilon(0.01));
+    CHECK_EQ(Jg_f[4], doctest::Approx(3.31122e6).epsilon(0.01));
 }
 
 TEST_SUITE_END();

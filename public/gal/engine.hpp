@@ -163,6 +163,13 @@ namespace detail
             return compute_entity<reified, V, A>(data, std::make_index_sequence<reified.size.term>());
         }
     }
+
+    template <typename T, typename... Ts>
+    struct reflect_first
+    {
+        using value_t = typename T::value_t;
+        using algebra_t = typename T::algebra_t;
+    };
 } // namespace detail
 
 template <typename... Data>
@@ -193,6 +200,9 @@ template <typename L, typename... Data>
 [[nodiscard]] static auto compute(L&& lambda, Data const&... input) noexcept
 {
     constexpr auto ies = detail::ies<Data...>(std::tuple<>{}, std::integral_constant<uint, 0>{});
+    using rf = detail::reflect_first<Data...>;
+    using value_t = typename rf::value_t;
+    using algebra_t = typename rf::algebra_t;
     using ie_result_t  = decltype(std::apply(lambda, ies));
     // Produce a lookup table keyed to the indeterminate id mapping to a union containing either an entity property or
     // an evaluated property
@@ -200,9 +210,6 @@ template <typename L, typename... Data>
     {
         if constexpr (std::tuple_size_v<ie_result_t> != 0)
         {
-            using value_t   = typename std::tuple_element_t<0, ie_result_t>::value_t;
-            using algebra_t = typename std::tuple_element_t<0, ie_result_t>::algebra_t;
-
             std::array<detail::ind_value<value_t>, (Data::ind_count() + ...)> data{};
             detail::fill(data.data(), input...);
 
@@ -216,9 +223,6 @@ template <typename L, typename... Data>
     }
     else
     {
-        using value_t   = typename ie_result_t::value_t;
-        using algebra_t = typename ie_result_t::algebra_t;
-
         std::array<detail::ind_value<value_t>, (Data::ind_count() + ...)> data{};
         detail::fill(data.data(), input...);
         return detail::finalize_entity<algebra_t, value_t, ie_result_t>(data);

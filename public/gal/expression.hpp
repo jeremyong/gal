@@ -65,8 +65,6 @@ constexpr inline frac_t<num, den> frac;
 template <expr_op O, typename T1, typename T2 = void>
 struct expr
 {
-    using value_t               = typename T1::value_t;
-    using algebra_t             = typename T1::algebra_t;
     constexpr static expr_op op = O;
     using lhs_t                 = T1;
     using rhs_t                 = T2;
@@ -75,8 +73,6 @@ struct expr
 template <expr_op O, typename T>
 struct expr<O, T, void>
 {
-    using value_t               = typename T::value_t;
-    using algebra_t             = typename T::algebra_t;
     constexpr static expr_op op = O;
     using lhs_t                 = T;
 };
@@ -84,17 +80,14 @@ struct expr<O, T, void>
 template <typename T, uint32_t ID>
 struct expr<expr_op::identity, T, std::integral_constant<uint32_t, ID>>
 {
-    constexpr static expr_op op = expr_op::identity;
-    using value_t               = typename T::value_t;
     using algebra_t             = typename T::algebra_t;
+    constexpr static expr_op op = expr_op::identity;
     constexpr static auto lhs   = T::ie(ID);
 };
 
 template <typename T, uint8_t... N>
 struct expr<expr_op::extract, T, std::integer_sequence<uint8_t, N...>>
 {
-    using value_t                                               = typename T::value_t;
-    using algebra_t                                             = typename T::algebra_t;
     constexpr static expr_op op                                 = expr_op::extract;
     using lhs_t                                                 = T;
     constexpr static std::array<uint8_t, sizeof...(N)> elements = {N...};
@@ -103,8 +96,6 @@ struct expr<expr_op::extract, T, std::integer_sequence<uint8_t, N...>>
 template <typename T, uint8_t G>
 struct expr<expr_op::select, T, std::integral_constant<uint8_t, G>>
 {
-    using value_t                  = typename T::value_t;
-    using algebra_t                = typename T::algebra_t;
     constexpr static expr_op op    = expr_op::select;
     using lhs_t                    = T;
     constexpr static uint8_t grade = G;

@@ -78,6 +78,21 @@ TEST_CASE("motors")
         {
             CHECK_EQ(m[i], doctest::Approx(m2[i]));
         }
+
+        auto m_norm = compute([](auto m) { return m * ~m; }, m2);
+        printf("m_norm: %f, %f\n", m_norm[0], m_norm[1]);
+        CHECK_EQ(m_norm[0], doctest::Approx(1));
+        CHECK_EQ(m_norm[1], doctest::Approx(0));
+    }
+
+    SUBCASE("normalize-motor")
+    {
+        motor<> m{{293.2, -39.3, 59.3, -1.04, 434.3, 23.0, 72.874}};
+        m.normalize();
+        auto m_norm = compute([](auto m) { return m * ~m; }, m);
+        printf("m_norm: %f, %f\n", m_norm[0], m_norm[1]);
+        CHECK_EQ(m_norm[0], doctest::Approx(1));
+        CHECK_EQ(m_norm[1], doctest::Approx(0));
     }
 }
 

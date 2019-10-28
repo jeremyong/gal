@@ -224,7 +224,79 @@ namespace pga {
 
     // A motor occupies the even subalgebra
     template <typename T = float>
-    using motor = entity<pga_algebra, T, 0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111>;
+    union motor
+    {
+        using algebra_t = pga_algebra;
+        using value_t   = T;
+
+        std::array<T, 8> data;
+
+        [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
+        {
+            return detail::construct_ie<algebra_t>(
+                id,
+                std::make_integer_sequence<width_t, 8>{},
+                std::integer_sequence<uint8_t, 0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111>{});
+        }
+
+        [[nodiscard]] constexpr static size_t size() noexcept
+        {
+            return 8;
+        }
+
+        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
+        {
+            return 8;
+        }
+
+        constexpr motor(std::array<T, 8> const& in) noexcept
+            : data{in}
+        {}
+
+        template <uint8_t... E>
+        constexpr motor(entity<algebra_t, T, E...> in) noexcept
+            : data{in.template select<0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111>()}
+        {
+        }
+
+        [[nodiscard]] constexpr entity<pga_algebra, T, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100> bivector() const
+            noexcept
+        {
+            return {data[1], data[2], data[3], data[4], data[5], data[6]};
+        }
+
+        void normalize() noexcept
+        {
+            auto m2     = compute([](auto m) { return m * ~m; }, *this);
+            auto u      = m2[0];
+            auto sqrt_u = std::sqrt(u);
+            auto v      = m2[1];
+            m2[0]       = T{1} / sqrt_u;
+            m2[1]       = -v / (2 * sqrt_u * u);
+            *this = compute([](auto m, auto inv_norm) { return m * inv_norm; }, *this, m2);
+        }
+
+        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] constexpr T get(size_t i) const noexcept
+        {
+            // Unused
+            return NAN;
+        }
+    };
+
+    template <typename T>
+    [[nodiscard]] constexpr motor<T> normalize(motor<T> m)
+    {
+    }
 
     template <typename T = float>
     union plane
@@ -595,12 +667,8 @@ namespace pga {
         auto s1 = m[0]; // <m>_0
         auto p1 = m[7]; // <m>_4
 
-        entity<pga_algebra, T, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100> l{m.template select<0b11>(),
-                                                                             m.template select<0b101>(),
-                                                                             m.template select<0b110>(),
-                                                                             m.template select<0b1001>(),
-                                                                             m.template select<0b1010>(),
-                                                                             m.template select<0b1100>()};
+        auto l = m.bivector();
+
         // s + p * I
         auto l2 = compute([](auto l) { return l * l; }, l);
         auto s = l2.template select<0>();

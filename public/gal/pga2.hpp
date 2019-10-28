@@ -55,11 +55,6 @@ namespace pga
             return 3;
         }
 
-        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
-        {
-            return 3;
-        }
-
         constexpr line(T d, T x, T y) noexcept
             : d{a}
             , x{b}
@@ -79,12 +74,6 @@ namespace pga
         [[nodiscard]] constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
-        }
-
-        [[nodiscard]] constexpr T get(size_t i) const noexcept
-        {
-            // Unused
-            return NAN;
         }
     };
 
@@ -136,11 +125,6 @@ namespace pga
             return 2;
         }
 
-        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
-        {
-            return 2;
-        }
-
         constexpr point(T x, T y) noexcept
             : x{x}
             , y{y}
@@ -163,12 +147,6 @@ namespace pga
         [[nodiscard]] constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
-        }
-
-        [[nodiscard]] constexpr T get(size_t i) const noexcept
-        {
-            // Unused
-            return NAN;
         }
     };
 
@@ -213,11 +191,6 @@ namespace pga
             return 3;
         }
 
-        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
-        {
-            return 3;
-        }
-
         constexpr vector(T x, T y, T z) noexcept
             : x{x}
             , y{y}
@@ -241,12 +214,6 @@ namespace pga
         [[nodiscard]] constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
-        }
-
-        [[nodiscard]] constexpr T get(size_t i) const noexcept
-        {
-            // Unused
-            return NAN;
         }
     };
 } // namespace pga

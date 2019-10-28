@@ -6,28 +6,71 @@
 #include <limits>
 #include <numeric>
 
+#include "opt.hpp"
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 namespace gal
 {
 // right-to-left binary exponentiation
-template <typename T>
-[[nodiscard]] constexpr T pow(T s, int e, int d) noexcept
+template <typename T, int N, int D>
+[[nodiscard]] GAL_FORCE_INLINE constexpr inline T pow(T s, std::integral_constant<int, N>, std::integral_constant<int, D>) noexcept
 {
-    if (d > 1)
+    if constexpr (D > 1)
     {
-        return std::pow(s, e/d);
+        return std::pow(s, T{N} / T{D});
     }
-    else if (e < 0)
-    {
-        return T{1} / ::gal::pow(s, -e, 1);
-    }
-    else if (e == 1)
+    else if constexpr (N == 1)
     {
         return s;
+    }
+    else if constexpr (N < 0)
+    {
+        return T{1} / ::gal::pow(s, std::integral_constant<int, -N>{}, std::integral_constant<int, 1>{});
+    }
+    else if constexpr (N == 2)
+    {
+        return s * s;
+    }
+    else if constexpr (N == 3)
+    {
+        return s * s * s;
+    }
+    else if constexpr (N == 4)
+    {
+        auto s2 = s * s;
+        return s2 * s2;
+    }
+    else if constexpr (N == 5)
+    {
+        auto s2 = s * s;
+        return s2 * s2 * s;
+    }
+    else if constexpr (N == 6)
+    {
+        auto s2 = s * s;
+        auto s3 = s2 * s;
+        return s3 * s3;
+    }
+    else if constexpr (N == 7)
+    {
+        auto s2 = s * s;
+        auto s4 = s2 * s2;
+        return s4 * s2 * s;
+    }
+    else if constexpr (N == 8)
+    {
+        auto s2 = s * s;
+        auto s4 = s2 * s2;
+        return s4 * s4;
     }
     else
     {
         T temp1{1};
         T temp2{s};
+        int e = N;
         while (e > 1)
         {
             if ((e & 1) == 1)
@@ -78,13 +121,21 @@ template <typename T>
     }
 }
 
-// Precondition: input is expected to be greater than 0
+// Precondition: input is expected to be greater than 0 or results are undefined
 [[nodiscard]] constexpr uint32_t leading_set_index(uint32_t input) noexcept
 {
 #if defined(__clang) || defined(__GNUG__)
     return 31 - __builtin_clz(input);
 #elif defined(_MSC_VER)
-    // TODO: implement me
+    DWORD leading_zero = 0;
+    if (_BitScanReverse(&leading_zero, input))
+    {
+        return 31 - leading_zero;
+    }
+    else
+    {
+        return 32;
+    }
 #endif
 }
 
@@ -93,7 +144,7 @@ template <typename T>
 #if defined(__clang) || defined(__GNUG__)
     return __builtin_popcount(input);
 #elif defined(_MSC_VER)
-    // TODO: implement me
+    return __popcnt(input);
 #endif
 }
 

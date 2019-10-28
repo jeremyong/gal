@@ -76,11 +76,6 @@ struct entity
         return sizeof...(E);
     }
 
-    [[nodiscard]] constexpr static uint32_t ind_count() noexcept
-    {
-        return sizeof...(E);
-    }
-
     template <uint8_t... S>
     [[nodiscard]] constexpr auto select() const noexcept
     {
@@ -130,12 +125,6 @@ struct entity
     {
         return data_[index];
     }
-
-    [[nodiscard]] constexpr T get(size_t) const noexcept
-    {
-        // Unreachable
-        return {};
-    }
 };
 
 template <typename A, typename T>
@@ -145,11 +134,6 @@ struct scalar
     using value_t   = T;
 
     [[nodiscard]] constexpr static size_t size() noexcept
-    {
-        return 1;
-    }
-
-    [[nodiscard]] constexpr static uint32_t ind_count() noexcept
     {
         return 1;
     }
@@ -178,12 +162,6 @@ struct scalar
     [[nodiscard]] constexpr T& operator[](size_t) noexcept
     {
         return value;
-    }
-
-    [[nodiscard]] constexpr T get(size_t) const noexcept
-    {
-        // Unreachable
-        return {};
     }
 
     T value;

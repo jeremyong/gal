@@ -159,11 +159,6 @@ namespace cga2
             return 2;
         }
 
-        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
-        {
-            return 2;
-        }
-
         [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
         {
             return data[index];
@@ -172,11 +167,6 @@ namespace cga2
         [[nodiscard]] constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
-        }
-
-        [[nodiscard]] constexpr T get(size_t i) const noexcept
-        {
-            return NAN;
         }
     };
     // TODO: provide representations for planes, spheres, flats, etc.

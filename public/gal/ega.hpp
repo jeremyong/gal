@@ -65,11 +65,6 @@ namespace ega
             return 3;
         }
 
-        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
-        {
-            return 3;
-        }
-
         constexpr vector(T a, T b, T c) noexcept
             : x{a}
             , y{b}
@@ -99,12 +94,6 @@ namespace ega
         {
             return data[index];
         }
-
-        [[nodiscard]] constexpr T get(size_t i) const noexcept
-        {
-            // Unused
-            return NAN;
-        }
     };
 
     template <typename T>
@@ -114,11 +103,6 @@ namespace ega
         using value_t = T;
 
         [[nodiscard]] constexpr static size_t size() noexcept
-        {
-            return 5;
-        }
-
-        [[nodiscard]] constexpr static uint32_t ind_count() noexcept
         {
             return 5;
         }
@@ -179,11 +163,6 @@ namespace ega
         [[nodiscard]] constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
-        }
-
-        [[nodiscard]] constexpr T get(size_t i) const noexcept
-        {
-            return NAN;
         }
     };
 } // namespace ega

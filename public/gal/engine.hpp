@@ -23,7 +23,7 @@ namespace detail
         else
         {
             return ies<Ds...>(std::tuple_cat(out, std::make_tuple(expr<expr_op::identity, D, decltype(id)>{})),
-                              std::integral_constant<uint, ID + D::ind_count()>{});
+                              std::integral_constant<uint, ID + D::size()>{});
         }
     }
 
@@ -52,40 +52,29 @@ namespace detail
     template <typename T>
     struct ind_value
     {
-        union
-        {
-            T const* pointer;
-            T value;
-        };
-
-        bool is_value;
+        T const* pointer;
 
         [[nodiscard]] constexpr T operator*() const noexcept
         {
-            return is_value ? value : *pointer;
+            return *pointer;
         }
     };
 
     template <typename T, typename D, typename... Ds>
-    constexpr static void fill(T* out, D const& datum, Ds const&... data) noexcept
+    GAL_FORCE_INLINE constexpr static void fill(T* out, D const& datum, Ds const&... data) noexcept
     {
-        for (size_t i = 0; i != D::size(); ++i)
+        if constexpr (D::size() > 0)
         {
-            auto& iv    = *(out + i);
-            iv.pointer  = &datum[i];
-            iv.is_value = false;
-        }
-
-        for (size_t i = D::size(); i != D::ind_count(); ++i)
-        {
-            auto& iv    = *(out + i);
-            iv.value    = datum.get(i);
-            iv.is_value = true;
+            for (size_t i = 0; i != D::size(); ++i)
+            {
+                auto& iv   = *(out + i);
+                iv.pointer = &datum[i];
+            }
         }
 
         if constexpr (sizeof...(Ds) > 0)
         {
-            fill(out + D::ind_count(), data...);
+            fill(out + D::size(), data...);
         }
     }
 
@@ -97,7 +86,7 @@ namespace detail
     struct cmon<F, ie, Index, std::index_sequence<I...>>
     {
         template <size_t N>
-        constexpr static F value(std::array<ind_value<F>, N> const& data) noexcept
+        GAL_FORCE_INLINE constexpr static F value(std::array<ind_value<F>, N> const& data) noexcept
         {
             constexpr auto m = ie.mons[Index];
             if constexpr (m.q.is_zero())
@@ -112,8 +101,8 @@ namespace detail
             {
                 return static_cast<F>(m.q)
                        * (::gal::pow(*data[ie.inds[m.ind_offset + I].id],
-                                     ie.inds[m.ind_offset + I].degree.num,
-                                     ie.inds[m.ind_offset + I].degree.den)
+                                     std::integral_constant<int, ie.inds[m.ind_offset + I].degree.num>{},
+                                     std::integral_constant<int, ie.inds[m.ind_offset + I].degree.den>{})
                           * ...);
             }
         }
@@ -127,30 +116,30 @@ namespace detail
     struct cterm<F, ie, Offset, std::index_sequence<I...>>
     {
         template <size_t N>
-        constexpr static F value(std::array<ind_value<F>, N> const& data) noexcept
+        GAL_FORCE_INLINE constexpr static F value(std::array<ind_value<F>, N> const& data) noexcept
         {
-            if constexpr (sizeof...(I) == 0)
-            {
-                return {0};
-            }
-            else
-            {
-                return (cmon<F, ie, Offset + I, std::make_index_sequence<ie.mons[Offset + I].count>>::value(data)
-                        + ...);
-            }
+            return (cmon<F, ie, Offset + I, std::make_index_sequence<ie.mons[Offset + I].count>>::value(data) + ...);
         }
     };
 
     template <auto const& ie, typename F, typename A, size_t N, size_t... I>
-    [[nodiscard]] constexpr static auto
+    [[nodiscard]] GAL_FORCE_INLINE constexpr static inline auto
     compute_entity(std::array<ind_value<F>, N> const& data, std::index_sequence<I...>) noexcept
     {
         using entity_t = entity<A, F, ie.terms[I].element...>;
-        return entity_t{cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(data)...};
+        if constexpr (sizeof...(I) == 0)
+        {
+            return entity_t{};
+        }
+        else
+        {
+            return entity_t{
+                cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(data)...};
+        }
     }
 
     template <typename A, typename V, typename T, typename D>
-    [[nodiscard]] static auto finalize_entity(D const& data)
+    [[nodiscard]] GAL_FORCE_INLINE static inline auto finalize_entity(D const& data)
     {
         constexpr static auto reified = reify<T>();
         if constexpr (detail::uses_null_basis<A>)
@@ -210,7 +199,7 @@ template <typename L, typename... Data>
     {
         if constexpr (std::tuple_size_v<ie_result_t> != 0)
         {
-            std::array<detail::ind_value<value_t>, (Data::ind_count() + ...)> data{};
+            std::array<detail::ind_value<value_t>, (Data::size() + ...)> data{};
             detail::fill(data.data(), input...);
 
             return std::apply(
@@ -223,7 +212,7 @@ template <typename L, typename... Data>
     }
     else
     {
-        std::array<detail::ind_value<value_t>, (Data::ind_count() + ...)> data{};
+        std::array<detail::ind_value<value_t>, (Data::size() + ...)> data{};
         detail::fill(data.data(), input...);
         return detail::finalize_entity<algebra_t, value_t, ie_result_t>(data);
     }

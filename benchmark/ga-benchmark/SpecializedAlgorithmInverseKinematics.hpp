@@ -38,29 +38,16 @@ struct point_z
     using algebra_t = cga_algebra;
     using value_t   = T;
 
-    T z;
-
-    constexpr point_z(T c) noexcept
-        : z{c}
-    {}
-
-    template <uint8_t... E>
-    constexpr point_z(entity<algebra_t, T, E...> in) noexcept
-        : z{in.template select<0b100>()}
-    {}
-
-    [[nodiscard]] constexpr static mv<algebra_t, 2, 3, 3> ie(uint32_t id) noexcept
+    [[nodiscard]] constexpr static mv<algebra_t, 0, 3, 3> ie(uint32_t id) noexcept
     {
         // A CGA point is represented as no + p + 1/2 p^2 ni
-        return {mv_size{2, 3, 3},
+        return {mv_size{0, 3, 3},
                 {
-                    ind{id, rat{1}}, // ind2 = p_z
-                    ind{id, rat{2}}, // ind5 = p_z^2
                 },
                 {
-                    mon{one, one, 1, 0},         // p_z
+                    mon{one, one, 0, 0},         // p_z
                     mon{one, zero, 0, 0},        // no
-                    mon{one_half, rat{2}, 1, 1}, // 1/2 p_z^2
+                    mon{one_half, rat{2}, 0, 0}, // 1/2 p_z^2
                 },
                 {
                     term{1, 0, 0b100},  // p_z
@@ -71,27 +58,7 @@ struct point_z
 
     [[nodiscard]] constexpr static size_t size() noexcept
     {
-        return 1;
-    }
-
-    [[nodiscard]] constexpr static uint32_t ind_count() noexcept
-    {
-        return 1;
-    }
-
-    [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
-    {
-        return z;
-    }
-
-    [[nodiscard]] constexpr T& operator[](size_t index) noexcept
-    {
-        return z;
-    }
-
-    [[nodiscard]] constexpr T get(size_t i) const noexcept
-    {
-        return NAN;
+        return 0;
     }
 };
 
@@ -157,11 +124,6 @@ union point_xz
         return 2;
     }
 
-    [[nodiscard]] constexpr static uint32_t ind_count() noexcept
-    {
-        return 2;
-    }
-
     [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
     {
         return data[index];
@@ -170,11 +132,6 @@ union point_xz
     [[nodiscard]] constexpr T& operator[](size_t index) noexcept
     {
         return data[index];
-    }
-
-    [[nodiscard]] constexpr T get(size_t i) const noexcept
-    {
-        return NAN;
     }
 };
 
@@ -216,7 +173,7 @@ auto InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang
     point_xz<real_t> J2{J2_x, J2_z};
     point_xz<real_t> J3{J3_x, J3_z};
     point_xz<real_t> Jg{Jg_x, Jg_z};
-    point_z<real_t> Pz{1};
+    point_z<real_t> Pz;
 
     auto Lz = compute(
         [](auto Pz, auto ang1) { return frac<1, 2> * ang1 * ((n_o<real_t> ^ Pz ^ n_i<real_t>) >> ips<real_t>); },

@@ -12,8 +12,8 @@ plugins: []
 
 nav:
   - 'Quick Start': 'index.md'
-  - 'Optimizations': 'optimizations'
-  - 'Coding Conventions': 'coding-conventions'
+  - 'Optimizations': 'optimizations.md'
+  - 'Coding Conventions': 'coding-conventions.md'
   - 'About': 'about.md'
 
 extra_javascript:

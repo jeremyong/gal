@@ -56,7 +56,7 @@ namespace ega
 
         [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
         {
-            return detail::construct_ie<algebra_t>(
+            return ::gal::detail::construct_ie<algebra_t>(
                 id, std::make_integer_sequence<width_t, 3>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100>{});
         }
 

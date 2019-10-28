@@ -8,4 +8,4 @@
 For computing in 3D, Geometric Algebra (henceforth, just *GA*) promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a *uniform* way between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).
 
 !!! Tip "GA? Is it fast though?"
-    GAL is pretty fast! Check out the [benchmarks](#benchmarks.md) page.
+    GAL is pretty fast! Check out the [benchmarks](benchmarks.md) page.

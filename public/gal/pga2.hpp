@@ -46,7 +46,7 @@ namespace pga2
 
         [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
         {
-            return detail::construct_ie<algebra_t>(
+            return gal::detail::construct_ie<algebra_t>(
                 id, std::make_integer_sequence<width_t, 3>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100>{});
         }
 
@@ -132,11 +132,12 @@ namespace pga2
 
         template <uint8_t... E>
         constexpr point(entity<pga2_algebra, T, E...> in) noexcept
+            : x{in.template select<0b101>()}
+            , y{in.template select<0b11>()}
         {
-            auto input = in.template select<0b11, 0b101, 0b110>();
-            auto w_inv = T{1} / input[2];
-            x          = -input[1] * w_inv;
-            y          = input[0] * w_inv;
+            auto w_inv = T{1} / in.template select<0b110>();
+            x          = w_inv;
+            y          = -w_inv;
         }
 
         [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
@@ -199,11 +200,10 @@ namespace pga2
 
         template <uint8_t... E>
         constexpr vector(entity<pga2_algebra, T, E...> in) noexcept
+            : data{in.template select<0b1101, 0b1011, 0b111>()}
         {
-            auto input = in.template select<0b111, 0b1011, 0b1101>();
-            z          = -input[0];
-            y          = input[1];
-            x          = -input[2];
+            z = -z;
+            x = -x;
         }
 
         [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept

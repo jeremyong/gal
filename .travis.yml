@@ -19,6 +19,7 @@ matrix:
         - CCXX=g++-9
         - CCC=gcc-9
         - BUILD_TYPE=Debug
+        - GAL_SAMPLES_ENABLED=off
         - BUILD_IK=off
 
     - compiler: gcc
@@ -33,6 +34,7 @@ matrix:
         - CCXX=g++-9
         - CCC=gcc-9
         - BUILD_TYPE=Release
+        - GAL_SAMPLES_ENABLED=off
         - BUILD_IK=off
 
     - compiler: clang
@@ -48,6 +50,7 @@ matrix:
         - CCXX=clang++-9
         - CCC=clang-9
         - BUILD_TYPE=Debug
+        - GAL_SAMPLES_ENABLED=off
         - BUILD_IK=on
 
     - compiler: clang
@@ -63,6 +66,7 @@ matrix:
         - CCXX=clang++-9
         - CCC=clang-9
         - BUILD_TYPE=Release
+        - GAL_SAMPLES_ENABLED=off
         - BUILD_IK=on
 
 before_script:

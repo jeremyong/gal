@@ -42,12 +42,11 @@ struct point_z
     {
         // A CGA point is represented as no + p + 1/2 p^2 ni
         return {mv_size{0, 3, 3},
+                {},
                 {
-                },
-                {
-                    mon{one, one, 0, 0},         // p_z
-                    mon{one, zero, 0, 0},        // no
-                    mon{one_half, rat{2}, 0, 0}, // 1/2 p_z^2
+                    mon{one, zero, 0, 0},      // p_z
+                    mon{one, zero, 0, 0},      // no
+                    mon{one_half, zero, 0, 0}, // 1/2 p_z^2
                 },
                 {
                     term{1, 0, 0b100},  // p_z

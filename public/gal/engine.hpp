@@ -2,10 +2,6 @@
 
 #include "entity.hpp"
 
-#ifdef GAL_DEBUG
-#include "expression_debug.hpp"
-#endif
-
 #include <cmath>
 #include <tuple>
 
@@ -18,11 +14,11 @@ namespace detail
     {
         if constexpr (sizeof...(Ds) == 0)
         {
-            return std::tuple_cat(out, std::make_tuple(expr<expr_op::identity, D, decltype(id)>{}));
+            return std::tuple_cat(out, std::make_tuple(expr_id<D, ID>{}));
         }
         else
         {
-            return ies<Ds...>(std::tuple_cat(out, std::make_tuple(expr<expr_op::identity, D, decltype(id)>{})),
+            return ies<Ds...>(std::tuple_cat(out, std::make_tuple(expr_id<D, ID>{})),
                               std::integral_constant<uint, ID + D::size()>{});
         }
     }
@@ -141,7 +137,7 @@ namespace detail
     template <typename A, typename V, typename T, typename D>
     [[nodiscard]] GAL_FORCE_INLINE static inline auto finalize_entity(D const& data)
     {
-        constexpr static auto reified = reify<T>();
+        constexpr static auto reified = T::reify();
         if constexpr (detail::uses_null_basis<A>)
         {
             constexpr static auto null_conversion = detail::to_null_basis(reified);
@@ -169,7 +165,7 @@ struct evaluate
     {
         constexpr auto ies = detail::ies<Data...>(std::tuple<>{}, std::integral_constant<uint, 0>{});
         using ie_result_t  = decltype(std::apply(lambda, ies));
-        return reify<ie_result_t>();
+        return ie_result_t::reify();
     }
 
 #ifdef GAL_DEBUG
@@ -180,19 +176,30 @@ struct evaluate
         static auto ies        = detail::ies<Data...>(std::tuple<>{}, std::integral_constant<uint, 0>{});
         static auto expression = std::apply(lambda, ies);
         using ie_result_t      = decltype(std::apply(lambda, ies));
-        return debug_reify<ie_result_t>();
+        return ie_result_t::reify_debug();
     }
 #endif
 };
+
+namespace detail
+{
+    template <typename D, typename... Ds>
+    struct category
+    {
+        using value_t   = typename D::value_t;
+        using algebra_t = typename D::algebra_t;
+    };
+}
 
 template <typename L, typename... Data>
 [[nodiscard]] static auto compute(L&& lambda, Data const&... input) noexcept
 {
     constexpr auto ies = detail::ies<Data...>(std::tuple<>{}, std::integral_constant<uint, 0>{});
-    using rf = detail::reflect_first<Data...>;
-    using value_t = typename rf::value_t;
-    using algebra_t = typename rf::algebra_t;
+    using cat          = detail::category<Data...>;
+    using value_t      = typename cat::value_t;
+    using algebra_t    = typename cat::algebra_t;
     using ie_result_t  = decltype(std::apply(lambda, ies));
+
     // Produce a lookup table keyed to the indeterminate id mapping to a union containing either an entity property or
     // an evaluated property
     if constexpr (detail::is_tuple_v<ie_result_t>)

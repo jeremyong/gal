@@ -25,14 +25,57 @@ namespace cga
     // 0b10000 => e- extension
     namespace detail
     {
-        // These tags are needed to provide unique specializations for the expressions for n_o and n_i
         template <typename T>
-        struct n_o_tag
-        {};
+        struct n_o_t
+        {
+            using value_t = T;
+            using algebra_t = cga::cga_algebra;
+            constexpr static mv<cga::cga_algebra, 0, 1, 1> value{mv_size{0, 1, 1},
+                                                                 {},
+                                                                 {mon{one, zero, 0, 0}},
+                                                                 {term{1, 0, 0b1000}}};
+            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
+            {
+                return value;
+            }
+        };
 
         template <typename T>
-        struct n_i_tag
-        {};
+        struct n_i_t
+        {
+            using value_t = T;
+            using algebra_t = cga::cga_algebra;
+            constexpr static mv<cga::cga_algebra, 0, 1, 1> value{mv_size{0, 1, 1},
+                                                                 {},
+                                                                 {mon{one, zero, 0, 0}},
+                                                                 {term{1, 0, 0b10000}}};
+            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
+            {
+                return value;
+            }
+        };
+
+        template <typename T>
+        struct ps_t
+        {
+            using value_t = T;
+            using algebra_t = cga::cga_algebra;
+            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
+            {
+                return ::gal::detail::to_null_basis(cga::cga_algebra::pseudoscalar);
+            }
+        };
+
+        template <typename T>
+        struct ips_t
+        {
+            using value_t = T;
+            using algebra_t = cga::cga_algebra;
+            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
+            {
+                return ::gal::detail::to_null_basis(cga::cga_algebra::pseudoscalar_inv);
+            }
+        };
     } // namespace detail
 } // namespace cga
 
@@ -42,55 +85,19 @@ namespace detail
     constexpr inline bool uses_null_basis<::gal::cga::cga_algebra> = true;
 }
 
-template <typename T>
-struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, cga::detail::n_o_tag<T>>
-{
-    using value_t               = T;
-    using algebra_t             = cga::cga_algebra;
-    constexpr static expr_op op = expr_op::identity;
-    constexpr static mv<cga::cga_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 0, 0b1000}}};
-};
-
-template <typename T>
-struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, cga::detail::n_i_tag<T>>
-{
-    using value_t               = T;
-    using algebra_t             = cga::cga_algebra;
-    constexpr static expr_op op = expr_op::identity;
-    constexpr static mv<cga::cga_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 0, 0b10000}}};
-};
-
-template <typename T>
-struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, detail::pseudoscalar_tag<T>>
-{
-    using value_t               = T;
-    using algebra_t             = cga::cga_algebra;
-    constexpr static expr_op op = expr_op::identity;
-    constexpr static auto lhs   = cga::cga_algebra::pseudoscalar;
-};
-
-template <typename T>
-struct expr<expr_op::identity, mv<cga::cga_algebra, 0, 1, 1>, detail::pseudoscalar_inv_tag<T>>
-{
-    using value_t               = T;
-    using algebra_t             = cga::cga_algebra;
-    constexpr static expr_op op = expr_op::identity;
-    constexpr static auto lhs   = cga::cga_algebra::pseudoscalar_inv;
-};
-
 namespace cga
 {
     template <typename T = float>
-    constexpr inline expr<expr_op::identity, mv<cga_algebra, 0, 1, 1>, detail::n_o_tag<T>> n_o;
+    constexpr inline ::gal::detail::expr_id<detail::n_o_t<T>, 0> n_o;
 
     template <typename T = float>
-    constexpr inline expr<expr_op::identity, mv<cga_algebra, 0, 1, 1>, detail::n_i_tag<T>> n_i;
+    constexpr inline ::gal::detail::expr_id<detail::n_i_t<T>, 0> n_i;
 
     template <typename T = float>
-    constexpr inline expr<expr_op::identity, mv<cga_algebra, 0, 1, 1>, ::gal::detail::pseudoscalar_tag<T>> ps;
+    constexpr inline ::gal::detail::expr_id<detail::ps_t<T>, 0> ps;
 
     template <typename T = float>
-    constexpr inline expr<expr_op::identity, mv<cga_algebra, 0, 1, 1>, ::gal::detail::pseudoscalar_inv_tag<T>> ips;
+    constexpr inline ::gal::detail::expr_id<detail::ips_t<T>, 0> ips;
 
     template <typename T = float>
     union point
@@ -131,7 +138,8 @@ namespace cga
             : data{in.template select<0b1, 0b10, 0b100>()}
         {}
 
-        [[nodiscard]] constexpr static mv<algebra_t, 6, 7, 5> ie(uint32_t id) noexcept {
+        [[nodiscard]] constexpr static mv<algebra_t, 6, 7, 5> ie(uint32_t id) noexcept
+        {
             // A CGA point is represented as no + p + 1/2 p^2 ni
             return {mv_size{6, 7, 5},
                     {

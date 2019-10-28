@@ -1,13 +1,13 @@
 #pragma once
 
-#include "expression.hpp"
+#include "expr.hpp"
 
 namespace gal
 {
 namespace detail
 {
     template <typename A, width_t... N, uint8_t... E>
-    [[nodiscard]] constexpr static auto
+    [[nodiscard]] constexpr auto
     construct_ie(uint32_t id, std::integer_sequence<width_t, N...>, std::integer_sequence<uint8_t, E...>) noexcept
     {
         constexpr size_t count = sizeof...(E);
@@ -141,7 +141,7 @@ struct scalar
     // NOTE: in GAL code, `ie` refers always to "indeterminate expression"
     [[nodiscard]] constexpr static mv<A, 1, 1, 1> ie(uint32_t id) noexcept
     {
-        return {mv_size{1, 1, 1}, {ind{id, one}}, {mon{one, 1, 0, 1}}, {term{1, 0, 0}}};
+        return {mv_size{1, 1, 1}, {ind{id, one}}, {mon{one, one, 1, 0}}, {term{1, 0, 0}}};
     }
 
     [[nodiscard]] constexpr T const* data() const noexcept

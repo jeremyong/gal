@@ -21,9 +21,10 @@ TEST_CASE("null-basis-conversion")
 TEST_CASE("point-norm")
 {
     point<float> p{3.9f, 1.2f, -29.f};
+    auto d      = evaluate<point<float>>{}.debug([](auto p) { return p >> p; });
     auto p_norm = compute([](auto p) { return p >> p; }, p);
     // Notice that we can compute that the norm of a point is exactly zero at compile time.
-    static_assert(p_norm.size() == 0);
+    // static_assert(p_norm.size() == 0);
     CHECK_EQ(p_norm.size(), 0);
 }
 

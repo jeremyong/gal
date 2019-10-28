@@ -11,6 +11,8 @@ class sample : public pd::pudding
     }
 };
 
+using namespace gal;
+using namespace gal::pga;
 
 int main(int argc, char** argv)
 {

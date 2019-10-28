@@ -2,11 +2,11 @@
 
 #include <doctest/doctest.h>
 #include <gal/ega.hpp>
-#include <gal/expression_debug.hpp>
 #include <gal/format.hpp>
 
 #include <cstdio>
 
+using namespace gal;
 using namespace gal::ega;
 using gal::compute;
 

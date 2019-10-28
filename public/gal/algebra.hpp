@@ -1191,7 +1191,7 @@ namespace detail
 } // namespace detail
 
 // Convenience template variable for making basis elements
-template <typename A, uint32_t G>
-constexpr inline mv<A, 0, 1, 1> e{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 0, G}}};
+template <typename A, uint32_t G, int N = 1, int D = 1>
+constexpr inline mv<A, 0, 1, 1> e{mv_size{0, 1, 1}, {}, {mon{rat{N, D}, zero, 0, 0}}, {term{1, 0, G}}};
 
 } // namespace gal

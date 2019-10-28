@@ -2,10 +2,10 @@
 
 #include <doctest/doctest.h>
 #include <gal/engine.hpp>
-#include <gal/cga.hpp>
+#include <gal/pga.hpp>
 
 using namespace gal;
-using algebra_t = gal::cga::cga_algebra;
+using algebra_t = gal::pga::pga_algebra;
 
 TEST_SUITE_BEGIN("finite-algebra");
 
@@ -18,7 +18,7 @@ TEST_CASE("multivector-arithmetic")
         S s1{1};
         S s2{2};
 
-        auto sum = compute([](auto const& s1, auto const& s2) { return s1 + s2; }, s1, s2);
+        auto sum = compute([](auto s1, auto s2) { return s1 + s2; }, s1, s2);
         CHECK_EQ(sum[0], doctest::Approx(3.0));
     }
 
@@ -42,12 +42,14 @@ TEST_CASE("multivector-arithmetic")
         S s1{1};
         S s2{2};
 
-        auto diff = compute([](auto const& s1, auto const& s2) { return s1 - s2; }, s1, s2);
-        // auto diff = compute_rt<([](auto const& s1, auto const& s2) { return s1 - s2; })>(s1, s2);
+        auto diff = compute([](auto s1, auto s2) { return s1 - s2; }, s1, s2);
         CHECK_EQ(diff[0], doctest::Approx(-1.0));
 
-        auto diff2 = compute([](auto const& s1, auto const& s2) { return s2 - s1 + s1; }, s1, s2);
+        auto diff2 = compute([](auto s1, auto s2) { return s2 - s1 + s1; }, s1, s2);
         CHECK_EQ(diff2[0], doctest::Approx(2.0));
+        auto d = evaluate<S, S>{}.debug([](auto s1, auto s2) {
+            return s2 - s1 + s1;
+            });
     }
 
     SUBCASE("independent-term-sum")

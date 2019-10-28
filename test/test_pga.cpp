@@ -1,7 +1,6 @@
 #include <doctest/doctest.h>
 #include <gal/pga.hpp>
 #include <gal/format.hpp>
-#include <gal/expression_debug.hpp>
 
 #include <iostream>
 

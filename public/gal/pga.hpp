@@ -36,32 +36,37 @@ namespace pga
     constexpr inline auto e023 = gal::e<pga_algebra, 0b1101>;
     constexpr inline auto e123 = gal::e<pga_algebra, 0b1110>;
     constexpr inline auto e1234 = gal::e<pga_algebra, 0b1111>;
-}
 
-template <typename T>
-struct expr<expr_op::identity, mv<pga::pga_algebra, 0, 1, 1>, detail::pseudoscalar_tag<T>>
-{
-    using value_t               = T;
-    using algebra_t             = pga::pga_algebra;
-    constexpr static expr_op op = expr_op::identity;
-    constexpr static auto lhs   = pga::pga_algebra::pseudoscalar;
-};
+    namespace detail
+    {
+        template <typename T>
+        struct ps_t
+        {
+            using value_t = T;
+            using algebra_t = pga::pga_algebra;
+            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
+            {
+                return pga::pga_algebra::pseudoscalar;
+            }
+        };
 
-template <typename T>
-struct expr<expr_op::identity, mv<pga::pga_algebra, 0, 1, 1>, detail::pseudoscalar_inv_tag<T>>
-{
-    using value_t               = T;
-    using algebra_t             = pga::pga_algebra;
-    constexpr static expr_op op = expr_op::identity;
-    constexpr static auto lhs   = pga::pga_algebra::pseudoscalar_inv;
-};
+        template <typename T>
+        struct ips_t
+        {
+            using value_t = T;
+            using algebra_t = pga::pga_algebra;
+            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
+            {
+                return pga::pga_algebra::pseudoscalar_inv;
+            }
+        };
+    }
 
-namespace pga {
     template <typename T = float>
-    constexpr inline expr<expr_op::identity, mv<pga_algebra, 0, 1, 1>, ::gal::detail::pseudoscalar_tag<T>> ps;
+    constexpr inline ::gal::detail::expr_id<detail::ps_t<T>, 0> ps;
 
     template <typename T = float>
-    constexpr inline expr<expr_op::identity, mv<pga_algebra, 0, 1, 1>, ::gal::detail::pseudoscalar_inv_tag<T>> ips;
+    constexpr inline ::gal::detail::expr_id<detail::ips_t<T>, 0> ips;
 
     // TODO: It isn't great that we cache the cos and sin of the rotor since storing 5 elements prevents a more natural
     // tightly-packed alignment
@@ -213,7 +218,7 @@ namespace pga {
 
         [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
         {
-            return detail::construct_ie<algebra_t>(
+            return ::gal::detail::construct_ie<algebra_t>(
                 id,
                 std::make_integer_sequence<width_t, 8>{},
                 std::integer_sequence<uint8_t, 0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111>{});
@@ -285,7 +290,7 @@ namespace pga {
 
         [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
         {
-            return detail::construct_ie<algebra_t>(
+            return ::gal::detail::construct_ie<algebra_t>(
                 id, std::make_integer_sequence<width_t, 4>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100, 0b1000>{});
         }
 
@@ -605,7 +610,7 @@ namespace pga {
         entity<pga_algebra, T, 0, 0b1111> inv_norm{T{1} / s2, p2 / s};
 
         bool s1_zero = std::abs(s1) < T{1e-6};
-        scalar<pga_algebra, T> u{s1_zero ? std::atan2(-p1, p2) : std::atan2(s2, s1)};
+        scalar<pga_algebra, T> u{s1_zero ? ::std::atan2(-p1, p2) : ::std::atan2(s2, s1)};
         scalar<pga_algebra, T> v{s1_zero ? -p1/s2 : p2 / s1};
 
         return compute(

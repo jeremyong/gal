@@ -19,6 +19,7 @@ matrix:
         - CCXX=g++-9
         - CCC=gcc-9
         - BUILD_TYPE=Debug
+        - BUILD_IK=off
 
     - compiler: gcc
       addons:
@@ -32,6 +33,7 @@ matrix:
         - CCXX=g++-9
         - CCC=gcc-9
         - BUILD_TYPE=Release
+        - BUILD_IK=off
 
     - compiler: clang
       addons:
@@ -46,6 +48,7 @@ matrix:
         - CCXX=clang++-9
         - CCC=clang-9
         - BUILD_TYPE=Debug
+        - BUILD_IK=on
 
     - compiler: clang
       addons:
@@ -60,6 +63,7 @@ matrix:
         - CCXX=clang++-9
         - CCC=clang-9
         - BUILD_TYPE=Release
+        - BUILD_IK=on
 
 before_script:
   - mkdir $HOME/usr
@@ -74,7 +78,7 @@ before_script:
   - $CCXX --version
   - $CCC --version
   - cmake --version
-  - CXX=$CCXX CC=$CCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+  - CXX=$CCXX CC=$CCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DGAL_TEST_IK_ENABLED=$BUILD_IK
 
 script:
   - cmake --build . -- -kj2

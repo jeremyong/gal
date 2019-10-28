@@ -16,6 +16,7 @@ option(GAL_TESTS_ENABLED "Enable GAL test compilation" ON)
 option(GAL_SAMPLES_ENABLED "Enable GAL samples compilation" ON)
 option(GAL_FORMATTERS_ENABLED "Enable formatters for use with fmtlib" ON)
 option(GAL_PROFILE_COMPILATION_ENABLED "Enable use of the compiler time trace facilities if available" OFF)
+option(GAL_TEST_IK_ENABLED "Enable benchmark ik test compilation" ON)
 
 # NEVER mutate global cmake state unless we are building as a standalone project
 if (GAL_STANDALONE)

@@ -1,5 +1,7 @@
 # Geometric Algebra Library
 
+[![Build Status](https://travis-ci.org/jeremyong/gal.svg?branch=master)](https://travis-ci.org/jeremyong/gal)
+
 [**GAL**](https://www.jeremyong.com/gal/) (project page link) is a C++17 expression compiler and engine for computing with geometric algebra. It focuses primarily on speed and customizability with the ambition for being suitable for use in production environments where real-time speed is a factor.
 
 Some things that make GAL unique are:

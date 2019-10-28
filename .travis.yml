@@ -12,11 +12,12 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - sourceline: ppa:ubuntu-toolchain-r/test
           packages:
-            - g++-8
+            - g++-9
       env:
-        - CXX=g++-8
-        - CC=gcc-8
+        - CCXX=g++-9
+        - CCC=gcc-9
         - BUILD_TYPE=Debug
 
     - compiler: gcc
@@ -24,11 +25,12 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - sourceline: ppa:ubuntu-toolchain-r/test
           packages:
-            - g++-8
+            - g++-9
       env:
-        - CXX=g++-8
-        - CC=gcc-8
+        - CCXX=g++-9
+        - CCC=gcc-9
         - BUILD_TYPE=Release
 
     - compiler: clang
@@ -41,8 +43,8 @@ matrix:
           packages:
             - clang-9
       env:
-        - CXX=clang++-9
-        - CC=clang-9
+        - CCXX=clang++-9
+        - CCC=clang-9
         - BUILD_TYPE=Debug
 
     - compiler: clang
@@ -55,8 +57,8 @@ matrix:
           packages:
             - clang-9
       env:
-        - CXX=clang++-9
-        - CC=clang-9
+        - CCXX=clang++-9
+        - CCC=clang-9
         - BUILD_TYPE=Release
 
 before_script:
@@ -69,10 +71,10 @@ before_script:
   - cd "${TRAVIS_BUILD_DIR}"
   - mkdir build
   - cd build
-  - $CXX --version
-  - $CC --version
+  - $CCXX --version
+  - $CCC --version
   - cmake --version
-  - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+  - CXX=$CCXX CC=$CCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
 script:
   - cmake --build . -- -kj2

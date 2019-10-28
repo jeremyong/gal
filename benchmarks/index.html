@@ -147,6 +147,10 @@
                 
             <li class="second-level"><a href="#compilation-time">Compilation time</a></li>
                 
+            <li class="second-level"><a href="#file-size">File size</a></li>
+                
+            <li class="second-level"><a href="#note-to-other-library-authors">Note to other library authors</a></li>
+                
     </ul>
 </div></div>
         <div class="col-md-9" role="main">
@@ -164,8 +168,8 @@
 <th>Commit Hash</th>
 <th>Time</th>
 <th>Iterations</th>
-<th>Iterations/ns</th>
-<th>Speedup</th>
+<th>Iterations/ns (higher is better)</th>
+<th>Speedup (higher is better)</th>
 </tr>
 </thead>
 <tbody>
@@ -190,8 +194,8 @@
 <td><a href="https://github.com/jeremyong/gal/commit/e3f49ae28680a89d328b2d37320fe61773c41b56">e3f49ae</a></td>
 <td>376 ns</td>
 <td>1873236</td>
-<td>4982/ns</td>
-<td>9.312x</td>
+<td><strong>4982/ns</strong></td>
+<td><strong>9.312x</strong></td>
 </tr>
 </tbody>
 </table>
@@ -202,13 +206,13 @@
 <thead>
 <tr>
 <th>Library</th>
-<th>Compile Time</th>
+<th>Compile Time (lower is better)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Versor</td>
-<td>5.50 s</td>
+<td><strong>5.50 s</strong></td>
 </tr>
 <tr>
 <td>GATL</td>
@@ -219,7 +223,51 @@
 <td>12.30 s</td>
 </tr>
 </tbody>
-</table></div>
+</table>
+<h2 id="file-size">File size</h2>
+<p>The file size of the compiled test can be a useful indicator of future bloat if used in your library or application. Obviously, you will need to measure this in your own code since the final size may not scale in any predictable way.</p>
+<p>The sizes of various segments (<code>.strtab</code>, <code>.text</code>, and <code>.symtab</code>) are included as an indication of what bloat may be attributed to. Smaller sections are omitted for brevity. Also, note that the raw sizes are obviously more important than the percentages. Statistics were taken by using the <a href="https://github.com/google/bloaty">google/bloaty</a> ELF parser.</p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>File size (lower is better)</th>
+<th><code>.strtab</code></th>
+<th><code>.text</code></th>
+<th><code>.symtab</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Versor</td>
+<td>282.7 kB</td>
+<td>92.2 kB (32.6%)</td>
+<td>157 kB (55.8%)</td>
+<td>7.88 kB (2.8%)</td>
+</tr>
+<tr>
+<td>GATL</td>
+<td>72.2 kB</td>
+<td>42.2 kB (58.5%)</td>
+<td>12.9 kB (17.8%)</td>
+<td>3.52 kB (4.9%)</td>
+</tr>
+<tr>
+<td>GAL</td>
+<td><strong>26.5 kB</strong></td>
+<td><strong>1.85 kB</strong> (7.0%)</td>
+<td><strong>9.9 kB</strong> (37.4%)</td>
+<td><strong>2.18 kB</strong> (8.2%)</td>
+</tr>
+</tbody>
+</table>
+<p>GAL tries very hard not to include headers unnecessarily which has an impact both on compile times and executable bloat.</p>
+<p>For reference, the <code>.strtab</code> segment refers to the string table (stores null-terminated strings). The <code>.text</code> segment refers to the code segment, and the <code>.symtab</code> refers to the symbol table (needed to relocate symbols and references).</p>
+<blockquote>
+<p>NOTE: the file sizes above include the benchmarking code, so your file savings may be even more dramatic (but no guarantees can be made).</p>
+</blockquote>
+<h2 id="note-to-other-library-authors">Note to other library authors</h2>
+<p>Please note that nothing on this site is intended to disparage other implementers of GA. The world needs more of them! There are certainly disadvantages of GAL at this time, namely that it is a bit less ergonomic to use at this time, and it's less battle-tested than other libraries. GAL had the benefit of being developed with newer compilers which allowed newer techniques (although there was still difficulty to be sure). In any case, I feel obligated to state a profound appreciation for the implementers and practitioners that paved a way before me.</p></div>
         
         
     </div>

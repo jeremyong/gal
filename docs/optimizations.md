@@ -18,3 +18,5 @@ This is a non-exhaustive set of notes to document the various optimizations that
 - If terms drop out in the final result, the type the computation is reified to does not include that term (reflected in `sizeof(result)`).
 - When converting an entity result into a concrete entity that has a greater size, a zero is written to the unoccupied terms as cheaply as possible (this is just zero-initialization).
 - All expression computation is zero-copy, meaning it is up to the compiler if it wishes to rearrange the data (e.g. in SIMD registers).
+
+> NOTE: Currently, clang seems to generate much better code than gcc (80% faster in some cases) and this is under active investigation.

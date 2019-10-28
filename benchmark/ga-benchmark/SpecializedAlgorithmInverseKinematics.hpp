@@ -32,6 +32,152 @@ using point  = point<real_t>;
 using scalar = gal::scalar<cga_algebra, real_t>;
 using namespace gal;
 
+template <typename T = float>
+struct point_z
+{
+    using algebra_t = cga_algebra;
+    using value_t   = T;
+
+    T z;
+
+    constexpr point_z(T c) noexcept
+        : z{c}
+    {}
+
+    template <uint8_t... E>
+    constexpr point_z(entity<algebra_t, T, E...> in) noexcept
+        : z{in.template select<0b100>()}
+    {}
+
+    [[nodiscard]] constexpr static mv<algebra_t, 2, 3, 3> ie(uint32_t id) noexcept
+    {
+        // A CGA point is represented as no + p + 1/2 p^2 ni
+        return {mv_size{2, 3, 3},
+                {
+                    ind{id, rat{1}}, // ind2 = p_z
+                    ind{id, rat{2}}, // ind5 = p_z^2
+                },
+                {
+                    mon{one, one, 1, 0},         // p_z
+                    mon{one, zero, 0, 0},        // no
+                    mon{one_half, rat{2}, 1, 1}, // 1/2 p_z^2
+                },
+                {
+                    term{1, 0, 0b100},  // p_z
+                    term{1, 1, 0b1000}, // no
+                    term{1, 2, 0b10000} // 1/2 p^2 ni
+                }};
+    }
+
+    [[nodiscard]] constexpr static size_t size() noexcept
+    {
+        return 1;
+    }
+
+    [[nodiscard]] constexpr static uint32_t ind_count() noexcept
+    {
+        return 1;
+    }
+
+    [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+    {
+        return z;
+    }
+
+    [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+    {
+        return z;
+    }
+
+    [[nodiscard]] constexpr T get(size_t i) const noexcept
+    {
+        return NAN;
+    }
+};
+
+template <typename T = float>
+union point_xz
+{
+    using algebra_t = cga_algebra;
+    using value_t   = T;
+
+    std::array<T, 2> data;
+    struct
+    {
+        union
+        {
+            T x;
+            T u;
+        };
+
+        union
+        {
+            T z;
+            T w;
+        };
+    };
+
+    constexpr point_xz(T a, T c) noexcept
+        : x{a}
+        , z{c}
+    {}
+
+    template <uint8_t... E>
+    constexpr point_xz(entity<algebra_t, T, E...> in) noexcept
+        : data{in.template select<0b1, 0b100>()}
+    {}
+
+    [[nodiscard]] constexpr static mv<algebra_t, 4, 5, 4> ie(uint32_t id) noexcept
+    {
+        // A CGA point is represented as no + p + 1/2 p^2 ni
+        return {mv_size{4, 5, 4},
+                {
+                    ind{id, rat{1}},     // ind0 = p_x
+                    ind{id + 1, rat{1}}, // ind2 = p_z
+                    ind{id, rat{2}},     // ind3 = p_x^2
+                    ind{id + 1, rat{2}}, // ind5 = p_z^2
+                },
+                {
+                    mon{one, one, 1, 0},         // p_x
+                    mon{one, one, 1, 1},         // p_z
+                    mon{one, zero, 0, 0},        // no
+                    mon{one_half, rat{2}, 1, 1}, // 1/2 p_x^2
+                    mon{one_half, rat{2}, 1, 2}, // 1/2 p_z^2
+                },
+                {
+                    term{1, 0, 0b1},    // p_x
+                    term{1, 1, 0b100},  // p_z
+                    term{1, 2, 0b1000}, // no
+                    term{2, 3, 0b10000} // 1/2 p^2 ni
+                }};
+    }
+
+    [[nodiscard]] constexpr static size_t size() noexcept
+    {
+        return 2;
+    }
+
+    [[nodiscard]] constexpr static uint32_t ind_count() noexcept
+    {
+        return 2;
+    }
+
+    [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+    {
+        return data[index];
+    }
+
+    [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+    {
+        return data[index];
+    }
+
+    [[nodiscard]] constexpr T get(size_t i) const noexcept
+    {
+        return NAN;
+    }
+};
+
 // Fourth order exp expansion
 template <typename T>
 inline auto expp(const T& arg)
@@ -43,12 +189,12 @@ inline auto expp(const T& arg)
             auto arg4 = arg2 * arg2;
             return frac<1> + arg + arg2 / frac<2> + arg3 / frac<6> + arg4 / frac<24>;
         },
-        arg, arg2);
+        arg,
+        arg2);
 }
 
 template <typename Scalar>
-auto
-InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang3, const Scalar& ang4, const Scalar& ang5)
+auto InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang3, const Scalar& ang4, const Scalar& ang5)
 {
     real_t d1 = 200.0, d2 = 680.0, d3 = 150.0, d4 = 140.0, d5 = 114.2;
     real_t l12 = 890.0, l23 = 880.0;
@@ -66,11 +212,11 @@ InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang3, co
     real_t Jg_y = 0.0;
     real_t Jg_z = d2 + l12 + d3;
 
-    point J1{J1_x, J1_y, J1_z};
-    point J2{J2_x, J2_y, J2_z};
-    point J3{J3_x, J3_y, J3_z};
-    point Jg{Jg_x, Jg_y, Jg_z};
-    point Pz{0, 0, 1};
+    point_xz<real_t> J1{J1_x, J1_z};
+    point_xz<real_t> J2{J2_x, J2_z};
+    point_xz<real_t> J3{J3_x, J3_z};
+    point_xz<real_t> Jg{Jg_x, Jg_z};
+    point_z<real_t> Pz{1};
 
     auto Lz = compute(
         [](auto Pz, auto ang1) { return frac<1, 2> * ang1 * ((n_o<real_t> ^ Pz ^ n_i<real_t>) >> ips<real_t>); },
@@ -111,7 +257,7 @@ InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang3, co
     auto [J2_rot1, t2_help] = compute(
         [](auto R1, auto J2, auto J2_f) {
             auto J2_rot1 = J2 % R1;
-            auto t2 = extract<0b1, 0b10, 0b100>{}(J2_f) - extract<0b1, 0b10, 0b100>{}(J2_rot1);
+            auto t2      = extract<0b1, 0b10, 0b100>{}(J2_f)-extract<0b1, 0b10, 0b100>{}(J2_rot1);
             return std::make_tuple(J2_rot1, frac<-1, 2> * t2 ^ n_i<real_t>);
         },
         R1,

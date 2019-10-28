@@ -1,3 +1,4 @@
+# This is a placeholder folder for if/when GAL no longer becomes an interface target
 add_library(gal
     INTERFACE
 )

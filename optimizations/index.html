@@ -241,10 +241,33 @@
 </table>
 <p>For convenience, the flag <code>-ffast-math</code> enables all the flags above and should be usable with GAL.</p>
 <p>Additionally, the hardware-dependent flags below are recommended if permitted by your deployment requirements:</p>
-<p>| GCC/Clang Flag | MSVC Flag | AMD Support | Intel Support | Rationale
---- | --- | --- | ---
-<code>-mfma</code> | <code>/arch:AVX2</code> and <code>/fp:fast</code> | Piledriver and later (2013) | Haswell and later (2014) | Compilers have gotten exceptionally good at identifying patterns and expressions that benefit from the fused-multiply-add instruction. This instruction not only increases speed but it also increases precision because the entire compound operation is completed at full precision before rounding.
-<code>-march=native</code> | | Any | If you control the final target, using <code>-march=native</code> will provide the most aggressive optimizations possible for the target hardware being compiled on.</p>
+<table>
+<thead>
+<tr>
+<th>GCC/Clang Flag</th>
+<th>MSVC Flag</th>
+<th>AMD Support</th>
+<th>Intel Support</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-mfma</code></td>
+<td><code>/arch:AVX2</code> and <code>/fp:fast</code></td>
+<td>Piledriver and later (2013)</td>
+<td>Haswell and later (2014)</td>
+<td>Compilers have gotten exceptionally good at identifying patterns and expressions that benefit from the fused-multiply-add instruction. This instruction not only increases speed but it also increases precision because the entire compound operation is completed at full precision before rounding.</td>
+</tr>
+<tr>
+<td><code>-march=native</code></td>
+<td></td>
+<td>Any</td>
+<td>If you control the final target, using <code>-march=native</code> will provide the most aggressive optimizations possible for the target hardware being compiled on.</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p>It goes without saying that all other standard practices apply (prefer 64-bit due to the additional register count, etc).</p></div>
         
         

@@ -141,6 +141,8 @@
                 
             <li class="second-level"><a href="#runtime">Runtime</a></li>
                 
+            <li class="second-level"><a href="#recommended-compiler-flags">Recommended compiler flags</a></li>
+                
     </ul>
 </div></div>
         <div class="col-md-9" role="main">
@@ -163,7 +165,87 @@
 <li>If terms drop out in the final result, the type the computation is reified to does not include that term (reflected in <code>sizeof(result)</code>).</li>
 <li>When converting an entity result into a concrete entity that has a greater size, a zero is written to the unoccupied terms as cheaply as possible (this is just zero-initialization).</li>
 <li>All expression computation is zero-copy, meaning it is up to the compiler if it wishes to rearrange the data (e.g. in SIMD registers).</li>
-</ul></div>
+</ul>
+<p>Here are some preliminary results for the <code>GABenchmark_AlgorithmInverseKinematics_ConformalModel_D3</code> benchmark provided by <a href="https://github.com/ga-developers/ga-benchmark">gabenchmark</a> (all benchmarks compiled with <code>-O2 -mfma</code> using GCC 10). Prior to each benchmark, CPU scaling was turned off for consistent results.</p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Time</th>
+<th>Iterations</th>
+<th>Iterations/ns</th>
+<th>Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/wolftype/versor">Versor</a></td>
+<td>1138 ns</td>
+<td>608337</td>
+<td>535/ns</td>
+<td>1x</td>
+</tr>
+<tr>
+<td><a href="https://github.com/laffernandes/gatl">GATL</a></td>
+<td>469 ns</td>
+<td>1505207</td>
+<td>3209/ns</td>
+<td>5.998x</td>
+</tr>
+<tr>
+<td><a href="https://github.com/jeremyong/gal">GAL</a></td>
+<td>376 ns</td>
+<td>1873236</td>
+<td>4982/ns</td>
+<td>9.312x</td>
+</tr>
+</tbody>
+</table>
+<p>This was tested on an Intel i9-9900K.</p>
+<h2 id="recommended-compiler-flags">Recommended compiler flags</h2>
+<p>The philosophy adopted by the author of GAL is that algorithms should be numerically robust such that floating point math can be regarded as associative. While this is sometimes more difficult to achieve, the gains are often well worth it as associativity enables the compiler to more easily vectorize and fuse operations. GA affords a good degree of numerical stability already. For example, a rigid body motion or rotation in GA is minimally parameterized. In contrast, the multiplication of several rotation matrices can quickly get out of hand, as the correlated off-diagonal elements drift breaking normalization. As such, users of GAL are recommended to consider the following compiler flags, at the very least, on a translation unit by translation unit basis.</p>
+<blockquote>
+<p>Note for MSVC users: Unlike GCC and Clang, MSVC provides a single control flag to modify the floating point environment. For MSVC, <code>/fp:fast</code> is recommended which enables all recommendations described in more detail below.</p>
+</blockquote>
+<p>The flags mentioned below apply to both GCC and Clang:</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Purpose</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-fno-signed-zeros</code></td>
+<td>Disables the signed representation of zeros.</td>
+<td>Signed zeros are traditionally used to ensure that a divide by zero will create the correct infinity (there is a big difference between <script type="math/tex">+\infty</script> and <script type="math/tex">-\infty</script>). Under projectivization, many operations that would have historically produced an infinity map instead to an ideal. The other case where division by zero may arise is during normalization, but in such a case, the result will be incorrect regardless of the sign of the infinity produced.</td>
+</tr>
+<tr>
+<td><code>-ffinite-math-only</code></td>
+<td>The compiler will no longer honor infinities.</td>
+<td>As mentioned, infinities under projectivization map to a finite quantity in all cases, and honoring infinities is wasteful.</td>
+</tr>
+<tr>
+<td><code>-funsafe-math-optimizations</code></td>
+<td>Permit associative operation reordering.</td>
+<td>Floating point expressions like <script type="math/tex">(x + y) + z</script> and <script type="math/tex">x + (y + z)</script> are not equivalent in general due to rounding errors. It is the opinion of the author that computation should generally be done in ideal precision ranges where possible. GA naturally avoids a number of pathological cases such as adding/multiplying a large number followed by subtracting/dividing by a large number.</td>
+</tr>
+<tr>
+<td><code>-fno-trapping-math</code></td>
+<td>Disables trapping floating point exceptions such as divide by zero and overflow.</td>
+<td>Normalizing entities such as motors, points, etc. are the only instance where a divide by zero can occur and overflow is conditioned on a reasable coordinate system (object space vs world space, etc). It is preferable to just check for what would have been a possible exception in the isolated cases where it is needed than to enable exception trapping everywhere.</td>
+</tr>
+</tbody>
+</table>
+<p>For convenience, the flag <code>-ffast-math</code> enables all the flags above and should be usable with GAL.</p>
+<p>Additionally, the hardware-dependent flags below are recommended if permitted by your deployment requirements:</p>
+<p>| GCC/Clang Flag | MSVC Flag | AMD Support | Intel Support | Rationale
+--- | --- | --- | ---
+<code>-mfma</code> | <code>/arch:AVX2</code> and <code>/fp:fast</code> | Piledriver and later (2013) | Haswell and later (2014) | Compilers have gotten exceptionally good at identifying patterns and expressions that benefit from the fused-multiply-add instruction. This instruction not only increases speed but it also increases precision because the entire compound operation is completed at full precision before rounding.
+<code>-march=native</code> | | Any | If you control the final target, using <code>-march=native</code> will provide the most aggressive optimizations possible for the target hardware being compiled on.</p>
+<p>It goes without saying that all other standard practices apply (prefer 64-bit due to the additional register count, etc).</p></div>
         
         
     </div>

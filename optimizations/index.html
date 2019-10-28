@@ -166,7 +166,7 @@
 <li>When converting an entity result into a concrete entity that has a greater size, a zero is written to the unoccupied terms as cheaply as possible (this is just zero-initialization).</li>
 <li>All expression computation is zero-copy, meaning it is up to the compiler if it wishes to rearrange the data (e.g. in SIMD registers).</li>
 </ul>
-<p>Here are some preliminary results for the <code>GABenchmark_AlgorithmInverseKinematics_ConformalModel_D3</code> benchmark provided by <a href="https://github.com/ga-developers/ga-benchmark">gabenchmark</a> (all benchmarks compiled with <code>-O2 -mfma</code> using GCC 10). Prior to each benchmark, CPU scaling was turned off for consistent results.</p>
+<p>Here are some preliminary results for the <code>GABenchmark_AlgorithmInverseKinematics_ConformalModel_D3</code> benchmark provided by <a href="https://github.com/ga-developers/ga-benchmark/blob/master/AlgorithmInverseKinematics.cpp">gabenchmark</a> (all benchmarks compiled with <code>-O2 -mfma</code> using GCC 10). Prior to each benchmark, CPU scaling was turned off for consistent results.</p>
 <table>
 <thead>
 <tr>
@@ -202,6 +202,29 @@
 </tbody>
 </table>
 <p>This was tested on an Intel i9-9900K.</p>
+<p>The compilation times for the same example are shown below:</p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Compile Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Versor</td>
+<td>5.50 s</td>
+</tr>
+<tr>
+<td>GATL</td>
+<td>20.38 s</td>
+</tr>
+<tr>
+<td>GAL</td>
+<td>12.30 s</td>
+</tr>
+</tbody>
+</table>
 <h2 id="recommended-compiler-flags">Recommended compiler flags</h2>
 <p>The philosophy adopted by the author of GAL is that algorithms should be numerically robust such that floating point math can be regarded as associative. While this is sometimes more difficult to achieve, the gains are often well worth it as associativity enables the compiler to more easily vectorize and fuse operations. GA affords a good degree of numerical stability already. For example, a rigid body motion or rotation in GA is minimally parameterized. In contrast, the multiplication of several rotation matrices can quickly get out of hand, as the correlated off-diagonal elements drift breaking normalization. As such, users of GAL are recommended to consider the following compiler flags, at the very least, on a translation unit by translation unit basis.</p>
 <blockquote>

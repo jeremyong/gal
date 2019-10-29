@@ -229,7 +229,7 @@
 <td><code>/arch:AVX2</code> and <code>/fp:fast</code></td>
 <td>Piledriver and later (2013)</td>
 <td>Haswell and later (2014)</td>
-<td>Compilers have gotten exceptionally good at identifying patterns and expressions that benefit from the fused-multiply-add instruction. This instruction not only increases speed but it also increases precision because the entire compound operation is completed at full precision before rounding.</td>
+<td>Compilers have gotten exceptionally good at identifying patterns and expressions that benefit from the fused-multiply-add instruction. This instruction not only increases speed but it also increases precision because the entire compound operation is completed at full precision before rounding. These flags correspond to <code>FMA3</code><sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></td>
 </tr>
 <tr>
 <td><code>-march=native</code></td>
@@ -240,7 +240,15 @@
 </tr>
 </tbody>
 </table>
-<p>It goes without saying that all other standard practices apply (prefer 64-bit due to the additional register count, etc).</p></div>
+<p>It goes without saying that all other standard practices apply (prefer 64-bit due to the additional register count, etc).</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>The <code>FMA4</code> set of instructions can help in some circumstances, but personally, I haven't found them to be worth the loss in compatibility afforded by using the slightly older (but very good) <code>FMA3</code> instructions.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div></div>
         
         
     </div>

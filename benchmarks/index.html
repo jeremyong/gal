@@ -239,7 +239,7 @@
 <tr>
 <td>clang++ 9.0.0</td>
 <td>GATL</td>
-<td><em>could not compile</em></td>
+<td><em>could not compile</em><sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></td>
 </tr>
 <tr>
 <td>clang++ 9.0.0</td>
@@ -249,7 +249,6 @@
 </tbody>
 </table>
 <p>As with the benchmark, CPU scaling was turned off for the test and all compilations were run from a clean build folder. As you can see, GAL doesn't compile the fastest, but does enjoy an edge over GATL due to the availability of <code>constexpr</code> at the time of authorship to avoid slow-to-compile techniques like SFINAE (<code>std::enable_if</code>). Improving compilation time (or at the very least) not regressing is a constant goal for GAL.</p>
-<p>Because of the newer clang compiler, GATL couldn't be compiled, possibly due to changes in the C++ standard or because older versions of clang were inadvertedly more permissive. Note that for g++, I opted to test all libraries against the current trunk version, as GAL uses various C++17 techniques handled better in GCC10 and improvements to the compiler generally benefit all libraries.</p>
 <h2 id="file-size">File size</h2>
 <p>The file size of the compiled test can be a useful indicator of future bloat if used in your library or application. Obviously, you will need to measure this in your own code since the final size may not scale in any predictable way.</p>
 <p>The sizes of various segments (<code>.strtab</code>, <code>.text</code>, and <code>.symtab</code>) are included as an indication of what bloat may be attributed to. Smaller sections are omitted for brevity. Also, note that the raw sizes are obviously more important than the percentages. Statistics were taken by using the <a href="https://github.com/google/bloaty">google/bloaty</a> ELF parser.</p>
@@ -348,7 +347,15 @@
 <hr />
 <h2 id="note-to-other-library-authors">Note to other library authors</h2>
 <p>Please note that nothing on this site is intended to disparage other implementers of GA. The world needs more of them! There are certainly disadvantages of GAL at this time, namely that it is a bit less ergonomic to use at this time, and it's less battle-tested than other libraries. GAL had the benefit of being developed with newer compilers which allowed newer techniques (although there was still difficulty to be sure). In any case, I feel obligated to state a profound appreciation for the implementers and practitioners that paved a way before me.</p>
-<p>If I've neglected to include a library or if you think I have made any errors, please don't hesitate to contact me and I'll make sure things get sorted. If there are situations where you think your library or code might perform better, let me know as well. Thanks!</p></div>
+<p>If I've neglected to include a library or if you think I have made any errors, please don't hesitate to contact me and I'll make sure things get sorted. If there are situations where you think your library or code might perform better, let me know as well. Thanks!</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Because of the newer clang compiler, GATL couldn't be compiled, possibly due to changes in the C++ standard or because older versions of clang were inadvertedly more permissive. Note that for g++, I opted to test all libraries against the current trunk version, as GAL uses various C++17 techniques handled better in GCC10 and improvements to the compiler generally benefit all libraries.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div></div>
         
         
     </div>

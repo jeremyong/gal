@@ -163,6 +163,7 @@
 <li>The final reification does NOT rely on <code>constexpr</code> expansion because this would introduce a function call that the compiler cannot reasonably inline (affects final performance by 10x!). This is done in a type expansion instead at the cost of some compile-time performance.</li>
 <li>Compile-time rational addition and multiplication is guarded against overflows carefully and if an overflow is about to occur, mediant approximation is used.</li>
 <li>Exponentiation is unrolled out compile time using binary right-to-left expansion since the exponent itself is known at compile time. When fractional exponents are present, a single call to <code>std::pow</code> is used instead.</li>
+<li>GAL is extremely careful about how its headers are organized so that the parser has minimal work to do. In particular, GAL does whatever it can to avoid the inclusion of system headers unless absolutely necessary. The substitutions made for leaner classes do <em>not</em> show up in the final build (they are only used for intermediate computation) and are measurably quicker to compile.</li>
 </ul>
 <h2 id="runtime">Runtime</h2>
 <ul>

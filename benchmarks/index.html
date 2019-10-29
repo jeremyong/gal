@@ -149,8 +149,8 @@
                 
             <li class="second-level"><a href="#file-size">File size</a></li>
                 
-            <li class="second-level"><a href="#note-to-other-library-authors">Note to other library authors</a></li>
-                
+                <li class="third-level"><a href="#some-quick-notes-for-reproducing-the-benchmark">Some quick notes for reproducing the benchmark</a></li>
+                <li class="third-level"><a href="#note-to-other-library-authors">Note to other library authors</a></li>
     </ul>
 </div></div>
         <div class="col-md-9" role="main">
@@ -160,6 +160,7 @@
 <p>NOTE: The author isn't honestly a believer in benchmarks as a proxy for how fast <em>your</em> code will run. Use these timings only as a heuristic on which to base your judgement and please, please, benchmark your own code. If you find something isn't fast, please file an issue! Thanks :)</p>
 </blockquote>
 <p>These results were produced on October 28, 2019 for the <code>GABenchmark_AlgorithmInverseKinematics_ConformalModel_D3</code> benchmark provided by <a href="https://github.com/ga-developers/ga-benchmark/blob/master/AlgorithmInverseKinematics.cpp">gabenchmark</a> (all benchmarks compiled with <code>-O2 -mfma</code> using GCC 10). Prior to each benchmark, CPU scaling was turned off for consistent results.</p>
+<p>For possible explanations to explain both the compile-time and runtime behavior of GAL, please refer to the <a href="../optimizations/">optimizations</a> section of this page.</p>
 <h2 id="runtime">Runtime</h2>
 <table>
 <thead>
@@ -199,7 +200,7 @@
 </tr>
 </tbody>
 </table>
-<p>This was tested on an Intel i9-9900K.</p>
+<p>This was tested on an Intel i9-9900K. The variable runtime is due to the way <a href="https://github.com/google/benchmark">google/benchmark</a> works. It will keep running new iterations until the statistical significance of the measurement increases above a predetermined amount. The important metric is the rate in the fourth column. The speedup factor in the final column is computed as the ratio to the throughput of Versor (first row).</p>
 <h2 id="compilation-time">Compilation time</h2>
 <p>The compilation times for the same example are shown below:</p>
 <table>
@@ -266,8 +267,60 @@
 <blockquote>
 <p>NOTE: the file sizes above include the benchmarking code, so your file savings may be even more dramatic (but no guarantees can be made).</p>
 </blockquote>
-<h2 id="note-to-other-library-authors">Note to other library authors</h2>
-<p>Please note that nothing on this site is intended to disparage other implementers of GA. The world needs more of them! There are certainly disadvantages of GAL at this time, namely that it is a bit less ergonomic to use at this time, and it's less battle-tested than other libraries. GAL had the benefit of being developed with newer compilers which allowed newer techniques (although there was still difficulty to be sure). In any case, I feel obligated to state a profound appreciation for the implementers and practitioners that paved a way before me.</p></div>
+<h3 id="some-quick-notes-for-reproducing-the-benchmark">Some quick notes for reproducing the benchmark</h3>
+<ul>
+<li>GAL provides a mechanism for specifying arbitrary multivectors as types with exact rational coefficients. This means that the conformal point located at <script type="math/tex">(1, 0, 0)</script>, represented by <script type="math/tex">\mathbf{o} + e_2 + \frac{1}{2}\boldsymbol\infty</script> can be represented exactly as opposed to the canonical point representation with $p_x = p_y$ being stored and computed with floating point zeros.</li>
+<li>When this optimization was made, all results were completely accurate up till the final reference value for <code>Jg_f[4]</code> for which the published result should be <code>3.31122e6</code>. Instead, GAL computes <code>1.831977e6</code> for this entry. Reintroducing floating point zeros into the expression immediately recovers the reference result, indicating that this lone result is likely incorrect as stated.</li>
+<li>A check of all 16 other reference results though matches identically (all of which are in more reasonable floating point ranges).</li>
+<li>To compile the GATL implementation of the algorithm, two changes needed to be introduced due to a breaking change with more modern compilers in handling <code>std::enable_if_t</code>. The following snippet:</li>
+</ul>
+<pre><code class="c++">    // GATL lazy_context.hpp lines 652 (whitespace added here for readability on web)
+    template&lt;
+        typename CoefficientType,
+        typename Expression,
+        typename = std::enable_if_t&lt;super::stored_inputs_count() != 0&gt;&gt;
+    constexpr decltype(auto)
+    eval(clifford_expression&lt;CoefficientType, Expression&gt; const &amp;expression) const {
+        return detail::eval&lt;
+            base_id + 1,
+            base_id + (detail::tag_t)super::stored_inputs_count()&gt;(
+                expression, super::stored_inputs_tuple());
+    }
+
+    template&lt;
+        typename CoefficientType,
+        typename Expression,
+        typename = std::enable_if_t&lt;super::stored_inputs_count() == 0&gt;&gt;
+    constexpr decltype(auto)
+    eval(clifford_expression&lt;CoefficientType, Expression&gt; &amp;&amp;) const noexcept {
+        return clifford_expression&lt;CoefficientType, Expression&gt;();
+    }
+</code></pre>
+
+<p>was changed to:</p>
+<pre><code class="c++">    template&lt;typename CoefficientType, typename Expression&gt;
+    constexpr decltype(auto)
+    eval(clifford_expression&lt;CoefficientType, Expression&gt; const &amp;expression) const {
+        if constexpr (super::stored_inputs_count() &gt; 0)
+        {
+            return detail::eval&lt;
+                base_id + 1,
+                base_id + (detail::tag_t)super::stored_inputs_count()&gt;(
+                    expression, super::stored_inputs_tuple());
+        }
+        else
+        {
+            return clifford_expression&lt;CoefficientType, Expression&gt;();
+        }
+    }
+</code></pre>
+
+<ul>
+<li>As this was an entirely compile-time transformation, it is not believed that either the runtime nor compilation time would be effected much. It would likely improve compilation time if anything due to the removal of an extra template instantiation in certain situations.</li>
+</ul>
+<h3 id="note-to-other-library-authors">Note to other library authors</h3>
+<p>Please note that nothing on this site is intended to disparage other implementers of GA. The world needs more of them! There are certainly disadvantages of GAL at this time, namely that it is a bit less ergonomic to use at this time, and it's less battle-tested than other libraries. GAL had the benefit of being developed with newer compilers which allowed newer techniques (although there was still difficulty to be sure). In any case, I feel obligated to state a profound appreciation for the implementers and practitioners that paved a way before me.</p>
+<p>If I've neglected to include a library or if you think I have made any errors, please don't hesitate to contact me and I'll make sure things get sorted. If there are situations where you think your library or code might perform better, let me know as well. Thanks!</p></div>
         
         
     </div>

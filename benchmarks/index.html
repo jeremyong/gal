@@ -151,7 +151,10 @@
                 
             <li class="second-level"><a href="#notes-for-reproducing-the-benchmark">Notes for reproducing the benchmark</a></li>
                 
-                <li class="third-level"><a href="#note-to-other-library-authors">Note to other library authors</a></li>
+            <li class="second-level"><a href="#roadmap">Roadmap</a></li>
+                
+            <li class="second-level"><a href="#note-to-other-library-authors">Note to other library authors</a></li>
+                
     </ul>
 </div></div>
         <div class="col-md-9" role="main">
@@ -319,8 +322,10 @@
 <ul>
 <li>As this was an entirely compile-time transformation, it is not believed that either the runtime nor compilation time would be effected much. It would likely improve compilation time if anything due to the removal of an extra template instantiation in certain situations.</li>
 </ul>
+<h2 id="roadmap">Roadmap</h2>
+<p>Benchmarking is a fine-art, and while I do not believe they should be misused, they are still helpful for identifying future areas of improvement and, perhaps more importantly, detecting regression. Because of the heavy compile-time nature of the library, small perturbations in the code can (in specific sections), cause dramatic effects downstream. A primary concern of GAL is to quickly work on getting demos working so that timings can be collected for a variety of useful workloads.</p>
 <hr />
-<h3 id="note-to-other-library-authors">Note to other library authors</h3>
+<h2 id="note-to-other-library-authors">Note to other library authors</h2>
 <p>Please note that nothing on this site is intended to disparage other implementers of GA. The world needs more of them! There are certainly disadvantages of GAL at this time, namely that it is a bit less ergonomic to use at this time, and it's less battle-tested than other libraries. GAL had the benefit of being developed with newer compilers which allowed newer techniques (although there was still difficulty to be sure). In any case, I feel obligated to state a profound appreciation for the implementers and practitioners that paved a way before me.</p>
 <p>If I've neglected to include a library or if you think I have made any errors, please don't hesitate to contact me and I'll make sure things get sorted. If there are situations where you think your library or code might perform better, let me know as well. Thanks!</p></div>
         

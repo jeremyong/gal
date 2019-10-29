@@ -554,8 +554,8 @@
 <h2 id="file-size">File size</h2>
 <p>The file size of the compiled test can be a useful indicator of future bloat if used in your library or application. Obviously, you will need to measure this in your own code since the final size may not scale in any predictable way.</p>
 <p>The sizes of various segments (<code>.strtab</code>, <code>.text</code>, and <code>.symtab</code>) are included as an indication of what bloat may be attributed to. Smaller sections are omitted for brevity. Also, note that the raw sizes are obviously more important than the percentages. Statistics were taken by using the <a href="https://github.com/google/bloaty">google/bloaty</a> <abbr title="Executable and Linker Format">ELF</abbr> parser.</p>
-<div class="admonition info">
-<p>The file sizes below include the benchmarking code, so your file savings may be even more dramatic (but no guarantees can be made).</p>
+<div class="admonition tip">
+<p>The file sizes below include the benchmarking code, so your file savings may be even more dramatic (just remember that no guarantees can be made).</p>
 </div>
 <table>
 <thead>
@@ -602,7 +602,7 @@
 <li>GAL provides a mechanism for specifying arbitrary multivectors as types with exact rational coefficients. This means that the conformal point located at <script type="math/tex">(1, 0, 0)</script>, represented by <script type="math/tex">\mathbf{o} + e_2 + \frac{1}{2}\boldsymbol\infty</script> can be represented exactly as opposed to the canonical point representation with <script type="math/tex">p_x = p_y = 0.0</script> being stored and computed with floating point zeros.</li>
 <li>When this optimization was made, all results were completely accurate up till the final reference value for <code>Jg_f[4]</code> for which the published result should be <code>3.31122e6</code>. Instead, GAL computes <code>1.831977e6</code> for this entry. Reintroducing floating point zeros into the expression immediately recovers the reference result, indicating that this lone result is likely incorrect as stated.</li>
 <li>A check of all 16 other reference results though matches identically (all of which are in more reasonable floating point ranges).</li>
-<li>To compile the <abbr title="Geometric Algebra Template Library">GATL</abbr> implementation of the algorithm, two changes needed to be introduced due to a breaking change with more modern compilers in handling <code>std::enable_if_t</code>. The following snippet:</li>
+<li>To compile the <abbr title="Geometric Algebra Template Library">GATL</abbr> implementation of the algorithm, two changes needed to be introduced due to a breaking change with more modern compilers in handling <code>std::enable_if_t</code>. Please refer to the following snippets:</li>
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Old (doesn't compile under g++10)</p>

@@ -1,623 +1,421 @@
-<!DOCTYPE html>
-<html lang="en">
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="GAL - A fast C++17 geometric algebra library">
-    <meta name="author" content="Jeremy Ong">
-    <link rel="canonical" href="https://jeremyong.com/gal/">
-    <link rel="img/favicon.ico">
 
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
     
-    <title>Quick Start - GAL</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="GAL - A fast C++17 geometric algebra library">
+      
+      
+        <link rel="canonical" href="https://jeremyong.com/gal/">
+      
+      
+        <meta name="author" content="Jeremy Ong">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="images/blur_on.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
-
-    <link rel="stylesheet" href="//use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.min.css">
-    <link href='//fonts.googleapis.com/css?family=PT+Sans:400,400italic,700,700italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
-    <link href='//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,600,700&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
-    <link href="css/bootstrap-custom.min.css" rel="stylesheet">
-    <link href="css/base.min.css" rel="stylesheet">
-    <link href="css/cinder.min.css" rel="stylesheet">
-    <link href="css/highlight.min.css" rel="stylesheet">
-
-    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-            <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
-        <![endif]-->
-
-    <script src="//ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
-    <script>
-    WebFont.load({
-        google: {
-            families: ['Open Sans', 'PT Sans']
+    
+      
+        <title>GAL</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/application.30686662.css">
+      
+        <link rel="stylesheet" href="assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#7e57c2">
+      
+    
+    
+      <script src="assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="css/main.css">
+    
+    
+      
+        
+<script>
+  window.ga = window.ga || function() {
+    (ga.q = ga.q || []).push(arguments)
+  }
+  ga.l = +new Date
+  /* Setup integration and send page view */
+  ga("create", "UA-10576233-1", "auto")
+  ga("set", "anonymizeIp", true)
+  ga("send", "pageview")
+  /* Register handler to log search on blur */
+  document.addEventListener("DOMContentLoaded", () => {
+    if (document.forms.search) {
+      var query = document.forms.search.query
+      query.addEventListener("blur", function() {
+        if (this.value) {
+          var path = document.location.pathname;
+          ga("send", "pageview", path + "?q=" + this.value)
         }
-    });
-    </script>
-
+      })
+    }
+  })
+</script>
+<script async src="https://www.google-analytics.com/analytics.js"></script>
+      
     
-    <script>
-    (function(i, s, o, g, r, a, m) {
-        i['GoogleAnalyticsObject'] = r;
-        i[r] = i[r] || function() {
-            (i[r].q = i[r].q || []).push(arguments)
-        }, i[r].l = 1 * new Date();
-        a = s.createElement(o),
-        m = s.getElementsByTagName(o)[0];
-        a.async = 1;
-        a.src = g;
-        m.parentNode.insertBefore(a, m)
-    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
-
-    ga('create', 'UA-10576233-1', 'jeremyong.com');
-    ga('send', 'pageview');
-    </script>
     
-
-     
-</head>
-
-<body class="homepage" >
-
-    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-    <div class="container">
-
-        <!-- Collapsed navigation -->
-        <div class="navbar-header">
-            <!-- Expander button -->
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#gal" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="https://jeremyong.com/gal" title="GAL" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon">blur_on</i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              GAL
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Home
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
             
 
-            <!-- Main title -->
 
-            <a class="navbar-brand" href=".">GAL</a>
-        </div>
+  
 
-        <!-- Expanded navigation -->
-        <div class="navbar-collapse collapse">
-                <!-- Main navigation -->
-                <ul class="nav navbar-nav">
-                
-                
-                    <li class="active">
-                        <a href=".">Quick Start</a>
-                    </li>
-                
-                
-                
-                    <li >
-                        <a href="optimizations/">Optimizations</a>
-                    </li>
-                
-                
-                
-                    <li >
-                        <a href="benchmarks/">Benchmarks</a>
-                    </li>
-                
-                
-                
-                    <li >
-                        <a href="coding-conventions/">Coding Conventions</a>
-                    </li>
-                
-                
-                
-                    <li >
-                        <a href="about/">About</a>
-                    </li>
-                
-                
-                </ul>
-
-            <ul class="nav navbar-nav navbar-right">
-                    <li class="disabled">
-                        <a rel="prev" >
-                            <i class="fas fa-arrow-left"></i> Previous
-                        </a>
-                    </li>
-                    <li >
-                        <a rel="next" href="optimizations/">
-                            Next <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="https://github.com/jeremyong/gal/edit/master/docs/index.md"><i class="fab fa-github"></i> Edit on GitHub</a>
-                    </li>
-            </ul>
-        </div>
+<a href="https://github.com/jeremyong/gal/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
     </div>
-</div>
-
-    <div class="container">
+  
+  <div class="md-source__repository">
+    jeremyong/gal
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
         
-        
-        <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
-    <ul class="nav bs-sidenav">
-        <li class="first-level active"><a href="#gal">GAL</a></li>
-            <li class="second-level"><a href="#getting-started">Getting Started</a></li>
-                
-            <li class="second-level"><a href="#requirements">Requirements</a></li>
-                
-            <li class="second-level"><a href="#usage">Usage</a></li>
-                
-                <li class="third-level"><a href="#pick-a-model">Pick A Model</a></li>
-                <li class="third-level"><a href="#create-some-entities">Create some entities</a></li>
-                <li class="third-level"><a href="#evaluating-expressions">Evaluating expressions</a></li>
-                <li class="third-level"><a href="#reading-results">Reading results</a></li>
-            <li class="second-level"><a href="#roadmap">Roadmap</a></li>
-                
-            <li class="second-level"><a href="#project-layout">Project layout</a></li>
-                
-    </ul>
-</div></div>
-        <div class="col-md-9" role="main">
+      
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="https://jeremyong.com/gal" title="GAL" class="md-nav__button md-logo">
+      
+        <i class="md-icon">blur_on</i>
+      
+    </a>
+    GAL
+  </label>
+  
+    <div class="md-nav__source">
+      
 
-<h1 id="gal">GAL</h1>
+
+  
+
+<a href="https://github.com/jeremyong/gal/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    jeremyong/gal
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+    <a href="." title="Home" class="md-nav__link md-nav__link--active">
+      Home
+    </a>
+    
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="quick-start/" title="Quick Start" class="md-nav__link">
+      Quick Start
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="optimizations/" title="Optimizations" class="md-nav__link">
+      Optimizations
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="benchmarks/" title="Benchmarks" class="md-nav__link">
+      Benchmarks
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="coding-conventions/" title="Coding Conventions" class="md-nav__link">
+      Coding Conventions
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="about/" title="About" class="md-nav__link">
+      About
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/jeremyong/gal/edit/master/docs/index.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="gal">GAL</h1>
 <p><a href="https://travis-ci.org/jeremyong/gal"><img alt="Build Status" src="https://travis-ci.org/jeremyong/gal.svg?branch=master" /></a>
 <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg" /></a></p>
 <p><a href="https://github.com/jeremyong/gal">GAL</a> is a realtime suitable C++17 library designed to be simultaneously competitive with and complementary to traditional methods for computing geometry (e.g. linear algebra, vector spaces, quaternions, dual quaternions). As the majority of its work is done at compile-time, the library is naturally "header-only" due to the implicit inlining requirements.</p>
-<p>For computing in 3D, Geometric Algebra (henceforth, just "<abbr title="Geometric Algebra">GA</abbr>") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a <em>uniform</em> way between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).</p>
-<hr />
-<h2 id="getting-started">Getting Started</h2>
-<ul>
-<li><code>git clone git@github.com:jeremyong/gal.git</code> - Clone the <a href="https://github.com/jeremyong/gal">project</a> (directly, as a submodule in your project, via CMake's <a href="https://cmake.org/cmake/help/latest/module/FetchContent.html">FetchContent</a> module, etc)</li>
-<li><code>gal</code> - Link the <code>gal</code> interface target if incorporating the library into your own code (will disable test and sample compilation)</li>
-<li><code>mkdir build &amp;&amp; cd build &amp;&amp; cmake .. -G Ninja &amp;&amp; ninja</code> - Build the tests</li>
-<li><code>./bin/gal_test</code> - From the build folder, run the tests</li>
-</ul>
-<p>When building as a standalone project, the following CMake options are available:</p>
-<table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>GAL_TESTS_ENABLED</code></td>
-<td><code>ON</code></td>
-<td>Compiles the tests</td>
-</tr>
-<tr>
-<td><code>GAL_SAMPLES_ENABLED</code></td>
-<td><code>ON</code></td>
-<td>Compiles the samples (none as of yet, stay tuned!)</td>
-</tr>
-<tr>
-<td><code>GAL_PROFILE_COMPILATION_ENABLED</code></td>
-<td><code>OFF</code></td>
-<td>Enables timing data generation (traces if using clang, reports if using gcc)</td>
-</tr>
-</tbody>
-</table>
-<p>If using CMake to integrate GAL into your project, here's a quick snippet you can use (requires CMake 3.14 or above):</p>
-<pre><code class="cmake">include(FetchContent)
-FetchContent_Declare(
-    gal
-    GIT_REPOSITORY https://github.com/jeremyong/gal.git
-    GIT_TAG master # or specific commit hash
-)
-FetchContent_MakeAvailable(gal)
+<p>For computing in 3D, Geometric Algebra (henceforth, just "GA") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a <em>uniform</em> way between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).</p>
+                
+                  
+                
+              
+              
+                
 
-target_link_libraries(your_target PRIVATE gal)
-</code></pre>
 
-<h2 id="requirements">Requirements</h2>
-<ul>
-<li>A working C++17 compiler (currently gcc and clang are tested but <abbr title="Microsoft Visual C++">MSVC</abbr> will come soon)</li>
-<li>If using <abbr title="GNU C Compiler">GCC</abbr>, you will get better results with a trunk build of <abbr title="GNU C Compiler">GCC</abbr> 10.0</li>
-<li><a href="https://cmake.org">CMake</a> 3.14+ if building the tests</li>
-<li>(optional) <a href="https://ninja-build.org/">Ninja</a> Backend build system</li>
-</ul>
-<blockquote>
-<p>Refer to the <a href="optimizations/#recommended-compiler-flags">optimizations</a> page to see recommended compiler flags for your application</p>
-</blockquote>
-<h2 id="usage">Usage</h2>
-<h3 id="pick-a-model">Pick A Model</h3>
-<p>To use GAL, you need to minimally include a single header corresponding to the model you wish to work with. The model defines the <a href="https://en.wikipedia.org/wiki/Metric_signature">metric signature</a> as well as the dimensionality of the space you wish to represent. Typically, this will either be the Euclidean plane or the fundamental Euclidean 3-space. If you installed or linked to the library through conventional means, you would include things with the <code>gal</code> path prefix (as in, <code>#include &lt;gal/pga.hpp&gt;</code> for example).</p>
-<table>
-<thead>
-<tr>
-<th>Header</th>
-<th>Space</th>
-<th>Namespace</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>gal/ega.hpp</code></td>
-<td>
-<script type="math/tex">\mathbb{R}_{3, 0, 0}</script>
-</td>
-<td><code>gal::ega</code></td>
-<td>Canonical 3D Euclidean space</td>
-</tr>
-<tr>
-<td><code>gal/pga2.hpp</code></td>
-<td>
-<script type="math/tex">\mathbf{P}(\mathbb{R}^*_{2, 0, 1})</script>
-</td>
-<td><code>gal::pga2</code></td>
-<td>Projectivized 2D Euclidean plane</td>
-</tr>
-<tr>
-<td><code>gal/pga.hpp</code></td>
-<td>
-<script type="math/tex">\mathbf{P}(\mathbb{R}^*_{3, 0, 1})</script>
-</td>
-<td><code>gal::pga</code></td>
-<td>Projectivized 3D Euclidean space</td>
-</tr>
-<tr>
-<td><code>gal/cga2.hpp</code></td>
-<td>
-<script type="math/tex">\mathbf{C}(\mathbb{R}_{3, 1, 0})</script>
-</td>
-<td><code>gal::cga2</code></td>
-<td>Conformalized 2D Euclidean plane</td>
-</tr>
-<tr>
-<td><code>gal/cga.hpp</code></td>
-<td>
-<script type="math/tex">\mathbf{C}(\mathbb{R}_{4, 1, 0})</script>
-</td>
-<td><code>gal::cga</code></td>
-<td>Conformalized 3D Euclidean plane</td>
-</tr>
-</tbody>
-</table>
-<p>All functions and entities specific to the model will be defined in the namespace according to the table above. General functions and operations will be defined in the <code>gal</code> namespace.</p>
-<h3 id="create-some-entities">Create some entities</h3>
-<p>Regardless of the space you choose, you will generally have access to the geometric entities you would expect, each templatized based on the precision you wish to work with.</p>
-<table>
-<thead>
-<tr>
-<th>Entity</th>
-<th>Class</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Points</td>
-<td><code>point&lt;T&gt;</code></td>
-</tr>
-<tr>
-<td>Lines</td>
-<td><code>line&lt;T&gt;</code></td>
-</tr>
-<tr>
-<td>Planes</td>
-<td><code>plane&lt;T&gt;</code></td>
-</tr>
-<tr>
-<td>Rotors</td>
-<td><code>rotor&lt;T&gt;</code></td>
-</tr>
-<tr>
-<td>Translator</td>
-<td><code>translator&lt;T&gt;</code></td>
-</tr>
-<tr>
-<td>Motor</td>
-<td><code>motor&lt;T&gt;</code></td>
-</tr>
-</tbody>
-</table>
-<p>As these entities have representations that are model-dependent, they reside in the model namespace from the table above. If a class is missing, it is likely not implemented as of yet (most work will happen in the <script type="math/tex">\mathbf{P}(\mathbb{R}^*_{3, 0, 1})</script>) so please file an issue if there's something you need (or even better, submit a <abbr title="Pull Request">PR</abbr>!).</p>
-<p>All the entities above are representations of <em>Euclidean</em> entities and take on a different shape internally (at compile-time) depending on the space and model you're working in.</p>
-<p>All entities support initialization the way you'd expect. For example <code>point&lt;double&gt; p{0, 1, 2}</code> defines the point at <script type="math/tex">(0, 1, 2)</script> when using any of the models that represent Euclidean 3-space. They also support indexed access (i.e. <code>p[1] == 1</code> will evaluate true) and in some cases, accessors are aliased using nested unions for convience. The point coordinates, for example, may be referred to via <code>u</code>, <code>v</code>, and <code>w</code>, or even <code>s</code> and <code>t</code> depending on the model dimensionality.</p>
-<p>Where appropriate, entities may support the <code>normalize</code> method, which mutates the entity as appropriate for its type. A divide-by-zero check is not performed. In all cases in fact, the library adopts the philosophy that the user should not pay for what the user does not use.</p>
-<p>Entities are stored sparsely regardless of the model they are in with <em>no additional overhead</em> for multivector basis-index bookkeeping. For example, <code>sizeof(point&lt;float&gt;)</code> is 12 (3 floats) regardless of whether you are working with <abbr title="Conformal Geometric Algebra">CGA</abbr> (where the point is represented as <script type="math/tex">\mathbf{o} + p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z} + \frac{1}{2}p^2\boldsymbol\infty</script>) or in <abbr title="Euclidean Geometric Algebra">EGA</abbr> (where the point is simply <script type="math/tex">p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z}</script>).</p>
-<h3 id="evaluating-expressions">Evaluating expressions</h3>
-<p>Expressions are evaluated lazily at compile-time in a manner that maximally promotes <a href="https://en.wikipedia.org/wiki/Common_subexpression_elimination"><abbr title="Common Subexpression Elimination">CSE</abbr></a>. Thus, we sacrifice a little bit of code-authorship convenience to gain a significant speedup at runtime.</p>
-<p>A computation will take the form <code>compute([](...) { ... }, entities...)</code> where the first argument is a lambda and the second argument are the entities you created in the prior step.</p>
-<p>A simple calculation might look like:</p>
-<pre><code class="c++">using namespace gal::pga;
-using gal::compute;
-
-point&lt;&gt; p1{1, 0, 0}; // The default value type is `float`
-point&lt;&gt; p2{0, 1, 1};
-
-// Take the regressive product of the two points to construct the line passing through them
-line&lt;&gt; l = compute([](auto p1, auto p2) { return p1 &amp; p2; }, p1, p2);
-
-// You can verify that l defines Plucker coordinates that pass through (1, 0, 0) and (0, 1, 1)
-</code></pre>
-
-<p>In the lambda (the first argument to compute), we do not capture variables, and we do not produce side-effects. The lambda itself is never actually evaluated (instead, <code>decltype</code> is used to compute the final result based solely on the type the lambda returns). In the body of the lambda, we shadow the outside variable names for convenience. The actual types that are passed to the lambda are building blocks of a template expression tree. Thus, operations that are supported in the body of a compute lambda are <em>not</em> supported outside the lambda.</p>
-<pre><code class="c++">point&lt;&gt; p1{1, 0, 0};
-point&lt;&gt; p2{0, 1, 1};
-
-line&lt;&gt; l = p1 &amp; p2; // Fails to compile!
-</code></pre>
-
-<p>This restriction may be relaxed in the future so that such operations create an immediate computation context for prototyping convenience.</p>
-<p>For convience, computations may return multiple results that will be reified to the same number of results.</p>
-<pre><code class="c++">point&lt;&gt; p1{1, 0, 0};
-point&lt;&gt; p2{0, 1, 1};
-point&lt;&gt; p3{1, 0, 1};
-
-// Make a line from p1 to p2, and a plane containing p1, p2, and p3
-auto&amp;&amp; [p12, p123] = compute(
-    [](auto p1, auto p2, auto p3) {
-        auto p12 = p1 &amp; p2;
-        auto p123 = p12 &amp; p3;
-        return std::make_tuple(p12, p123);
-    }, p1, p2, p3);
-</code></pre>
-
-<p>The binary operations supported in the compute lambda are as follows:</p>
-<table>
-<thead>
-<tr>
-<th>Symbol</th>
-<th>Operation</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>*</code></td>
-<td>
-<script type="math/tex">ab</script>
-</td>
-<td>The fundamental geometric product</td>
-</tr>
-<tr>
-<td><code>^</code></td>
-<td>
-<script type="math/tex">a \wedge b </script>
-</td>
-<td>The exterior (wedge or outer) product</td>
-</tr>
-<tr>
-<td><code>&amp;</code></td>
-<td>
-<script type="math/tex">a \vee b = (a^\star \wedge b^\star)^\star</script>
-</td>
-<td>The regressive product</td>
-</tr>
-<tr>
-<td><code>&gt;&gt;</code></td>
-<td>
-<script type="math/tex">a \rfloor b </script>
-</td>
-<td>The left contraction</td>
-</tr>
-<tr>
-<td><code>|</code></td>
-<td>
-<script type="math/tex">a \cdot b</script>
-</td>
-<td>The symmetric inner product</td>
-</tr>
-<tr>
-<td><code>%</code></td>
-<td>
-<script type="math/tex">ba \tilde b</script>
-</td>
-<td>The sandwich operator</td>
-</tr>
-<tr>
-<td><code>+</code></td>
-<td>
-<script type="math/tex">a + b</script>
-</td>
-<td>Multivector sum</td>
-</tr>
-<tr>
-<td><code>-</code></td>
-<td>
-<script type="math/tex">a + b</script>
-</td>
-<td>Multivector difference</td>
-</tr>
-<tr>
-<td><code>scalar_product</code></td>
-<td>
-<script type="math/tex">\langle ab\rangle_0</script>
-</td>
-<td>Scalar product</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p>WARNING: Please <em>do</em> use parenthesis when using operators so as to avoid bugs associated with operator precedence.</p>
-</blockquote>
-<p>And the following table describes the unary operations</p>
-<table>
-<thead>
-<tr>
-<th>Symbol</th>
-<th>Operation</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>~</code></td>
-<td>
-<script type="math/tex">\tilde a</script>
-</td>
-<td>Reversion</td>
-</tr>
-<tr>
-<td><code>!</code></td>
-<td>
-<script type="math/tex">a^*</script>
-</td>
-<td>The Poincare dual map</td>
-</tr>
-<tr>
-<td><code>-</code></td>
-<td>
-<script type="math/tex">a + b</script>
-</td>
-<td>Multivector negation</td>
-</tr>
-<tr>
-<td><code>extract&lt;uint8_t... E&gt;(a)</code></td>
-<td>
-<script type="math/tex">\Sigma_{\{i \in E\}} a_i</script>
-</td>
-<td>Extract a specified set of components into a new multivector</td>
-</tr>
-</tbody>
-</table>
-<p>Generally, the operations above work with multivectors, The main exception is the use of <code>+</code>, <code>-</code>, <code>*</code>, and <code>/</code> in order to shift or scale a multivector by a compile-time constant. For this, one (and at most one) of the operands must be of type <code>frac&lt;int, int&gt;</code>. For example <code>frac&lt;1, 2&gt; * a</code> would divide the multivector <code>a</code> by 2. Equivalently, this could be done with <code>a / frac&lt;2&gt;</code> as you would expect (the denominator defaults to 1).</p>
-<h3 id="reading-results">Reading results</h3>
-<p>As we saw in the above example, we can either return from a computation a single result, or just as easily a variadic number of results. What is happening behind the scenes here is an implicit cast whenever you specify the type. It starts
-as a generic <code>entity</code> type which is templatized on the data it contains. For example, if we did a computation which produced a result of the form <script type="math/tex">a + be_{01}</script>, the computation would produce an entity of type <code>entity&lt;A, T, 0, 0b11&gt;</code> where <code>A</code> is the algebraic model we are using, <code>T</code> is the value type, and <code>0</code> and <code>0b11</code> (3 expressed as binary) are bitfields encoding the coordinates of the multivector. The entity type can be worked with directly using the index operator <code>[size_t]</code>. Alternatively, it can be cast at any point to a concrete type like so:</p>
-<pre><code class="c++">point&lt;float&gt; p{an_entity};
-</code></pre>
-
-<p>There is no runtime cost associated with the cast unless the source entity is aliased in a manner the compiler must do a copy. No RTTI or inheritance is used. You cannot cast the type to a different model or precision (at this time).</p>
-<p>Entities, do <em>not</em> need to be casted into concrete types before being used in a computation. For example:</p>
-<pre><code class="c++">point&lt;&gt; p1{1, 0, 0};
-point&lt;&gt; p2{0, 1, 1};
-point&lt;&gt; p3{1, 0, 1};
-
-// This returns a line, but lets say we don't know that
-auto p12 = compute(
-    [](auto p1, auto p2) {
-        return p1 &amp; p2;
-    }, p1, p2);
-
-static_assert(p12.size() == 6, &quot;p12 is a 6 dimensional bivector&quot;);
-
-// We use p12 without caring about its shape (same efficiency as above) before finally
-// storing it as a plane. Note that we could have continued to proceed without storing
-// it as a concrete type.
-plane&lt;&gt; p123 = compute(
-    [](auto p12, auto p3)
-        return p12 &amp; p3;
-    }, p12, p3);
-</code></pre>
-
-<p>If needed, a custom multivector can be easily created manually in the geometric model of your choosing. For example:</p>
-<pre><code class="c++">using algebra = gal::pga;
-entity&lt;algebra, double, 0b11, 0b101&gt; my_multivector{3.2, 1.2};
-</code></pre>
-
-<p>This creates the quantity <script type="math/tex">3.2e_{01} + 1.2e_{02}</script> and can be used in a compute context like any other entity (concrete or otherwise). The basis elements are expressed as a bitfield with the lower indices corresponding to the least significant bits. It is important that they be specified <em>in ascending lexicographic order</em> as this is not currently checked for compilation efficiency. Internally, all multivectors, polynomials, and indeterminates are kept sorted to achieve optimal compiler throughput and many algorithms may break if this total ordering is not respected.</p>
-<h2 id="roadmap">Roadmap</h2>
-<p>(not ordered)</p>
-<ul>
-<li>Support <abbr title="Microsoft Visual C++">MSVC</abbr></li>
-<li>Support transcendental function usage in lazily evaluated contexts</li>
-<li>Provide samples and visualization framework</li>
-<li>Provide examples using dual and complex numbers as the field type</li>
-<li>Provide more instructional documentation for newer practitioners of <abbr title="Geometric Algebra">GA</abbr></li>
-<li>Support much longer evaluation contexts (compile-time acceleration)</li>
-<li>Integrate CI/automated testing</li>
-</ul>
-<h2 id="project-layout">Project layout</h2>
-<pre><code>docs/
-    index.md  # This documentation homepage.
-    ...       # Other markdown pages, images and other files.
-public/                     # Added to your include path (public headers)
-    gal/
-        algebra.hpp         # Routines for manipulating multivectors (product, sum, negation, etc)
-        algorithm.hpp       # Compile-time routines (i.e. sorting, rearrangement)
-        cga.hpp             # Provides conformal geometric algebra
-        cga2.hpp            # Provides 2D conformal geometric algebra (aka compass ruler algebra)
-        ega.hpp             # Provides 3D geometric algebra
-        engine.hpp          # Defines various mechanisms for evaluating expressions at runtime
-        entity.hpp          # Describes the statically-typed representation of runtime multivectors
-        expression_debug.hpp    # Debug facilities
-        expression.hpp      # Expression template interface
-        format.hpp          # Various string-conversion routines
-        geometric_algebra.hpp   # Implements the various products and operations defined in GA
-        null_algebra.hpp    # Routines for converting to and from the null-basis
-        numeric.hpp         # Compile time numeric facilities (rational numbers, fast pow, etc)
-        pga.hpp             # Provides the 3D projective geometric algebra P(R3*)
-        pga2.hpp            # Provides the 2D projective geometric algebra P(R2*)
-samples/
-    main.cpp    # Primary entrypoint (coming soon!)
-test/
-    ...         # Various files to test different functionality
-</code></pre></div>
-        
-        
-    </div>
-
-    <footer class="col-md-12 text-center">
-        
-        <hr>
-        <p>
-        <small>Jeremy Ong 2019<br></small>
-        
-        <small>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p></small>
-
-        
-        
-    </footer>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="js/bootstrap-3.0.3.min.js"></script>
-    <script src="js/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-    <script>var base_url = "."</script>
-    
-    <script src="js/base.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-    <div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
-                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            </div>
-            <div class="modal-body">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th style="width: 20%;">Keys</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="help shortcut"><kbd>?</kbd></td>
-                    <td>Open this help</td>
-                  </tr>
-                  <tr>
-                    <td class="next shortcut"><kbd>n</kbd></td>
-                    <td>Next page</td>
-                  </tr>
-                  <tr>
-                    <td class="prev shortcut"><kbd>p</kbd></td>
-                    <td>Previous page</td>
-                  </tr>
-                  <tr>
-                    <td class="search shortcut"><kbd>s</kbd></td>
-                    <td>Search</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="modal-footer">
-            </div>
+              
+            </article>
+          </div>
         </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+        
+          <a href="quick-start/" title="Quick Start" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Quick Start
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
     </div>
-</div>
-    </body>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright &copy; 2019 Jeremy Ong
+          </div>
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/jeremyong" class="md-footer-social__link fa fa-github"></a>
+    
+      <a href="https://twitter.com/m_ninepoints" class="md-footer-social__link fa fa-twitter"></a>
+    
+      <a href="https://www.linkedin.com/in/jeremycong" class="md-footer-social__link fa fa-linkedin"></a>
+    
+  </div>
 
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="assets/javascripts/application.ac79c3b0.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      
+    
+  </body>
 </html>
-
-<!--
-MkDocs version : 1.0.4
-Build Date UTC : 2019-10-29 07:49:05
--->

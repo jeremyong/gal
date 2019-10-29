@@ -165,7 +165,7 @@
 <p><a href="https://travis-ci.org/jeremyong/gal"><img alt="Build Status" src="https://travis-ci.org/jeremyong/gal.svg?branch=master" /></a>
 <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg" /></a></p>
 <p><a href="https://github.com/jeremyong/gal">GAL</a> is a realtime suitable C++17 library designed to be simultaneously competitive with and complementary to traditional methods for computing geometry (e.g. linear algebra, vector spaces, quaternions, dual quaternions). As the majority of its work is done at compile-time, the library is naturally "header-only" due to the implicit inlining requirements.</p>
-<p>For computing in 3D, Geometric Algebra (henceforth, just "GA") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a <em>uniform</em> way between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).</p>
+<p>For computing in 3D, Geometric Algebra (henceforth, just "<abbr title="Geometric Algebra">GA</abbr>") promotes the familiar 3-coordinate space to an 8 dimensional one (or 16 if projectivized) in order to directly encode the various geometric entities naturally and in a way that promotes uniform expressiveness. For example, formulae involving transformations (rotations, translations, rigid body motion) and incidence (projections from one entity to another, metric measurements) are all expressed in a <em>uniform</em> way between points, lines, planes, etc. (as opposed to needing a bespoke formula for each situation).</p>
 <hr />
 <h2 id="getting-started">Getting Started</h2>
 <ul>
@@ -215,8 +215,8 @@ target_link_libraries(your_target PRIVATE gal)
 
 <h2 id="requirements">Requirements</h2>
 <ul>
-<li>A working C++17 compiler (currently gcc and clang are tested but MSVC will come soon)</li>
-<li>If using GCC, you will get better results with a trunk build of GCC 10.0</li>
+<li>A working C++17 compiler (currently gcc and clang are tested but <abbr title="Microsoft Visual C++">MSVC</abbr> will come soon)</li>
+<li>If using <abbr title="GNU C Compiler">GCC</abbr>, you will get better results with a trunk build of <abbr title="GNU C Compiler">GCC</abbr> 10.0</li>
 <li><a href="https://cmake.org">CMake</a> 3.14+ if building the tests</li>
 <li>(optional) <a href="https://ninja-build.org/">Ninja</a> Backend build system</li>
 </ul>
@@ -315,13 +315,13 @@ target_link_libraries(your_target PRIVATE gal)
 </tr>
 </tbody>
 </table>
-<p>As these entities have representations that are model-dependent, they reside in the model namespace from the table above. If a class is missing, it is likely not implemented as of yet (most work will happen in the <script type="math/tex">\mathbf{P}(\mathbb{R}^*_{3, 0, 1})</script>) so please file an issue if there's something you need (or even better, submit a PR!).</p>
+<p>As these entities have representations that are model-dependent, they reside in the model namespace from the table above. If a class is missing, it is likely not implemented as of yet (most work will happen in the <script type="math/tex">\mathbf{P}(\mathbb{R}^*_{3, 0, 1})</script>) so please file an issue if there's something you need (or even better, submit a <abbr title="Pull Request">PR</abbr>!).</p>
 <p>All the entities above are representations of <em>Euclidean</em> entities and take on a different shape internally (at compile-time) depending on the space and model you're working in.</p>
 <p>All entities support initialization the way you'd expect. For example <code>point&lt;double&gt; p{0, 1, 2}</code> defines the point at <script type="math/tex">(0, 1, 2)</script> when using any of the models that represent Euclidean 3-space. They also support indexed access (i.e. <code>p[1] == 1</code> will evaluate true) and in some cases, accessors are aliased using nested unions for convience. The point coordinates, for example, may be referred to via <code>u</code>, <code>v</code>, and <code>w</code>, or even <code>s</code> and <code>t</code> depending on the model dimensionality.</p>
 <p>Where appropriate, entities may support the <code>normalize</code> method, which mutates the entity as appropriate for its type. A divide-by-zero check is not performed. In all cases in fact, the library adopts the philosophy that the user should not pay for what the user does not use.</p>
-<p>Entities are stored sparsely regardless of the model they are in with <em>no additional overhead</em> for multivector basis-index bookkeeping. For example, <code>sizeof(point&lt;float&gt;)</code> is 12 (3 floats) regardless of whether you are working with CGA (where the point is represented as <script type="math/tex">\mathbf{o} + p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z} + \frac{1}{2}p^2\boldsymbol\infty</script>) or in EGA (where the point is simply <script type="math/tex">p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z}</script>).</p>
+<p>Entities are stored sparsely regardless of the model they are in with <em>no additional overhead</em> for multivector basis-index bookkeeping. For example, <code>sizeof(point&lt;float&gt;)</code> is 12 (3 floats) regardless of whether you are working with <abbr title="Conformal Geometric Algebra">CGA</abbr> (where the point is represented as <script type="math/tex">\mathbf{o} + p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z} + \frac{1}{2}p^2\boldsymbol\infty</script>) or in <abbr title="Euclidean Geometric Algebra">EGA</abbr> (where the point is simply <script type="math/tex">p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z}</script>).</p>
 <h3 id="evaluating-expressions">Evaluating expressions</h3>
-<p>Expressions are evaluated lazily at compile-time in a manner that maximally promotes <a href="https://en.wikipedia.org/wiki/Common_subexpression_elimination">CSE</a>. Thus, we sacrifice a little bit of code-authorship convenience to gain a significant speedup at runtime.</p>
+<p>Expressions are evaluated lazily at compile-time in a manner that maximally promotes <a href="https://en.wikipedia.org/wiki/Common_subexpression_elimination"><abbr title="Common Subexpression Elimination">CSE</abbr></a>. Thus, we sacrifice a little bit of code-authorship convenience to gain a significant speedup at runtime.</p>
 <p>A computation will take the form <code>compute([](...) { ... }, entities...)</code> where the first argument is a lambda and the second argument are the entities you created in the prior step.</p>
 <p>A simple calculation might look like:</p>
 <pre><code class="c++">using namespace gal::pga;
@@ -394,7 +394,7 @@ auto&amp;&amp; [p12, p123] = compute(
 <td>
 <script type="math/tex">a \rfloor b </script>
 </td>
-<td>The left contraction product</td>
+<td>The left contraction</td>
 </tr>
 <tr>
 <td><code>|</code></td>
@@ -511,15 +511,15 @@ plane&lt;&gt; p123 = compute(
 entity&lt;algebra, double, 0b11, 0b101&gt; my_multivector{3.2, 1.2};
 </code></pre>
 
-<p>This creates the quantity (3.2e_{01} + 1.2_{02})\ and can be used in a compute context like any other entity (concrete or otherwise). The basis elements are expressed as a bitfield with the lower indices corresponding to the least significant bits. It is important that they be specified <em>in ascending order</em> as this is not currently checked. Internally, all multivectors, polynomials, and indeterminates are kept sorted to achieve optimal compiler throughput and many algorithms may break if this total ordering is not respected.</p>
+<p>This creates the quantity <script type="math/tex">3.2e_{01} + 1.2e_{02}</script> and can be used in a compute context like any other entity (concrete or otherwise). The basis elements are expressed as a bitfield with the lower indices corresponding to the least significant bits. It is important that they be specified <em>in ascending lexicographic order</em> as this is not currently checked for compilation efficiency. Internally, all multivectors, polynomials, and indeterminates are kept sorted to achieve optimal compiler throughput and many algorithms may break if this total ordering is not respected.</p>
 <h2 id="roadmap">Roadmap</h2>
 <p>(not ordered)</p>
 <ul>
-<li>Support MSVC</li>
+<li>Support <abbr title="Microsoft Visual C++">MSVC</abbr></li>
 <li>Support transcendental function usage in lazily evaluated contexts</li>
 <li>Provide samples and visualization framework</li>
 <li>Provide examples using dual and complex numbers as the field type</li>
-<li>Provide more instructional documentation for newer practitioners of GA</li>
+<li>Provide more instructional documentation for newer practitioners of <abbr title="Geometric Algebra">GA</abbr></li>
 <li>Support much longer evaluation contexts (compile-time acceleration)</li>
 <li>Integrate CI/automated testing</li>
 </ul>
@@ -619,5 +619,5 @@ test/
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2019-10-29 06:42:17
+Build Date UTC : 2019-10-29 07:49:05
 -->

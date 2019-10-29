@@ -567,7 +567,6 @@
 <span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">your_target</span> <span class="s">PRIVATE</span> <span class="s">gal</span><span class="p">)</span>
 </pre></div>
 
-
 <h2 id="usage">Usage</h2>
 <h3 id="pick-a-model">Pick A Model</h3>
 <p>To use GAL, you need to minimally include a single header corresponding to the model you wish to work with. The model defines the <a href="https://en.wikipedia.org/wiki/Metric_signature">metric signature</a> as well as the dimensionality of the space you wish to represent. Typically, this will either be the Euclidean plane or the fundamental Euclidean 3-space. If you installed or linked to the library through conventional means, you would include things with the <code>gal</code> path prefix (as in, <code>#include &lt;gal/pga.hpp&gt;</code> for example).</p>
@@ -669,6 +668,8 @@
 <p>Expressions are evaluated lazily at compile-time in a manner that maximally promotes <a href="https://en.wikipedia.org/wiki/Common_subexpression_elimination"><abbr title="Common Subexpression Elimination">CSE</abbr></a>. Thus, we sacrifice a little bit of code-authorship convenience to gain a significant speedup at runtime.</p>
 <p>A computation will take the form <code>compute([](...) { ... }, entities...)</code> where the first argument is a lambda and the second argument are the entities you created in the prior step.</p>
 <p>A simple calculation might look like:</p>
+<div class="admonition example">
+<p class="admonition-title">Line Construction</p>
 <div class="codehilite"><pre><span></span><span class="k">using</span> <span class="k">namespace</span> <span class="n">gal</span><span class="o">::</span><span class="n">pga</span><span class="p">;</span>
 <span class="k">using</span> <span class="n">gal</span><span class="o">::</span><span class="n">compute</span><span class="p">;</span>
 
@@ -686,17 +687,21 @@
 <span class="c1">// with a collinear point will result in 0.</span>
 </pre></div>
 
-
+</div>
 <p>In the lambda (the first argument to compute), we do not capture variables, and we do not produce side-effects. The lambda itself is never actually evaluated (instead, <code>decltype</code> is used to compute the final result based solely on the type the lambda returns). In the body of the lambda, we shadow the outside variable names for convenience. The actual types that are passed to the lambda are building blocks of a template expression tree. Thus, operations that are supported in the body of a compute lambda are <em>not</em> supported outside the lambda.</p>
+<div class="admonition bug">
+<p class="admonition-title">Bug</p>
 <div class="codehilite"><pre><span></span><span class="n">point</span><span class="o">&lt;&gt;</span> <span class="n">p1</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">};</span>
 <span class="n">point</span><span class="o">&lt;&gt;</span> <span class="n">p2</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
 
 <span class="n">line</span><span class="o">&lt;&gt;</span> <span class="n">l</span> <span class="o">=</span> <span class="n">p1</span> <span class="o">&amp;</span> <span class="n">p2</span><span class="p">;</span> <span class="c1">// Fails to compile!</span>
 </pre></div>
 
-
+</div>
 <p>This restriction may be relaxed in the future so that such operations create an immediate computation context for prototyping convenience.</p>
 <p>For convience, computations may return multiple results that will be reified to the same number of results.</p>
+<div class="admonition example">
+<p class="admonition-title">Variadic Return</p>
 <div class="codehilite"><pre><span></span><span class="n">point</span><span class="o">&lt;&gt;</span> <span class="n">p1</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">};</span>
 <span class="n">point</span><span class="o">&lt;&gt;</span> <span class="n">p2</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
 <span class="n">point</span><span class="o">&lt;&gt;</span> <span class="n">p3</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
@@ -710,7 +715,7 @@
     <span class="p">},</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">p3</span><span class="p">);</span>
 </pre></div>
 
-
+</div>
 <p>The binary operations supported in the compute lambda are as follows:</p>
 <table>
 <thead>
@@ -837,9 +842,10 @@ as a generic <code>entity</code> type which is templatized on the data it contai
 <div class="codehilite"><pre><span></span><span class="n">point</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span> <span class="n">p</span><span class="p">{</span><span class="n">an_entity</span><span class="p">};</span>
 </pre></div>
 
-
 <p>There is no runtime cost associated with the cast unless the source entity is aliased in a manner the compiler must do a copy. No RTTI or inheritance is used. You cannot cast the type to a different model or precision (at this time).</p>
 <p>Entities, do <em>not</em> need to be casted into concrete types before being used in a computation. For example:</p>
+<div class="admonition example">
+<p class="admonition-title">Auto return deduction</p>
 <div class="codehilite"><pre><span></span><span class="n">point</span><span class="o">&lt;&gt;</span> <span class="n">p1</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">};</span>
 <span class="n">point</span><span class="o">&lt;&gt;</span> <span class="n">p2</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
 <span class="n">point</span><span class="o">&lt;&gt;</span> <span class="n">p3</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
@@ -861,13 +867,15 @@ as a generic <code>entity</code> type which is templatized on the data it contai
     <span class="p">},</span> <span class="n">p12</span><span class="p">,</span> <span class="n">p3</span><span class="p">);</span>
 </pre></div>
 
-
+</div>
 <p>If needed, a custom multivector can be easily created manually in the geometric model of your choosing. For example:</p>
+<div class="admonition example">
+<p class="admonition-title">User-defined multivector</p>
 <div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">algebra</span> <span class="o">=</span> <span class="n">gal</span><span class="o">::</span><span class="n">pga</span><span class="p">;</span>
 <span class="n">entity</span><span class="o">&lt;</span><span class="n">algebra</span><span class="p">,</span> <span class="kt">double</span><span class="p">,</span> <span class="mi">0</span><span class="n">b11</span><span class="p">,</span> <span class="mi">0</span><span class="n">b101</span><span class="o">&gt;</span> <span class="n">my_multivector</span><span class="p">{</span><span class="mf">3.2</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">};</span>
 </pre></div>
 
-
+</div>
 <p>This creates the quantity <script type="math/tex">3.2e_{01} + 1.2e_{02}</script> and can be used in a compute context like any other entity (concrete or otherwise). The basis elements are expressed as a bitfield with the lower indices corresponding to the least significant bits. It is important that they be specified <em>in ascending lexicographic order</em> as this is not currently checked for compilation efficiency. Internally, all multivectors, polynomials, and indeterminates are kept sorted to achieve optimal compiler throughput and many algorithms may break if this total ordering is not respected.</p>
 <h2 id="roadmap">Roadmap</h2>
 <p>(not ordered)</p>

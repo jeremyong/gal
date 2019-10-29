@@ -600,7 +600,11 @@
 <li>A check of all 16 other reference results though matches identically (all of which are in more reasonable floating point ranges).</li>
 <li>To compile the <abbr title="Geometric Algebra Template Library">GATL</abbr> implementation of the algorithm, two changes needed to be introduced due to a breaking change with more modern compilers in handling <code>std::enable_if_t</code>. The following snippet:</li>
 </ul>
-<div class="codehilite"><pre><span></span>    <span class="c1">// GATL lazy_context.hpp lines 652 (whitespace added here for readability on web)</span>
+<div class="admonition warning">
+<p class="admonition-title">Old (doesn't compile under g++10)</p>
+<div class="codehilite"><pre><span></span>    <span class="c1">// GATL</span>
+    <span class="c1">// lazy_context.hpp:652</span>
+    <span class="c1">// (whitespace added here for readability on web)</span>
     <span class="k">template</span><span class="o">&lt;</span>
         <span class="k">typename</span> <span class="n">CoefficientType</span><span class="p">,</span>
         <span class="k">typename</span> <span class="n">Expression</span><span class="p">,</span>
@@ -623,9 +627,13 @@
     <span class="p">}</span>
 </pre></div>
 
-
+</div>
 <p>was changed to:</p>
-<div class="codehilite"><pre><span></span>    <span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span> <span class="n">CoefficientType</span><span class="p">,</span> <span class="k">typename</span> <span class="n">Expression</span><span class="o">&gt;</span>
+<div class="admonition success">
+<p class="admonition-title">New (compiles successfully)</p>
+<div class="codehilite"><pre><span></span>    <span class="c1">// GATL</span>
+    <span class="c1">// lazy_context.hpp:652</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span> <span class="n">CoefficientType</span><span class="p">,</span> <span class="k">typename</span> <span class="n">Expression</span><span class="o">&gt;</span>
     <span class="k">constexpr</span> <span class="k">decltype</span><span class="p">(</span><span class="k">auto</span><span class="p">)</span>
     <span class="n">eval</span><span class="p">(</span><span class="n">clifford_expression</span><span class="o">&lt;</span><span class="n">CoefficientType</span><span class="p">,</span> <span class="n">Expression</span><span class="o">&gt;</span> <span class="k">const</span> <span class="o">&amp;</span><span class="n">expression</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
         <span class="k">if</span> <span class="k">constexpr</span> <span class="p">(</span><span class="n">super</span><span class="o">::</span><span class="n">stored_inputs_count</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
@@ -642,7 +650,7 @@
     <span class="p">}</span>
 </pre></div>
 
-
+</div>
 <ul>
 <li>As this was an entirely compile-time transformation, it is not believed that either the runtime nor compilation time would be effected much. It would likely improve compilation time if anything due to the removal of an extra template instantiation in certain situations.</li>
 </ul>

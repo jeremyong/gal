@@ -149,7 +149,8 @@
                 
             <li class="second-level"><a href="#file-size">File size</a></li>
                 
-                <li class="third-level"><a href="#some-quick-notes-for-reproducing-the-benchmark">Some quick notes for reproducing the benchmark</a></li>
+            <li class="second-level"><a href="#notes-for-reproducing-the-benchmark">Notes for reproducing the benchmark</a></li>
+                
                 <li class="third-level"><a href="#note-to-other-library-authors">Note to other library authors</a></li>
     </ul>
 </div></div>
@@ -267,7 +268,7 @@
 <blockquote>
 <p>NOTE: the file sizes above include the benchmarking code, so your file savings may be even more dramatic (but no guarantees can be made).</p>
 </blockquote>
-<h3 id="some-quick-notes-for-reproducing-the-benchmark">Some quick notes for reproducing the benchmark</h3>
+<h2 id="notes-for-reproducing-the-benchmark">Notes for reproducing the benchmark</h2>
 <ul>
 <li>GAL provides a mechanism for specifying arbitrary multivectors as types with exact rational coefficients. This means that the conformal point located at <script type="math/tex">(1, 0, 0)</script>, represented by <script type="math/tex">\mathbf{o} + e_2 + \frac{1}{2}\boldsymbol\infty</script> can be represented exactly as opposed to the canonical point representation with $p_x = p_y$ being stored and computed with floating point zeros.</li>
 <li>When this optimization was made, all results were completely accurate up till the final reference value for <code>Jg_f[4]</code> for which the published result should be <code>3.31122e6</code>. Instead, GAL computes <code>1.831977e6</code> for this entry. Reintroducing floating point zeros into the expression immediately recovers the reference result, indicating that this lone result is likely incorrect as stated.</li>
@@ -318,6 +319,7 @@
 <ul>
 <li>As this was an entirely compile-time transformation, it is not believed that either the runtime nor compilation time would be effected much. It would likely improve compilation time if anything due to the removal of an extra template instantiation in certain situations.</li>
 </ul>
+<hr />
 <h3 id="note-to-other-library-authors">Note to other library authors</h3>
 <p>Please note that nothing on this site is intended to disparage other implementers of GA. The world needs more of them! There are certainly disadvantages of GAL at this time, namely that it is a bit less ergonomic to use at this time, and it's less battle-tested than other libraries. GAL had the benefit of being developed with newer compilers which allowed newer techniques (although there was still difficulty to be sure). In any case, I feel obligated to state a profound appreciation for the implementers and practitioners that paved a way before me.</p>
 <p>If I've neglected to include a library or if you think I have made any errors, please don't hesitate to contact me and I'll make sure things get sorted. If there are situations where you think your library or code might perform better, let me know as well. Thanks!</p></div>

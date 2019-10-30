@@ -1,5 +1,21 @@
-/*
-.md-header {
-    background-color: #282A36;
+.benchmarks tr:nth-child(3) {
+    background-color: #e6ceff;
 }
-*/
+
+.benchmarks tr:nth-child(3):hover {
+    background-color: #ffc4ff !important;
+}
+
+.benchmarks2 tr:nth-child(3) {
+    background-color: #e6ceff;
+}
+.benchmarks2 tr:nth-child(3):hover {
+    background-color: #ffc4ff !important;
+}
+
+.benchmarks2 tr:nth-child(6) {
+    background-color: #e6ceff;
+}
+.benchmarks2 tr:nth-child(6):hover {
+    background-color: #ffc4ff !important;
+}

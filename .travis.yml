@@ -82,7 +82,7 @@ before_script:
   - $CCXX --version
   - $CCC --version
   - cmake --version
-  - CXX=$CCXX CC=$CCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DGAL_TEST_IK_ENABLED=$BUILD_IK
+  - CXX=$CCXX CC=$CCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DGAL_TEST_IK_ENABLED=$BUILD_IK -DGAL_SAMPLES_ENABLED=off
 
 script:
   - cmake --build . -- -kj2

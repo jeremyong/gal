@@ -1,6 +1,7 @@
 site_name: GAL
 theme:
   name: material
+  custom_dir: 'theme'
   palette:
     primary: 'deep purple'
     accent: 'purple'
@@ -12,7 +13,7 @@ repo_url: https://github.com/jeremyong/gal
 repo_name: 'jeremyong/gal'
 site_description: GAL - A fast C++17 geometric algebra library
 site_author: Jeremy Ong
-copyright: 'Copyright &copy; 2019 Jeremy Ong'
+copyright: 'GAL Copyright &copy; 2019 Jeremy Ong'
 google_analytics: ['UA-10576233-1', 'auto']
 
 plugins: []
@@ -35,12 +36,14 @@ extra_javascript:
 
 markdown_extensions:
   - admonition
+  - attr_list
   - mdx_math
   - footnotes
   - abbr
   - codehilite
   - pymdownx.superfences
   - pymdownx.mark
+  - pymdownx.extrarawhtml
 
 extra:
   disqus: 'jeremyong'

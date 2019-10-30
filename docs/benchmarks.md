@@ -9,11 +9,13 @@ For possible explanations to explain both the compile-time and runtime behavior 
 
 ## Runtime
 
+<div class="benchmarks" markdown="1">
 | Library | Commit Hash | Time | Iterations | Iterations/ns (higher is better) | Speedup (higher is better) |
 --- | --- | --- | --- | --- | ---
 [Versor](https://github.com/wolftype/versor) | [2c5b455](https://github.com/wolftype/versor/commit/2c5b455187a162bd429a3acf6ffd2f06fb4732ab) | 1138 ns | 608337 | 535/ns | 1x
 [GATL](https://github.com/laffernandes/gatl) | [c47ad5](https://github.com/laffernandes/gatl/commit/c47ad5d13c18f0116797d1ea614557cca5e99bb3) | 469 ns | 1505207 | 3209/ns | 5.998x
-==[GAL](https://github.com/jeremyong/gal)== | [e3f49ae](https://github.com/jeremyong/gal/commit/e3f49ae28680a89d328b2d37320fe61773c41b56) | 376 ns | 1873236 | **4982/ns** | **9.312x**
+[GAL](https://github.com/jeremyong/gal) | [e3f49ae](https://github.com/jeremyong/gal/commit/e3f49ae28680a89d328b2d37320fe61773c41b56) | 376 ns | 1873236 | **4982/ns** | **9.312x**
+</div>
 
 This was tested on an Intel i9-9900K. The variable runtime is due to the way [google/benchmark](https://github.com/google/benchmark) works. It will keep running new iterations until the statistical significance of the measurement increases above a predetermined amount. The important metric is the rate in the fourth column. The speedup factor in the final column is computed as the ratio to the throughput of Versor (first row).
 
@@ -21,14 +23,16 @@ This was tested on an Intel i9-9900K. The variable runtime is due to the way [go
 
 The compilation times for the same example are shown below:
 
+<div class="benchmarks2" markdown="1">
 | Compiler | Library | Compile Time (lower is better) |
 --- | --- | ---
 g++ (GCC) 10.0.0 20191012 (experimental) | Versor | **5.50 s**
 g++ (GCC) 10.0.0 20191012 (experimental) | GATL | 20.38 s
-g++ (GCC) 10.0.0 20191012 (experimental) | ==GAL== | 12.30 s
+g++ (GCC) 10.0.0 20191012 (experimental) | GAL | 12.30 s
 clang++ 9.0.0 | Versor | **3.47 s**
 clang++ 9.0.0 | GATL | *could not compile*[^1]
-clang++ 9.0.0 | ==GAL== | 7.19 s
+clang++ 9.0.0 | GAL | 7.19 s
+</div>
 
 As with the benchmark, CPU scaling was turned off for the test and all compilations were run from a clean build folder. As you can see, GAL doesn't compile the fastest, but does enjoy an edge over GATL due to the availability of `constexpr` at the time of authorship to avoid slow-to-compile techniques like SFINAE (`std::enable_if`).[^2] Improving compilation time (or at the very least) not regressing is a constant goal for GAL.
 
@@ -41,11 +45,13 @@ The sizes of various segments (`.strtab`, `.text`, and `.symtab`) are included a
 !!! tip ""
     The file sizes below include the benchmarking code, so your file savings may be even more dramatic (just remember that no guarantees can be made).
 
+<div class="benchmarks" markdown="1">
 | Library | File size (lower is better) | Percent reduction (higher is better) | `.strtab` | `.text` | `.symtab`
 --- | --- | --- | --- | --- | ---
 Versor | 282.7 kB | 0% | 92.2 kB (32.6%) | 157 kB (55.8%) | 7.88 kB (2.8%)
 GATL | 72.2 kB | 74.461% | 42.2 kB (58.5%) | 12.9 kB (17.8%) | 3.52 kB (4.9%)
-==GAL== | **26.5 kB** | **90.626%**| **1.85 kB** (7.0%) | **9.9 kB** (37.4%) | **2.18 kB** (8.2%)
+GAL | **26.5 kB** | **90.626%**| **1.85 kB** (7.0%) | **9.9 kB** (37.4%) | **2.18 kB** (8.2%)
+</div>
 
 GAL tries very hard not to include headers unnecessarily which has an impact both on compile times and executable bloat.
 

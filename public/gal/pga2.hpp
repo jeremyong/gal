@@ -10,28 +10,28 @@
 
 namespace gal
 {
-namespace pga
+namespace pga2
 {
     // NOTE: the inner product of e0 can be set to +1 or -1 without any change in the algebra's geometric
     // interpretation. Here, we opt to define e0^2 := 1 by convention
-    using pga_metric = ::gal::metric<2, 0, 1>;
+    using pga2_metric = ::gal::metric<2, 0, 1>;
 
     // PGA2 is a graded algebra with 8 basis elements
-    using pga_algebra = gal::algebra<pga_metric>;
+    using pga2_algebra = gal::algebra<pga2_metric>;
 
-    constexpr inline auto e    = gal::e<pga_algebra, 0>;
-    constexpr inline auto e0   = gal::e<pga_algebra, 0b1>;
-    constexpr inline auto e1   = gal::e<pga_algebra, 0b10>;
-    constexpr inline auto e2   = gal::e<pga_algebra, 0b100>;
-    constexpr inline auto e01  = gal::e<pga_algebra, 0b11>;
-    constexpr inline auto e02  = gal::e<pga_algebra, 0b101>;
-    constexpr inline auto e12  = gal::e<pga_algebra, 0b110>;
-    constexpr inline auto e012 = gal::e<pga_algebra, 0b111>;
+    constexpr inline auto e    = gal::e<pga2_algebra, 0>;
+    constexpr inline auto e0   = gal::e<pga2_algebra, 0b1>;
+    constexpr inline auto e1   = gal::e<pga2_algebra, 0b10>;
+    constexpr inline auto e2   = gal::e<pga2_algebra, 0b100>;
+    constexpr inline auto e01  = gal::e<pga2_algebra, 0b11>;
+    constexpr inline auto e02  = gal::e<pga2_algebra, 0b101>;
+    constexpr inline auto e12  = gal::e<pga2_algebra, 0b110>;
+    constexpr inline auto e012 = gal::e<pga2_algebra, 0b111>;
 
     template <typename T = float>
     union line
     {
-        using algebra_t               = pga_algebra;
+        using algebra_t               = pga2_algebra;
         using value_t                 = T;
         constexpr static bool is_dual = true;
 
@@ -47,7 +47,7 @@ namespace pga
         [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
         {
             return detail::construct_ie<algebra_t>(
-                id, std::make_integer_sequence<width_t, 4>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100>{});
+                id, std::make_integer_sequence<width_t, 3>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100>{});
         }
 
         [[nodiscard]] constexpr static size_t size() noexcept
@@ -56,13 +56,13 @@ namespace pga
         }
 
         constexpr line(T d, T x, T y) noexcept
-            : d{a}
-            , x{b}
-            , y{c}
+            : d{d}
+            , x{x}
+            , y{y}
         {}
 
         template <uint8_t... E>
-        constexpr line(entity<pga_algebra, T, E...> in) noexcept
+        constexpr line(entity<pga2_algebra, T, E...> in) noexcept
             : data{in.template select<0b1, 0b10, 0b100>()}
         {}
 
@@ -80,7 +80,7 @@ namespace pga
     template <typename T = float>
     union point
     {
-        using algebra_t               = pga_algebra;
+        using algebra_t               = pga2_algebra;
         using value_t                 = T;
         constexpr static bool is_dual = true;
 
@@ -107,15 +107,15 @@ namespace pga
         {
             return {mv_size{2, 3, 3},
                     {
-                        ind{id + 1, 1}, // y
-                        ind{id, 1}      // -x
+                        ind{id + 1, 1}, // -y
+                        ind{id, 1}      // x
                     },
-                    {mon{one, one, 0, 1},       // y
-                     mon{minus_one, one, 1, 1}, // -x
-                     mon{one, zero, 0, 0}},      // point at origin
+                    {mon{minus_one, one, 0, 1}, // -y
+                     mon{one, one, 1, 1},       // x
+                     mon{one, zero, 0, 0}},     // point at origin
                     {
-                        term{1, 0, 0b11},  // y * e01
-                        term{1, 1, 0b101}, // -x * e02
+                        term{1, 0, 0b11},  // -y * e01
+                        term{1, 1, 0b101}, // x * e02
                         term{1, 2, 0b110}  // e12
                     }};
         }
@@ -131,12 +131,12 @@ namespace pga
         {}
 
         template <uint8_t... E>
-        constexpr point(entity<pga_algebra, T, E...> in) noexcept
+        constexpr point(entity<pga2_algebra, T, E...> in) noexcept
         {
             auto input = in.template select<0b11, 0b101, 0b110>();
             auto w_inv = T{1} / input[2];
-            x          = -input[1] * c_inv;
-            y          = input[0] * c_inv;
+            x          = -input[1] * w_inv;
+            y          = input[0] * w_inv;
         }
 
         [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
@@ -153,7 +153,7 @@ namespace pga
     template <typename T = float>
     union vector
     {
-        using algebra_t               = pga_algebra;
+        using algebra_t               = pga2_algebra;
         using value_t                 = T;
         constexpr static bool is_dual = true;
 
@@ -198,7 +198,7 @@ namespace pga
         {}
 
         template <uint8_t... E>
-        constexpr vector(entity<pga_algebra, T, E...> in) noexcept
+        constexpr vector(entity<pga2_algebra, T, E...> in) noexcept
         {
             auto input = in.template select<0b111, 0b1011, 0b1101>();
             z          = -input[0];
@@ -216,5 +216,5 @@ namespace pga
             return data[index];
         }
     };
-} // namespace pga
+} // namespace pga2
 } // namespace gal

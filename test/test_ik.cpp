@@ -73,7 +73,9 @@ TEST_CASE("cga-ik")
     CHECK_EQ(Jg_f[2], doctest::Approx(2132.49).epsilon(0.01));
     CHECK_EQ(Jg_f[3], doctest::Approx(0.99996).epsilon(0.01));
     // This check seems spurious compared to other results due to precision.
+    // The author believes the given answer is actually less precise.
     // CHECK_EQ(Jg_f[4], doctest::Approx(3.31122e6).epsilon(0.01));
+    CHECK_EQ(Jg_f[4], doctest::Approx(1.83198e6).epsilon(0.01));
 }
 
 TEST_SUITE_END();

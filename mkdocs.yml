@@ -1,23 +1,53 @@
 site_name: GAL
-theme: cinder
+theme:
+  name: material
+  palette:
+    primary: 'deep purple'
+    accent: 'purple'
+  favicon: 'images/blur_on.png'
+  logo:
+    icon: 'blur_on'
 site_url: https://jeremyong.com/gal
 repo_url: https://github.com/jeremyong/gal
-repo_name: GitHub
+repo_name: 'jeremyong/gal'
 site_description: GAL - A fast C++17 geometric algebra library
 site_author: Jeremy Ong
-copyright: 'Jeremy Ong 2019'
-google_analytics: ['UA-10576233-1', 'jeremyong.com']
+copyright: 'Copyright &copy; 2019 Jeremy Ong'
+google_analytics: ['UA-10576233-1', 'auto']
 
 plugins: []
 
 nav:
-  - 'Quick Start': 'index.md'
+  - 'Home': 'index.md'
+  - 'Quick Start': 'quick-start.md'
   - 'Optimizations': 'optimizations.md'
+  - 'Benchmarks': 'benchmarks.md'
   - 'Coding Conventions': 'coding-conventions.md'
   - 'About': 'about.md'
+
+edit_uri: ''
+
+extra_css:
+  - 'css/main.css'
 
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-AMS-MML_HTMLorMML
 
 markdown_extensions:
+  - admonition
   - mdx_math
+  - footnotes
+  - abbr
+  - codehilite
+  - pymdownx.superfences
+  - pymdownx.mark
+
+extra:
+  disqus: 'jeremyong'
+  social:
+    - type: 'github'
+      link: 'https://github.com/jeremyong'
+    - type: 'twitter'
+      link: 'https://twitter.com/m_ninepoints'
+    - type: 'linkedin'
+      link: 'https://www.linkedin.com/in/jeremycong'

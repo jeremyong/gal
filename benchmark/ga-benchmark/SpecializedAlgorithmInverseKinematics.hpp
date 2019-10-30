@@ -173,6 +173,7 @@ auto InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang
     point_xz<real_t> J2{J2_x, J2_z};
     point_xz<real_t> J3{J3_x, J3_z};
     point_xz<real_t> Jg{Jg_x, Jg_z};
+    // point Jg{Jg_x, Jg_y, Jg_z};
     point_z<real_t> Pz;
 
     auto Lz = compute(

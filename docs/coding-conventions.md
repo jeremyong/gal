@@ -23,3 +23,6 @@ This document describes a number of patterns you should expect to encounter as e
 - The codegen of the final expression reification is extremely sensitive to changes in the code, so if operating in this area, a benchmark is necessary to verify no regression took place.
 - When juggling templates, we endeavor (greatly!) to avoid template instantiations wherever possible. By the same token, we avoid relying on `std::tuple`, SFINAE, recursion, and other techniques known to have adverse effects on compile time wherever possible.
 - GAL tiptoes around undefined behavior as much as possible, preferring to be standards conforming. The notable exception is the reliance of well-behaved alignment for structs and data members colocated within a union. This is a reasonable expectation for all modern compilers today.
+
+*[STL]: Standard Template Library
+*[SFINAE]: Subtitution Failure Is Not An Error

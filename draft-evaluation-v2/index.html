@@ -592,7 +592,7 @@
 <h4 id="algorithm_1">Algorithm</h4>
 <ol>
 <li>At this point, we've identified subexpressions from the computation of each element of <script type="math/tex">\overline\Gamma</script> as sets <script type="math/tex">\overline B</script> that need to be computed (mapped to <script type="math/tex">B</script>). First, we need to perform a final merge as subexpressions identified in distinct <script type="math/tex">\overline\gamma</script> may overlap.</li>
-<li>An issue immediately presents itself as it is possible that a subexpression of some <script type="math/tex">\overline\gamma_k</script> is located in the subexpression of a different <script type="math/tex">\overline\gamma_l</script>. This is, of course, a factorially complex computation which is not easily optimized because each <script type="math/tex">\overline\gamma</script> must be simplified <em>without</em> knowledge of the other elements of <script type="math/tex">\overline\Gamma</script>. <em>This is where GAL breaks optimality</em> at this time and resorts to relying on the compiler to perform adequate <abbr title="Common Subexpression Elimination">CSE</abbr>. Thus, this step is a no-op and the results we have thus far, we declare as the <script type="math/tex">\overline\lambda</script> we have been seeking.</li>
+<li>An issue immediately presents itself as it is possible that a subexpression of some <script type="math/tex">\overline\gamma_k</script> is located in the subexpression of a different <script type="math/tex">\overline\gamma_l</script>. This is, of course, a factorially complex computation which is not easily optimized because each <script type="math/tex">\overline\gamma</script> must be simplified <em>without</em> knowledge of the other elements of <script type="math/tex">\overline\Gamma</script>. <em>This is where GAL breaks optimality</em> at this time and resorts to relying on the compiler to perform adequate <abbr title="Common Subexpression Elimination">CSE</abbr>. Thus, this step is a no-op and the results we have thus far, we declare as the <script type="math/tex">\overline\lambda</script> we have been seeking.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></li>
 <li>The map <script type="math/tex">\overline B\rightarrow B</script> is evaluated and stored to an array <script type="math/tex">B</script>.</li>
 <li>
 <script type="math/tex">B</script> is concatenated to <script type="math/tex">A</script> to form the set of runtime-values <script type="math/tex">A\cup B</script>.</li>
@@ -610,10 +610,13 @@
 <p>... in spite of the fact that such a lambda <em>is</em> a constant expression, but the limitations of the current state of affairs with C++ <code>constexpr</code> are plentiful.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 <li id="fn:3">
-<p>A bloom filter is a constant-memory probabalistic data structure that supports constant time existense plausibility tests (<a href="https://en.wikipedia.org/wiki/Bloom_filter">wiki</a>)&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p>A bloom filter is a constant-memory probabalistic data structure that supports constant time existense plausibility tests (<a href="https://en.wikipedia.org/wiki/Bloom_filter">wiki</a>).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:4">
 <p>Note that we do not need to repeat this procedure with the <abbr title="Left-hand Side">LHS</abbr> and <abbr title="Reft-hand Side">RHS</abbr> arguments flipped. Existence of a common subexpression is a mutual co-property.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>A future improvement can perform a fast bitwise-and operation on the bloom filter contents to determine the possibility of an intersection between different <script type="math/tex">\overline\gamma</script>.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>

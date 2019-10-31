@@ -573,10 +573,10 @@
 <ol>
 <li>During expression tree construction, each operation node computes the hash of its inputs and the operation. In the case of a unary operation, the hash sum has two arguments (input hash, and operation hash), and in the case of a binary operation, the hash sum has three arguments. In this manner, any two subtree hashes can be compared for equality in constant time.</li>
 <li>Each tree maintains at a top level, a list of additional trees representing the set <script type="math/tex">\overline B</script> of intermediate subexpressions identified.</li>
-<li>Additionally, the expression tree maintains a continuously updated bloom filter. The advantages of the bloom filter is that it occupies constant memory which is extremely desirable for compile-time computation.</li>
+<li>Additionally, the expression tree maintains a continuously updated bloom filter<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup>. The advantages of the bloom filter is that it occupies constant memory which is extremely desirable for compile-time computation.</li>
 <li>When a binary operation joins two nodes, it is possible that a child or the root of the <abbr title="Left-hand Side">LHS</abbr> matches a child or a root of the <abbr title="Reft-hand Side">RHS</abbr>.<ol>
 <li>Without loss of generality, swap the <abbr title="Left-hand Side">LHS</abbr> and <abbr title="Reft-hand Side">RHS</abbr> if necessary so that the number of nodes in the <abbr title="Left-hand Side">LHS</abbr> is less than the number of nodes in the <abbr title="Reft-hand Side">RHS</abbr>.</li>
-<li>To detect a common subexpression, traverse the <abbr title="Left-hand Side">LHS</abbr> and perform an existence test for each node on the bloom filter<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> of the <abbr title="Reft-hand Side">RHS</abbr>.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></li>
+<li>To detect a common subexpression, traverse the <abbr title="Left-hand Side">LHS</abbr> and perform an existence test for each node on the bloom filter of the <abbr title="Reft-hand Side">RHS</abbr>.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></li>
 <li>If a match is found, we promote the subtree to the top level <script type="math/tex">\overline B</script>, and replace both matching nodes with a placeholder node <script type="math/tex">\overline\beta</script>. The node <script type="math/tex">\overline\beta</script> is given an identifier <script type="math/tex">j</script> corresponding to the index of the subtree in the top-level list.</li>
 <li>Crucially, the hash of <script type="math/tex">\overline\beta_j</script> is <em>not</em> changed.</li>
 <li>The top level lists of <script type="math/tex">\overline B_\textit{LHS}</script> and <script type="math/tex">\overline B_\textit{RHS}</script> themselves need to be merged which will require a renumbering. During the merge, the <script type="math/tex">\overline\beta</script> intermediates are kept sorted in hash order so that identical <script type="math/tex">\overline\beta</script> trees are deduplicated easily. The result is the a remapping of the top level list to <script type="math/tex">\overline B_\textit{LHS} \cup \overline B_\textit{RHS}</script>.</li>
@@ -585,10 +585,10 @@
 <li>A unary operation that is marked <em>transcendental</em> is immediately promoted to an intermediate <script type="math/tex">\overline\beta</script>.</li>
 </ol>
 <h4 id="output">Output</h4>
-<p>The output is, for each user-defined <script type="math/tex">\gamma</script>, an expression tree containing a primary tree and a list of subexpressions <script type="math/tex">B_\gamma</script>.</p>
+<p>The output is, for each user-defined <script type="math/tex">\overline\gamma</script>, an expression tree containing a primary tree and a list of subexpressions <script type="math/tex">\overline B_\gamma</script>.</p>
 <h3 id="expression-tree-evaluation_1">Expression tree evaluation</h3>
 <h4 id="input_1">Input</h4>
-<p>A set of <abbr title="Common Subexpression Elimination">CSE</abbr>-eliminated trees from the previous construction phase.</p>
+<p>A set <script type="math/tex">\overline B_\overline\gamma</script> of <abbr title="Common Subexpression Elimination">CSE</abbr>-eliminated trees from the previous construction phase (each associated with a <script type="math/tex">\overline\gamma</script>), along with the original <script type="math/tex">\overline \gamma</script> as a function of both <script type="math/tex">\overline\alpha \in \overline A</script> and <script type="math/tex">\overline\beta \in \overline B</script>.</p>
 <h4 id="algorithm_1">Algorithm</h4>
 <ol>
 <li>At this point, we've identified subexpressions from the computation of each element of <script type="math/tex">\overline\Gamma</script> as sets <script type="math/tex">\overline B</script> that need to be computed (mapped to <script type="math/tex">B</script>). First, we need to perform a final merge as subexpressions identified in distinct <script type="math/tex">\overline\gamma</script> may overlap.</li>

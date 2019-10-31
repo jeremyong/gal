@@ -577,9 +577,10 @@
 <li>Additionally, the expression tree maintains a both continuously updated bloom filter.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> The advantages of the bloom filter is that it occupies constant memory which is extremely desirable for compile-time computation.</li>
 <li>When a binary operation joins two nodes, it is possible that a child or the root of the <abbr title="Left-hand Side">LHS</abbr> matches a child or a root of the <abbr title="Reft-hand Side">RHS</abbr>.<ol>
 <li>Without loss of generality, swap the <abbr title="Left-hand Side">LHS</abbr> and <abbr title="Reft-hand Side">RHS</abbr> if necessary so that the number of nodes in the <abbr title="Left-hand Side">LHS</abbr> is less than the number of nodes in the <abbr title="Reft-hand Side">RHS</abbr>.</li>
-<li>To detect a common subexpression, traverse the <abbr title="Left-hand Side">LHS</abbr> and perform an existence test for each node on the bloom filter of the <abbr title="Reft-hand Side">RHS</abbr>.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></li>
+<li>To detect a common subexpression, traverse the <abbr title="Left-hand Side">LHS</abbr> and perform an existence test for each node on the bloom filter of the <abbr title="Reft-hand Side">RHS</abbr>.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup> Initial implementations may skip the initial bloom filtration and go straight to an <script type="math/tex">O(n)</script> scan of the tree (which may be sufficient for small inputs).<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></li>
 <li>If a match is found, we promote the subtree to the top level <script type="math/tex">\overline B</script>, and replace both matching nodes with a placeholder node <script type="math/tex">\overline\beta</script>. The node <script type="math/tex">\overline\beta</script> is given an identifier <script type="math/tex">j</script> corresponding to the index of the subtree in the top-level list.</li>
 <li>The top level lists of <script type="math/tex">\overline B_\textit{LHS}</script> and <script type="math/tex">\overline B_\textit{RHS}</script> themselves need to be merged which will require a renumbering. During the merge, the <script type="math/tex">\overline\beta</script> intermediates are kept sorted in hash order so that identical <script type="math/tex">\overline\beta</script> trees are deduplicated easily. The result is the a remapping of the top level list to <script type="math/tex">\overline B_\textit{LHS} \cup \overline B_\textit{RHS}</script>.</li>
+<li>Finally, the checksum of the <abbr title="Left-hand Side">LHS</abbr> and <abbr title="Reft-hand Side">RHS</abbr> is computed together and attached to the new root node.</li>
 </ol>
 </li>
 <li>A unary operation that is marked <em>transcendental</em> is immediately promoted to an intermediate <script type="math/tex">\overline\beta</script>.</li>
@@ -592,7 +593,7 @@
 <h4 id="algorithm_1">Algorithm</h4>
 <ol>
 <li>At this point, we've identified subexpressions from the computation of each element of <script type="math/tex">\overline\Gamma</script> as sets <script type="math/tex">\overline B</script> that need to be computed (mapped to <script type="math/tex">B</script>). First, we need to perform a final merge as subexpressions identified in distinct <script type="math/tex">\overline\gamma</script> may overlap.</li>
-<li>An issue immediately presents itself as it is possible that a subexpression of some <script type="math/tex">\overline\gamma_k</script> is located in the subexpression of a different <script type="math/tex">\overline\gamma_l</script>. This is, of course, a factorially complex computation which is not easily optimized because each <script type="math/tex">\overline\gamma</script> must be simplified <em>without</em> knowledge of the other elements of <script type="math/tex">\overline\Gamma</script>. <em>This is where GAL breaks optimality</em> at this time and resorts to relying on the compiler to perform adequate <abbr title="Common Subexpression Elimination">CSE</abbr>. Thus, this step is a no-op and the results we have thus far, we declare as the <script type="math/tex">\overline\lambda</script> we have been seeking.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></li>
+<li>An issue immediately presents itself as it is possible that a subexpression of some <script type="math/tex">\overline\gamma_k</script> is located in the subexpression of a different <script type="math/tex">\overline\gamma_l</script>. Thus, we perform a final N-way merge step (as when we merge Merkle trees in a binary operation) to collapse expressions one more time.</li>
 <li>The map <script type="math/tex">\overline B\rightarrow B</script> is evaluated and stored to an array <script type="math/tex">B</script>.</li>
 <li>
 <script type="math/tex">B</script> is concatenated to <script type="math/tex">A</script> to form the set of runtime-values <script type="math/tex">A\cup B</script>.</li>
@@ -613,13 +614,13 @@
 <p>Merkle tree allow quick <script type="math/tex">O(1)</script> comparisons of subtrees by accumulating hashes as you ascend up the tree (<a href="https://en.wikipedia.org/wiki/Merkle_tree">wiki</a>). For this application, we use checksums (a CRC function) and not a hash function because we are interested primarily in fast equality checking. That is to say we aren't interested in any guarantees in the entropy of the output.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:4">
-<p>A bloom filter is a constant-memory probabalistic data structure that supports constant time existense plausibility tests (<a href="https://en.wikipedia.org/wiki/Bloom_filter">wiki</a>).&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<p>A bloom filter is a constant-memory probabalistic data structure that supports constant time existense plausibility tests (<a href="https://en.wikipedia.org/wiki/Bloom_filter">wiki</a>). If used in this application, the bloom filter implementation will be adjusted to tune for low membership and evaluation speed, not collision probability.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 <li id="fn:5">
 <p>Note that we do not need to repeat this procedure with the <abbr title="Left-hand Side">LHS</abbr> and <abbr title="Reft-hand Side">RHS</abbr> arguments flipped. Existence of a common subexpression is a mutual co-property.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
 </li>
 <li id="fn:6">
-<p>A future improvement can perform a fast bitwise-and operation on the bloom filter contents to determine the possibility of an intersection between different <script type="math/tex">\overline\gamma</script>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+<p>Normally, using an optimization such as a bloom filter in this way would be completely overkill. It is on the table due to the poor performance of compile-time recursion.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>

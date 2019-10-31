@@ -573,7 +573,7 @@
 <ol>
 <li>During expression tree construction, each operation node computes the hash of its inputs and the operation. In the case of a unary operation, the hash sum has two arguments (input hash, and operation hash), and in the case of a binary operation, the hash sum has three arguments. In this manner, any two subtree hashes can be compared for equality in constant time. For leaf nodes, the hash is fully determined by the terms present in the node's multivector, the indeterminate count, and the id of the first indeterminate.</li>
 <li>Each tree maintains at a top level, a list of additional trees representing the set <script type="math/tex">\overline B</script> of intermediate subexpressions identified.</li>
-<li>Each node maintains a hash sum of itself and all of its children, making the tree a special form of a Merkel tree.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></li>
+<li>Each node maintains a hash sum of itself and all of its children, making the tree a special form of a Merkle tree.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></li>
 <li>Additionally, the expression tree maintains a both continuously updated bloom filter.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> The advantages of the bloom filter is that it occupies constant memory which is extremely desirable for compile-time computation.</li>
 <li>When a binary operation joins two nodes, it is possible that a child or the root of the <abbr title="Left-hand Side">LHS</abbr> matches a child or a root of the <abbr title="Reft-hand Side">RHS</abbr>.<ol>
 <li>Without loss of generality, swap the <abbr title="Left-hand Side">LHS</abbr> and <abbr title="Reft-hand Side">RHS</abbr> if necessary so that the number of nodes in the <abbr title="Left-hand Side">LHS</abbr> is less than the number of nodes in the <abbr title="Reft-hand Side">RHS</abbr>.</li>
@@ -611,7 +611,7 @@
 <p>... in spite of the fact that such a lambda <em>is</em> a constant expression, but the limitations of the current state of affairs with C++ <code>constexpr</code> are plentiful.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 <li id="fn:3">
-<p>Merkel tree allow quick <script type="math/tex">O(1)</script> comparisons of subtrees by accumulating hashes as you ascend up the tree (<a href="https://en.wikipedia.org/wiki/Merkle_tree">wiki</a>).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p>Merkle tree allow quick <script type="math/tex">O(1)</script> comparisons of subtrees by accumulating hashes as you ascend up the tree (<a href="https://en.wikipedia.org/wiki/Merkle_tree">wiki</a>).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:4">
 <p>A bloom filter is a constant-memory probabalistic data structure that supports constant time existense plausibility tests (<a href="https://en.wikipedia.org/wiki/Bloom_filter">wiki</a>).&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>

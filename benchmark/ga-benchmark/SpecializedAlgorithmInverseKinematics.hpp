@@ -15,11 +15,12 @@
 // the result must be:
 //
 //   R1 = 0.992546 + 0.121869 * e1^e2
-//   R2 = 0.976296 + 0.210006 * e1^e3 - 0.0523604 * e2^e3 + 142.804 * e1^ni - 35.6051 * e2^ni - 43.2871 * e3^ni
-//   R3 = 0.959806 - 0.272314 * e1^e3 + 0.0678954 * e2^e3 - 404.827 * e1^ni + 100.935 * e2^ni + 161.69 * e3^ni
-//   T2 = 1 - 182.475 * e1^ni + 45.4961 * e2^ni + 41.6926 * e3^ni
-//   R4 = 0.834423 + 0.296658 * e1^e2 + 0.112228 * e1^e3 + 0.450123 * e2^e3 + 145.475 * e1^ni + 583.469 * e2^ni
-//   Rg = 0.933654 + 0.277405 * e1^e2 + 0.0937376 * e1^e3 - 0.206198 * e2^e3 + 112.644 * e1^ni - 763.223 * e2^ni
+//   R2 = 0.976296 + 0.210006 * e1^e3 - 0.0523604 * e2^e3 + 142.804 * e1^ni - 35.6051 * e2^ni
+//   - 43.2871 * e3^ni R3 = 0.959806 - 0.272314 * e1^e3 + 0.0678954 * e2^e3 - 404.827 * e1^ni +
+//   100.935 * e2^ni + 161.69 * e3^ni T2 = 1 - 182.475 * e1^ni + 45.4961 * e2^ni + 41.6926 * e3^ni
+//   R4 = 0.834423 + 0.296658 * e1^e2 + 0.112228 * e1^e3 + 0.450123 * e2^e3 + 145.475 * e1^ni +
+//   583.469 * e2^ni Rg = 0.933654 + 0.277405 * e1^e2 + 0.0937376 * e1^e3 - 0.206198 * e2^e3 +
+//   112.644 * e1^ni - 763.223 * e2^ni
 //        - 174.171 * e3^ni
 //   Jg_f = 1351.52 * e1 - 498.052 * e2 + 2132.49 * e3 + 0.99996 * no + 3.31122e+06 * ni
 //
@@ -88,7 +89,7 @@ union point_xz
         , z{c}
     {}
 
-    template <uint8_t... E>
+    template <elem_t... E>
     constexpr point_xz(entity<algebra_t, T, E...> in) noexcept
         : data{in.template select<0b1, 0b100>()}
     {}
@@ -143,14 +144,18 @@ inline auto expp(const T& arg)
         [](auto arg, auto arg2) {
             auto arg3 = arg * arg2;
             auto arg4 = arg2 * arg2;
-            return frac<1> + arg + arg2 / frac<2> + arg3 / frac<6> + arg4 / frac<24>;
+            return 1 + arg + arg2 / 2 + arg3 / 6 + arg4 / 24;
         },
         arg,
         arg2);
 }
 
 template <typename Scalar>
-auto InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang3, const Scalar& ang4, const Scalar& ang5)
+auto InverseKinematics(const Scalar& ang1,
+                       const Scalar& ang2,
+                       const Scalar& ang3,
+                       const Scalar& ang4,
+                       const Scalar& ang5)
 {
     real_t d1 = 200.0, d2 = 680.0, d3 = 150.0, d4 = 140.0, d5 = 114.2;
     real_t l12 = 890.0, l23 = 880.0;
@@ -173,11 +178,10 @@ auto InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang
     point_xz<real_t> J3{J3_x, J3_z};
     point_xz<real_t> Jg{Jg_x, Jg_z};
     // point Jg{Jg_x, Jg_y, Jg_z};
-    point_z<real_t> Pz;
+    // point_z<real_t> Pz;
 
     auto Lz = compute(
-        [](auto Pz, auto ang1) { return frac<1, 2> * ang1 * ((n_o<real_t> ^ Pz ^ n_i<real_t>) >> ips<real_t>); },
-        Pz,
+        [](auto ang1) { return ((1_no ^ (1_no + 1_e3 + 1_ni / 2) ^ 1_ni) >> 1_ips) * ang1 / 2; },
         scalar{ang1});
     auto R1 = expp(Lz);
 
@@ -185,8 +189,8 @@ auto InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang
 
     auto L2 = compute(
         [](auto R1, auto J1, auto P2_help, auto ang2) {
-            auto L2init = (J1 ^ P2_help ^ n_i<real_t>) >> ips<real_t>;
-            return ang2 * (L2init % R1) / frac<2>;
+            auto L2init = (J1 ^ P2_help ^ 1_ni) >> 1_ips;
+            return (L2init % R1) * ang2 / 2;
         },
         R1,
         J1,
@@ -198,24 +202,23 @@ auto InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang
 
     auto R21 = compute([](auto R1, auto R2) { return R2 * R1; }, R1, R2);
 
-    auto [J2_f, L3] = compute(
-        [](auto R21, auto J2, auto P3_help, auto ang3) {
-            auto L3init = (J2 ^ P3_help ^ n_i<real_t>) >> ips<real_t>;
-            auto J2_f   = J2 % R21;
-            return std::make_tuple(J2_f, frac<1, 2> * ang3 * (L3init % R21));
-        },
-        R21,
-        J2,
-        P3_help,
-        scalar{ang3});
+    auto L3init
+        = compute([](auto J2, auto P3_help) { return (J2 ^ P3_help ^ 1_ni) >> 1_ips; }, J2, P3_help);
+    auto J2_f = compute([](auto J2, auto R21) { return J2 % R21; }, J2, R21);
+
+    auto L3 = compute([](auto L3init, auto R21, auto ang3) { return (L3init % R21) * ang3 / 2; },
+                      L3init,
+                      R21,
+                      scalar{ang3});
 
     auto R3 = expp(L3);
 
     auto [J2_rot1, t2_help] = compute(
         [](auto R1, auto J2, auto J2_f) {
             auto J2_rot1 = J2 % R1;
-            auto t2      = extract<0b1, 0b10, 0b100>{}(J2_f)-extract<0b1, 0b10, 0b100>{}(J2_rot1);
-            return std::make_tuple(J2_rot1, frac<-1, 2> * t2 ^ n_i<real_t>);
+            auto t2      = J2_f[0b1] + J2_f[0b10] + J2_f[0b100] - J2_rot1[0b1] - J2_rot1[0b10]
+                      - J2_rot1[0b100];
+            return gal::make_tuple(J2_rot1, -t2 ^ 1_ni / 2);
         },
         R1,
         J2,
@@ -225,9 +228,9 @@ auto InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang
 
     auto [L4init, L4weight, R3T2R1] = compute(
         [](auto J3, auto Jg, auto R3, auto T2, auto R1) {
-            auto L4init   = (J3 ^ Jg ^ n_i<real_t>) >> ips<real_t>;
+            auto L4init   = (J3 ^ Jg ^ 1_ni) >> 1_ips;
             auto L4weight = L4init >> ~L4init;
-            return std::make_tuple(L4init, L4weight, R3 * T2 * R1);
+            return gal::make_tuple(L4init, L4weight, R3 * T2 * R1);
         },
         J3,
         Jg,
@@ -241,28 +244,30 @@ auto InverseKinematics(const Scalar& ang1, const Scalar& ang2, const Scalar& ang
         component /= norm;
     }
 
-    auto L4 = compute([](auto L4init, auto R3T2R1, auto ang4) { return frac<1, 2> * ang4 * (L4init % R3T2R1); },
-                      L4init,
-                      R3T2R1,
-                      scalar{ang4});
+    auto L4
+        = compute([](auto L4init, auto R3T2R1, auto ang4) { return ang4 * (L4init % R3T2R1) / 2; },
+                  L4init,
+                  R3T2R1,
+                  scalar{ang4});
     auto R4 = expp(L4);
 
     point Pg_help{J3_x, J3_y + 1.0, J3_z};
     auto [Lginit, R4R3T2R1] = compute(
         [](auto R4, auto R3T2R1, auto J3, auto Pg_help) {
-            auto Lginit   = (J3 ^ Pg_help ^ n_i<real_t>) >> ips<real_t>;
+            auto Lginit   = (J3 ^ Pg_help ^ 1_ni) >> 1_ips;
             auto R4R3T2R1 = R4 * R3T2R1;
-            return std::make_tuple(Lginit, R4R3T2R1);
+            return gal::make_tuple(Lginit, R4R3T2R1);
         },
         R4,
         R3T2R1,
         J3,
         Pg_help);
 
-    auto Lg = compute([](auto Lginit, auto R4R3T2R1, auto ang5) { return frac<1, 2> * ang5 * (Lginit % R4R3T2R1); },
-                      Lginit,
-                      R4R3T2R1,
-                      scalar{ang5});
+    auto Lg = compute(
+        [](auto Lginit, auto R4R3T2R1, auto ang5) { return ang5 * (Lginit % R4R3T2R1) / 2; },
+        Lginit,
+        R4R3T2R1,
+        scalar{ang5});
 
     auto Rg = expp(Lg);
 

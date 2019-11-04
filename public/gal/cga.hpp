@@ -10,12 +10,13 @@ namespace gal
 {
 namespace cga
 {
-    // The metric is defined here as the standard Minkowski spacetime. To extract the conformal representations,
-    // a change of basis is required where o = 1/2 * (e + e-) and inf = e- - e.
+    // The metric is defined here as the standard Minkowski spacetime. To extract the conformal
+    // representations, a change of basis is required where o = 1/2 * (e + e-) and inf = e- - e.
     //
-    // Internally, the change of basis will occur from the null basis to the natural basis before and after expression
-    // evaluation. The elements are ordered such that no and ni (null-basis-origin and null-basis-infinity) come at the
-    // end such that the parity of all terms of all blades is unchanged after the change of basis.
+    // Internally, the change of basis will occur from the null basis to the natural basis before
+    // and after expression evaluation. The elements are ordered such that no and ni
+    // (null-basis-origin and null-basis-infinity) come at the end such that the parity of all terms
+    // of all blades is unchanged after the change of basis.
     using cga_metric = gal::metric<4, 1, 0>;
 
     // The CGA is a graded algebra with 32 basis elements
@@ -23,60 +24,52 @@ namespace cga
 
     // 0b1 => e+ extension
     // 0b10000 => e- extension
-    namespace detail
+
+    constexpr detail::rpne<cga_algebra, 1> operator"" _e1(unsigned long long n)
     {
-        template <typename T>
-        struct n_o_t
-        {
-            using value_t = T;
-            using algebra_t = cga::cga_algebra;
-            constexpr static mv<cga::cga_algebra, 0, 1, 1> value{mv_size{0, 1, 1},
-                                                                 {},
-                                                                 {mon{one, zero, 0, 0}},
-                                                                 {term{1, 0, 0b1000}}};
-            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
-            {
-                return value;
-            }
-        };
+        uint32_t op = detail::c_scalar + 0b1;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
 
-        template <typename T>
-        struct n_i_t
-        {
-            using value_t = T;
-            using algebra_t = cga::cga_algebra;
-            constexpr static mv<cga::cga_algebra, 0, 1, 1> value{mv_size{0, 1, 1},
-                                                                 {},
-                                                                 {mon{one, zero, 0, 0}},
-                                                                 {term{1, 0, 0b10000}}};
-            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
-            {
-                return value;
-            }
-        };
+    constexpr detail::rpne<cga_algebra, 1> operator"" _e2(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b10;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
 
-        template <typename T>
-        struct ps_t
-        {
-            using value_t = T;
-            using algebra_t = cga::cga_algebra;
-            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
-            {
-                return ::gal::detail::to_null_basis(cga::cga_algebra::pseudoscalar);
-            }
-        };
+    constexpr detail::rpne<cga_algebra, 1> operator"" _e3(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b100;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
 
-        template <typename T>
-        struct ips_t
-        {
-            using value_t = T;
-            using algebra_t = cga::cga_algebra;
-            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
-            {
-                return ::gal::detail::to_null_basis(cga::cga_algebra::pseudoscalar_inv);
-            }
-        };
-    } // namespace detail
+    // Before change-of-basis:
+    // 0b1000 => no
+    // 0b10000 => ni
+
+    constexpr detail::rpne<cga_algebra, 1> operator"" _no(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1000;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<cga_algebra, 1> operator"" _ni(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b10000;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<cga_algebra, 1> operator"" _ps(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b11111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<cga_algebra, 1> operator"" _ips(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b11111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(-n), 1}};
+    }
 } // namespace cga
 
 namespace detail
@@ -87,18 +80,6 @@ namespace detail
 
 namespace cga
 {
-    template <typename T = float>
-    constexpr inline ::gal::detail::expr_id<detail::n_o_t<T>, 0> n_o;
-
-    template <typename T = float>
-    constexpr inline ::gal::detail::expr_id<detail::n_i_t<T>, 0> n_i;
-
-    template <typename T = float>
-    constexpr inline ::gal::detail::expr_id<detail::ps_t<T>, 0> ps;
-
-    template <typename T = float>
-    constexpr inline ::gal::detail::expr_id<detail::ips_t<T>, 0> ips;
-
     template <typename T = float>
     union point
     {
@@ -133,7 +114,7 @@ namespace cga
             , z{c}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr point(entity<algebra_t, T, E...> in) noexcept
             : data{in.template select<0b1, 0b10, 0b100>()}
         {}

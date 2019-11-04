@@ -7,7 +7,7 @@
 
 namespace gal
 {
-template <typename A, typename T, uint8_t... E>
+template <typename A, typename T, elem_t... E>
 [[nodiscard]] std::string to_string(entity<A, T, E...> in)
 {
     if constexpr (sizeof...(E) == 0)

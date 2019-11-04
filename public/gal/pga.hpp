@@ -13,68 +13,116 @@ namespace gal
 {
 namespace pga
 {
-    // NOTE: the inner product of e0 can be set to +1 or -1 without any change in the algebra's geometric
-    // interpretation. Here, we opt to define e0^2 := 1 by convention
+    // NOTE: the inner product of e0 can be set to +1 or -1 without any change in the algebra's
+    // geometric interpretation. Here, we opt to define e0^2 := 1 by convention
     using pga_metric = ::gal::metric<3, 0, 1>;
 
     // The PGA is a graded algebra with 16 basis elements
     using pga_algebra = gal::algebra<pga_metric>;
 
-    constexpr inline auto e = gal::e<pga_algebra, 0>;
-    constexpr inline auto e0 = gal::e<pga_algebra, 0b1>;
-    constexpr inline auto e1 = gal::e<pga_algebra, 0b10>;
-    constexpr inline auto e2 = gal::e<pga_algebra, 0b100>;
-    constexpr inline auto e3 = gal::e<pga_algebra, 0b1000>;
-    constexpr inline auto e01 = gal::e<pga_algebra, 0b11>;
-    constexpr inline auto e02 = gal::e<pga_algebra, 0b101>;
-    constexpr inline auto e03 = gal::e<pga_algebra, 0b1001>;
-    constexpr inline auto e12 = gal::e<pga_algebra, 0b110>;
-    constexpr inline auto e13 = gal::e<pga_algebra, 0b1010>;
-    constexpr inline auto e23 = gal::e<pga_algebra, 0b1100>;
-    constexpr inline auto e012 = gal::e<pga_algebra, 0b111>;
-    constexpr inline auto e013 = gal::e<pga_algebra, 0b1011>;
-    constexpr inline auto e023 = gal::e<pga_algebra, 0b1101>;
-    constexpr inline auto e123 = gal::e<pga_algebra, 0b1110>;
-    constexpr inline auto e1234 = gal::e<pga_algebra, 0b1111>;
-
-    namespace detail
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e0(unsigned long long n)
     {
-        template <typename T>
-        struct ps_t
-        {
-            using value_t = T;
-            using algebra_t = pga::pga_algebra;
-            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
-            {
-                return pga::pga_algebra::pseudoscalar;
-            }
-        };
-
-        template <typename T>
-        struct ips_t
-        {
-            using value_t = T;
-            using algebra_t = pga::pga_algebra;
-            [[nodiscard]] constexpr static auto ie(uint32_t) noexcept
-            {
-                return pga::pga_algebra::pseudoscalar_inv;
-            }
-        };
+        uint32_t op = detail::c_scalar + 0b1;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
     }
 
-    template <typename T = float>
-    constexpr inline ::gal::detail::expr_id<detail::ps_t<T>, 0> ps;
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e1(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b10;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
 
-    template <typename T = float>
-    constexpr inline ::gal::detail::expr_id<detail::ips_t<T>, 0> ips;
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e2(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b100;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
 
-    // TODO: It isn't great that we cache the cos and sin of the rotor since storing 5 elements prevents a more natural
-    // tightly-packed alignment
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e3(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1000;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e01(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b11;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e02(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b101;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e03(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1001;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e12(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b110;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e13(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1010;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e23(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1100;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e012(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e013(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1101;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e023(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1011;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e123(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1110;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _e0123(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga_algebra, 1> operator"" _ps(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    // TODO: It isn't great that we cache the cos and sin of the rotor since storing 5 elements
+    // prevents a more natural tightly-packed alignment
     template <typename T = float>
     union rotor
     {
         using algebra_t = pga_algebra;
-        using value_t = T;
+        using value_t   = T;
 
         [[nodiscard]] constexpr static size_t size() noexcept
         {
@@ -114,7 +162,8 @@ namespace pga
         // x := ID 2
         // y := ID 3
         // z := ID 4
-        // A rotation t around a line is given by the expression cos(t/2) + sin(t/2)(l_x + l_y + l_z)
+        // A rotation t around a line is given by the expression cos(t/2) + sin(t/2)(l_x + l_y +
+        // l_z)
         [[nodiscard]] constexpr static mv<pga_algebra, 8, 4, 4> ie(uint32_t id) noexcept
         {
             return {mv_size{7, 4, 4},
@@ -125,7 +174,10 @@ namespace pga
                      ind{id + 3, one},
                      ind{id + 1, one}, // x * sin(t/2)
                      ind{id + 2, one}},
-                    {mon{one, one, 1, 0}, mon{one, one, 1, 1}, mon{minus_one, rat{2}, 2, 2}, mon{one, rat{2}, 2, 3}},
+                    {mon{one, one, 1, 0},
+                     mon{one, one, 1, 1},
+                     mon{minus_one, rat{2}, 2, 2},
+                     mon{one, rat{2}, 2, 3}},
                     {term{1, 0, 0b0}, term{1, 1, 0b110}, term{1, 2, 0b1010}, term{1, 3, 0b1100}}};
         }
 
@@ -144,7 +196,7 @@ namespace pga
     union translator
     {
         using algebra_t = pga_algebra;
-        using value_t = T;
+        using value_t   = T;
 
         [[nodiscard]] constexpr static size_t size() noexcept
         {
@@ -188,7 +240,7 @@ namespace pga
                      ind{id, one}, // d * l_z
                      ind{id + 2, one}},
                     {
-                        mon{one, zero, 0, 0},            // 1
+                        mon{one, zero, 0, 0},              // 1
                         mon{minus_one_half, rat{2}, 2, 1}, // -1/2 * l_x
                         mon{minus_one_half, rat{2}, 2, 2}, // -1/2 * l_y
                         mon{minus_one_half, rat{2}, 2, 3}  // -1/2 * l_z
@@ -207,6 +259,9 @@ namespace pga
         }
     };
 
+    template <typename T>
+    union line;
+
     // A motor occupies the even subalgebra
     template <typename T = float>
     union motor
@@ -221,7 +276,7 @@ namespace pga
             return ::gal::detail::construct_ie<algebra_t>(
                 id,
                 std::make_integer_sequence<width_t, 8>{},
-                std::integer_sequence<uint8_t, 0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111>{});
+                std::integer_sequence<elem_t, 0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111>{});
         }
 
         [[nodiscard]] constexpr static size_t size() noexcept
@@ -229,18 +284,21 @@ namespace pga
             return 8;
         }
 
+        constexpr motor(T v1, T v2, T v3, T v4, T v5, T v6, T v7, T v8)
+            : data{v1, v2, v3, v4, v5, v6, v7, v8}
+        {}
+
         constexpr motor(std::array<T, 8> const& in) noexcept
             : data{in}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr motor(entity<algebra_t, T, E...> in) noexcept
             : data{in.template select<0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111>()}
-        {
-        }
+        {}
 
-        [[nodiscard]] constexpr entity<pga_algebra, T, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100> bivector() const
-            noexcept
+        [[nodiscard]] constexpr entity<pga_algebra, T, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100>
+        bivector() const noexcept
         {
             return {data[1], data[2], data[3], data[4], data[5], data[6]};
         }
@@ -253,7 +311,7 @@ namespace pga
             auto v      = m2[1];
             m2[0]       = T{1} / sqrt_u;
             m2[1]       = -v / (2 * sqrt_u * u);
-            *this = compute([](auto m, auto inv_norm) { return m * inv_norm; }, *this, m2);
+            *this       = compute([](auto m, auto inv_norm) { return m * inv_norm; }, *this, m2);
         }
 
         [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
@@ -265,18 +323,16 @@ namespace pga
         {
             return data[index];
         }
-    };
 
-    template <typename T>
-    [[nodiscard]] constexpr motor<T> normalize(motor<T> m)
-    {
-    }
+        // A closed-form solution of the logarithm of an element of the even subalgebra also exists
+        [[nodiscard]] constexpr auto log() const noexcept;
+    };
 
     template <typename T = float>
     union plane
     {
-        using algebra_t = pga_algebra;
-        using value_t   = T;
+        using algebra_t               = pga_algebra;
+        using value_t                 = T;
         constexpr static bool is_dual = true;
 
         std::array<T, 4> data;
@@ -291,7 +347,9 @@ namespace pga
         [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
         {
             return ::gal::detail::construct_ie<algebra_t>(
-                id, std::make_integer_sequence<width_t, 4>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100, 0b1000>{});
+                id,
+                std::make_integer_sequence<width_t, 4>{},
+                std::integer_sequence<elem_t, 0b1, 0b10, 0b100, 0b1000>{});
         }
 
         [[nodiscard]] constexpr static size_t size() noexcept
@@ -306,11 +364,10 @@ namespace pga
             , z{z}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr plane(entity<pga_algebra, T, E...> in) noexcept
             : data{in.template select<0b1, 0b10, 0b100, 0b1000>()}
-        {
-        }
+        {}
 
         [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
         {
@@ -326,8 +383,8 @@ namespace pga
     template <typename T = float>
     union point
     {
-        using algebra_t = pga_algebra;
-        using value_t   = T;
+        using algebra_t               = pga_algebra;
+        using value_t                 = T;
         constexpr static bool is_dual = true;
 
         std::array<T, 3> data;
@@ -370,7 +427,7 @@ namespace pga
             , z{z}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr point(entity<pga_algebra, T, E...> in) noexcept
             : data{in.template select<0b1101, 0b1011, 0b111>()}
         {
@@ -394,8 +451,8 @@ namespace pga
     template <typename T = float>
     union vector
     {
-        using algebra_t = pga_algebra;
-        using value_t   = T;
+        using algebra_t               = pga_algebra;
+        using value_t                 = T;
         constexpr static bool is_dual = true;
 
         std::array<T, 3> data;
@@ -438,7 +495,7 @@ namespace pga
             , z{z}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr vector(entity<pga_algebra, T, E...> in) noexcept
             : data{in.template select<0b1101, 0b1011, 0b111>()}
         {
@@ -457,15 +514,16 @@ namespace pga
         }
     };
 
-    // Lines in P^3 are defined using Plücker coordinates: https://en.wikipedia.org/wiki/Plücker_coordinates
-    // The lines e01, e02, and e03 are the ideal lines representing the intersections of e1, e2, and e3 with the ideal
-    // plane respectively. The lines e23, e31, and e12 are lines through the origin in the x, y, and z directions
+    // Lines in P^3 are defined using Plücker coordinates:
+    // https://en.wikipedia.org/wiki/Plücker_coordinates The lines e01, e02, and e03 are the ideal
+    // lines representing the intersections of e1, e2, and e3 with the ideal plane respectively. The
+    // lines e23, e31, and e12 are lines through the origin in the x, y, and z directions
     // respectively.
     template <typename T = float>
     union line
     {
-        using algebra_t = pga_algebra;
-        using value_t = T;
+        using algebra_t               = pga_algebra;
+        using value_t                 = T;
         constexpr static bool is_dual = true;
 
         std::array<T, 6> data;
@@ -522,7 +580,7 @@ namespace pga
             , mz{mz}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr line(entity<pga_algebra, T, E...> in) noexcept
             : data{in.template select<0b1100, 0b1010, 0b110, 0b11, 0b101, 0b1001>()}
         {
@@ -545,76 +603,96 @@ namespace pga
         {
             return data[index];
         }
+
+        // A bivector has a closed-form exponential solution which can be used to produce a motor
+        [[nodiscard]] constexpr auto exp() const noexcept
+        {
+            // We need to decompose the line l into two parts which scale the normalized euclidean
+            // and ideal components of the line L. L being a bivector squares to produce a quantity
+            // of the form L^2 = s + p * I. norm = sqrt(-L^2) = sqrt(-s - p * I) = sqrt(-s) - p / (2
+            // * sqrt(-s)) * I The inverse of the norm is given by norm_inv = 1/sqrt(-s) - p / 2 / s
+            // / sqrt(-s) * I So L_norm can be written as norm_inv * L
+            auto l2 = compute([](auto l) { return (l | l) + (l ^ l); }, *this);
+            auto s  = l2.template select<0>();
+            auto p  = l2.template select<0b1111>();
+            auto u  = std::sqrt(-s);
+            auto v  = -p / (2 * u);
+
+            entity<pga_algebra, T, 0, 0b1111> inv_norm{T{1} / u, v / s};
+            // inv_norm * l is the normalized bivector and the original bivector can be written as
+            // (u + vI) * inv_norm * l
+            auto cos_u = std::cos(u);
+            auto sin_u = std::sin(u);
+            decltype(inv_norm) real{cos_u, -v * sin_u};
+            decltype(inv_norm) ideal{sin_u, v * cos_u};
+            return compute(
+                [](auto real, auto ideal, auto inv_norm, auto l) {
+                    return real + ideal * inv_norm * l;
+                },
+                real,
+                ideal,
+                inv_norm,
+                *this);
+        }
     };
 
-    // A bivector has a closed-form exponential solution which can be used to produce a motor
     template <typename T>
-    [[nodiscard]] constexpr motor<T> exp(line<T> const& l) noexcept
+    constexpr auto motor<T>::log() const noexcept
     {
-        // We need to decompose the line l into two parts which scale the normalized euclidean and ideal components of
-        // the line L.
-        // L being a bivector squares to produce a quantity of the form L^2 = s + p * I.
-        // norm = sqrt(-L^2) = sqrt(-s - p * I) = sqrt(-s) - p / (2 * sqrt(-s)) * I
-        // The inverse of the norm is given by norm_inv = 1/sqrt(-s) - p / 2 / s / sqrt(-s) * I
-        // So L_norm can be written as norm_inv * L
-        auto l2 = compute([](auto l) { return ((l | l) + (l ^ l)); }, l);
-        auto s = l2.template select<0>();
-        auto p = l2.template select<0b1111>();
-        auto u = std::sqrt(-s);
-        auto v = -p / (2 * u);
-
-        entity<pga_algebra, T, 0, 0b1111> inv_norm{T{1} / u, v / s};
-        // inv_norm * l is the normalized bivector and the original bivector can be written as (u + vI) * inv_norm * l
-        auto cos_u = std::cos(u);
-        auto sin_u = std::sin(u);
-        decltype(inv_norm) real{cos_u, -v * sin_u};
-        decltype(inv_norm) ideal{sin_u, v * cos_u};
-        return compute([](auto real, auto ideal, auto inv_norm, auto l) { return real + ideal * inv_norm * l; },
-                       real,
-                       ideal,
-                       inv_norm,
-                       l);
-    }
-
-    // A closed-form solution of the logarithm of an element of the even subalgebra also exists
-    template <typename T>
-    [[nodiscard]] constexpr line<T> log(motor<T> const& m) noexcept
-    {
-        // When normalized, the motor has the form <m>_0 + <m>_2 + <m>4
+        // When normalized, the motor has the form <m>_0 + <m>_2 + <m>_4
         // m := s1 + L + p1 * I
         // Decompose L into L = (s2 + p2 * I) * L_norm => m = s1 + p1 * I + (s2 + p2 * I) * L_norm
+        //
         // The norm is computed as above with norm = sqrt(-s2) - p2/(2 * sqrt(-s2)) * I
         // so norm_inv is 1/sqrt(-s2) - p2 / (2 * s2 * sqrt(-s2)) * I
-        // The exponential has the form (cosu - vsinu * I) + (sinu + vcosu * I) * L_norm = e^((u + v*I) * L_norm)
+        //
+        // The exponential has the form:
+        //
+        // (cosu - vsinu * I) + (sinu + vcosu * I) * L_norm = e^((u + v*I) * L_norm)
+        //
         // Comparing the two equations leads to:
+        //
         // s1 = cosu
         // p2 = vcosu
         // s2 = sinu
         // p1 = -vsinu
         //
-        // If s1 isn't 0, we can solve for u as arctan(s2/s1) and v = p2/s1 using the first 2 equations
-        // If s1 is 0, we take instead the second and fourth equation so u = arctan(-p2/p1) and v = -p1/s2
-        auto s1 = m[0]; // <m>_0
-        auto p1 = m[7]; // <m>_4
+        // If s1 isn't 0, we can solve for u as arctan(s2/s1) and v = p2/s1 using the first 2
+        // equations If s1 is 0, we take instead the second and fourth equation so u =
+        // arctan(-p2/p1) and v = -p1/s2
+        auto s1 = data[0]; // <m>_0
+        auto p1 = data[7]; // <m>_4
 
-        auto l = m.bivector();
+        auto l = bivector();
 
-        // s + p * I
-        auto l2 = compute([](auto l) { return l * l; }, l);
-        auto s = l2.template select<0>();
-        auto p = l2.template select<0b1111>();
+        // s2 + p2 * I
+        auto l2 = compute([](auto l) { return (l | l) + (l ^ l); }, l);
+        auto s2 = std::sqrt(-l2.template select<0>());
+        auto p2 = -l2.template select<0b1111>() / (2 * s2);
 
-        auto s2 = std::sqrt(-s);
-        auto p2 = -p / (2 * s2);
-
-        entity<pga_algebra, T, 0, 0b1111> inv_norm{T{1} / s2, p2 / s};
+        entity<pga_algebra, T, 0, 0b1111> inv_norm{T{1} / s2, p2 / l2.template select<0>()};
 
         bool s1_zero = std::abs(s1) < T{1e-6};
         scalar<pga_algebra, T> u{s1_zero ? ::std::atan2(-p1, p2) : ::std::atan2(s2, s1)};
-        scalar<pga_algebra, T> v{s1_zero ? -p1/s2 : p2 / s1};
+        scalar<pga_algebra, T> v{s1_zero ? -p1 / s2 : p2 / s1};
 
         return compute(
-            [](auto u, auto v, auto l, auto inv_norm) { return (u + v * ps<T>)*l * inv_norm; }, u, v, l, inv_norm);
+            [](auto u, auto v, auto l, auto inv_norm) { return (u + v * 1_ps) * l * inv_norm; },
+            u,
+            v,
+            l,
+            inv_norm);
     }
+
 } // namespace pga
+
+namespace detail
+{
+    template <typename T>
+    struct special_entities<::gal::pga::pga_algebra, T>
+    {
+        using line_t  = ::gal::pga::line<T>;
+        using motor_t = ::gal::pga::motor<T>;
+    };
+} // namespace detail
 } // namespace gal

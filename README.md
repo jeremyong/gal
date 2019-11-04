@@ -28,6 +28,26 @@ Runtime and compile time performance is achieved by using the following approach
 5. The final indeterminate form is evaluated coefficient by coefficient. For CSE, the compiler is relied on at this time, although future work in doing compile time multivariate polynomial reduction is possible. For maximal throughput, this does not rely on features like `std::tuple` which are known to have poor compilation performance where possible.
 6. The results are optionally cast back into the flat entity form which extracts multivector components and applies scaling as appropriate. This operation is also a compile time operation which may cause additional computation to drop out trivially.
 
+## Rights and Attribution
+
+GAL is licensed permissively under the MIT license and free as in :beer:.
+
+Attribution is appreciated, but not required for use of the library. If you would like to cite this work in an academic setting, feel free to use the following BibTex snippet, produced here for your convenience:
+
+```latex
+@misc{jeremy_ong_2019,
+    author = {Ong, Jeremy},
+    title = {GAL},
+    year = {2019},
+    publisher = {GitHub},
+    journal = {GitHub repository},
+    howpublished = {\url{https://github.com/jeremyong/gal}},
+    commit = {[insert commit used]}
+}
+```
+
+Please adjust the snippet above per recommendations from the journal you wish to publish to.
+
 ## Usage
 
 Being a template-library, GAL is header-only and can be installed by either linking the `gal` interface target via cmake or by copying the files in `src` to a known include path.
@@ -131,7 +151,7 @@ For more complete documentation, please refer to the [project page](https://jere
 Example usage:
 
 ```c++
-#include <gal/cga.hpp>
+#include <gal/pga.hpp>
 
 // Let's work with the projectivized dual space of R3
 using point = gal::pga::point<float>;

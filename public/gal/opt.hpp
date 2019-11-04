@@ -5,3 +5,5 @@
 #elif defined(_MSC_VER)
 #    define GAL_FORCE_INLINE __forceinline
 #endif
+
+#define GAL_NODISCARD [[nodiscard]]

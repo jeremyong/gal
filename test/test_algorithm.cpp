@@ -1,7 +1,20 @@
-#include <gal/algorithm.hpp>
+#include <array>
 #include <doctest/doctest.h>
+#include <gal/algorithm.hpp>
+#include <gal/crc.hpp>
+#include <gal/tuple.hpp>
 
 using gal::detail::sort;
+
+template <typename T>
+struct add_n
+{
+    int incr;
+    constexpr auto operator()(T in)
+    {
+        return in + incr;
+    }
+};
 
 TEST_SUITE_BEGIN("algorithm");
 
@@ -121,4 +134,62 @@ TEST_CASE("sort")
     }
 }
 
+TEST_CASE("crc32")
+{
+    static_assert(gal::detail::crc32(0xDEADBEEF) == 0x1A5A601F);
+}
+
+TEST_CASE("tuple")
+{
+    using gal::tuple;
+    tuple<int, char> t{1039, 'b'};
+    auto i = t.template get<0>();
+    CHECK_EQ(i, 1039);
+    auto c = t.template get<1>();
+    CHECK_EQ(c, 'b');
+
+    SUBCASE("tuple-find-type")
+    {
+        auto index = t.find_t<char>();
+        CHECK_EQ(index, 1);
+    }
+
+    SUBCASE("tuple-split")
+    {
+        auto sp = t.template split_at_type<char>();
+        CHECK_EQ(decltype(sp.first)::size(), 1);
+        CHECK_EQ(decltype(sp.second)::size(), 0);
+        CHECK_EQ(sp.first.template get<0>(), 1039);
+    }
+
+    SUBCASE("tuple-push")
+    {
+        auto p = t.push(3.5f);
+        CHECK_EQ(decltype(p)::size(), 3);
+        CHECK_EQ(p.template get<0>(), 3.5f);
+        CHECK_EQ(p.template get<1>(), 1039);
+        CHECK_EQ(p.template get<2>(), 'b');
+    }
+
+    SUBCASE("tuple-set")
+    {
+        t.template set<0>(42);
+        CHECK_EQ(t.template get<0>(), 42);
+    }
+
+    SUBCASE("tuple-map")
+    {
+        t.template mutate<add_n>(2);
+        CHECK_EQ(t.template get<0>(), 1041);
+        CHECK_EQ(t.template get<1>(), 'd');
+    }
+
+    SUBCASE("tuple-pop")
+    {
+        auto pop = t.pop();
+        CHECK_EQ(decltype(pop.second)::size(), 1);
+        CHECK_EQ(pop.first, 1039);
+        CHECK_EQ(pop.second.template get<0>(), 'b');
+    }
+}
 TEST_SUITE_END();

@@ -12,21 +12,60 @@ namespace gal
 {
 namespace pga2
 {
-    // NOTE: the inner product of e0 can be set to +1 or -1 without any change in the algebra's geometric
-    // interpretation. Here, we opt to define e0^2 := 1 by convention
+    // NOTE: the inner product of e0 can be set to +1 or -1 without any change in the algebra's
+    // geometric interpretation. Here, we opt to define e0^2 := 1 by convention
     using pga2_metric = ::gal::metric<2, 0, 1>;
 
     // PGA2 is a graded algebra with 8 basis elements
     using pga2_algebra = gal::algebra<pga2_metric>;
 
-    constexpr inline auto e    = gal::e<pga2_algebra, 0>;
-    constexpr inline auto e0   = gal::e<pga2_algebra, 0b1>;
-    constexpr inline auto e1   = gal::e<pga2_algebra, 0b10>;
-    constexpr inline auto e2   = gal::e<pga2_algebra, 0b100>;
-    constexpr inline auto e01  = gal::e<pga2_algebra, 0b11>;
-    constexpr inline auto e02  = gal::e<pga2_algebra, 0b101>;
-    constexpr inline auto e12  = gal::e<pga2_algebra, 0b110>;
-    constexpr inline auto e012 = gal::e<pga2_algebra, 0b111>;
+    constexpr detail::rpne<pga2_algebra, 1> operator"" _e0(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga2_algebra, 1> operator"" _e1(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b10;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga2_algebra, 1> operator"" _e2(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b100;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga2_algebra, 1> operator"" _e01(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b11;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga2_algebra, 1> operator"" _e02(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b101;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga2_algebra, 1> operator"" _e12(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b110;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga2_algebra, 1> operator"" _e012(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<pga2_algebra, 1> operator"" _ps(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
 
     template <typename T = float>
     union line
@@ -47,7 +86,9 @@ namespace pga2
         [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
         {
             return gal::detail::construct_ie<algebra_t>(
-                id, std::make_integer_sequence<width_t, 3>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100>{});
+                id,
+                std::make_integer_sequence<width_t, 3>{},
+                std::integer_sequence<elem_t, 0b1, 0b10, 0b100>{});
         }
 
         [[nodiscard]] constexpr static size_t size() noexcept
@@ -61,7 +102,7 @@ namespace pga2
             , y{y}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr line(entity<pga2_algebra, T, E...> in) noexcept
             : data{in.template select<0b1, 0b10, 0b100>()}
         {}
@@ -130,7 +171,7 @@ namespace pga2
             , y{y}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr point(entity<pga2_algebra, T, E...> in) noexcept
             : x{in.template select<0b101>()}
             , y{in.template select<0b11>()}
@@ -198,7 +239,7 @@ namespace pga2
             , z{z}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr vector(entity<pga2_algebra, T, E...> in) noexcept
             : data{in.template select<0b1101, 0b1011, 0b111>()}
         {

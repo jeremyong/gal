@@ -1,11 +1,34 @@
 #pragma once
 
-#include <array>
+#include <cstddef>
+#include <utility>
 
 namespace gal
 {
 namespace detail
 {
+    // Retrieve the nth type from a type list
+    template <size_t I, typename T>
+    struct indexed
+    {
+        using type = T;
+    };
+
+    template <typename Is, typename... Ts>
+    struct indexer;
+
+    template <size_t... Is, typename... Ts>
+    struct indexer<std::index_sequence<Is...>, Ts...> : indexed<Is, Ts>...
+    {};
+
+    template <size_t I, typename T>
+    constexpr static indexed<I, T> select(indexed<I, T>);
+
+    // Uses ADL to select the correct type
+    template <size_t I, typename... Ts>
+    using nth_element =
+        typename decltype(select<I>(indexer<std::index_sequence_for<Ts...>, Ts...>{}))::type;
+
     template <typename T>
     constexpr void swap(T& lhs, T& rhs) noexcept
     {
@@ -15,8 +38,8 @@ namespace detail
         }
 
         T tmp = lhs;
-        lhs = rhs;
-        rhs = tmp;
+        lhs   = rhs;
+        rhs   = tmp;
     }
 
     // Needed for the time being because std::sort is not yet declared constexpr
@@ -80,9 +103,10 @@ namespace detail
         }
         else
         {
-            // NOTE: This is NOT the most efficient qsort implementation but it is implemented this way for simplicity.
-            // If it is a bottleneck, a faster sort will be implemented in the future. Use the last as the pivot
-            auto pivot = *(last - 1);
+            // NOTE: This is NOT the most efficient qsort implementation but it is implemented this
+            // way for simplicity. If it is a bottleneck, a faster sort will be implemented in the
+            // future. Use the last as the pivot
+            auto pivot  = *(last - 1);
             auto cursor = first;
             for (auto it = first; it != last - 1; ++it)
             {
@@ -158,9 +182,10 @@ namespace detail
         }
         else
         {
-            // NOTE: This is NOT the most efficient qsort implementation but it is implemented this way for simplicity.
-            // If it is a bottleneck, a faster sort will be implemented in the future. Use the last as the pivot
-            auto pivot = *(last - 1);
+            // NOTE: This is NOT the most efficient qsort implementation but it is implemented this
+            // way for simplicity. If it is a bottleneck, a faster sort will be implemented in the
+            // future. Use the last as the pivot
+            auto pivot  = *(last - 1);
             auto cursor = first;
             for (auto it = first; it != last - 1; ++it)
             {
@@ -174,5 +199,5 @@ namespace detail
             sort(cursor + 1, last, less);
         }
     }
-}
-}
+} // namespace detail
+} // namespace gal

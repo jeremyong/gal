@@ -15,10 +15,11 @@ add_executable(gal_test
     test_algorithm.cpp
     test_cga.cpp
     test_ega.cpp
+    test_dfa.cpp
     test_pga.cpp)
 
 if (GAL_TEST_IK_ENABLED)
-    target_sources(gal_test PUBLIC test_ik.cpp)
+    # target_sources(gal_test PUBLIC test_ik.cpp)
 endif()
 
 

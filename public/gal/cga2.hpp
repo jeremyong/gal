@@ -125,7 +125,7 @@ namespace cga2
             , y{b}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr point(entity<algebra_t, T, E...> in) noexcept
             : data{in.template select<0b1, 0b10>()}
         {}

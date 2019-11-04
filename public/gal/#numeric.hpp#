@@ -178,6 +178,19 @@ struct rat
         return num == 0;
     }
 
+    constexpr bool maybe_sqrt() const noexcept
+    {
+        auto sqrt_num = std::sqrt(num);
+        if (sqrt_num == std::floor(sqrt_num))
+        {
+            auto sqrt_den = std::sqrt(den);
+            if (sqrt_den == std::floor(sqrt_den))
+            {
+                
+            }
+        }
+    }
+
     [[nodiscard]] constexpr bool is_unit() const noexcept
     {
         return num == den;

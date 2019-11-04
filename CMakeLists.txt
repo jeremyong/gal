@@ -51,6 +51,6 @@ if (GAL_TESTS_ENABLED AND GAL_STANDALONE)
 endif()
 
 if (GAL_SAMPLES_ENABLED AND GAL_STANDALONE)
-  add_subdirectory(samples)
+  # add_subdirectory(samples)
 endif()
 

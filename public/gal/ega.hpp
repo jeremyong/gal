@@ -16,15 +16,59 @@ namespace ega
 
     using ega_algebra = gal::algebra<ega_metric>;
 
-    // These are intended to be used only in a compute context
-    constexpr inline auto e = gal::e<ega_algebra, 0>;
-    constexpr inline auto e0 = gal::e<ega_algebra, 0b1>;
-    constexpr inline auto e1 = gal::e<ega_algebra, 0b10>;
-    constexpr inline auto e2 = gal::e<ega_algebra, 0b100>;
-    constexpr inline auto e01 = gal::e<ega_algebra, 0b11>;
-    constexpr inline auto e02 = gal::e<ega_algebra, 0b101>;
-    constexpr inline auto e12 = gal::e<ega_algebra, 0b110>;
-    constexpr inline auto e012 = gal::e<ega_algebra, 0b111>;
+    constexpr detail::rpne<ega_algebra, 1> operator"" _e0(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b1;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<ega_algebra, 1> operator"" _e1(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b10;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<ega_algebra, 1> operator"" _e2(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b100;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<ega_algebra, 1> operator"" _e01(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b11;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<ega_algebra, 1> operator"" _e02(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b101;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<ega_algebra, 1> operator"" _e12(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b110;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<ega_algebra, 1> operator"" _e012(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<ega_algebra, 1> operator"" _ps(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
+    }
+
+    constexpr detail::rpne<ega_algebra, 1> operator"" _ips(unsigned long long n)
+    {
+        uint32_t op = detail::c_scalar + 0b111;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(-n), 1}};
+    }
 
     template <typename T = float>
     union vector
@@ -57,7 +101,9 @@ namespace ega
         [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
         {
             return ::gal::detail::construct_ie<algebra_t>(
-                id, std::make_integer_sequence<width_t, 3>{}, std::integer_sequence<uint8_t, 0b1, 0b10, 0b100>{});
+                id,
+                std::make_integer_sequence<width_t, 3>{},
+                std::integer_sequence<elem_t, 0b1, 0b10, 0b100>{});
         }
 
         [[nodiscard]] constexpr static size_t size() noexcept
@@ -71,11 +117,10 @@ namespace ega
             , z{c}
         {}
 
-        template <uint8_t... E>
+        template <elem_t... E>
         constexpr vector(entity<ega_algebra, T, E...> in) noexcept
             : data{in.template select<0b1, 0b10, 0b100>()}
-        {
-        }
+        {}
 
         void normalize() noexcept
         {
@@ -100,7 +145,7 @@ namespace ega
     union rotor
     {
         using algebra_t = ega_algebra;
-        using value_t = T;
+        using value_t   = T;
 
         [[nodiscard]] constexpr static size_t size() noexcept
         {
@@ -142,17 +187,19 @@ namespace ega
         // z := ID 4
         [[nodiscard]] constexpr static mv<ega_algebra, 8, 4, 4> ie(uint32_t id) noexcept
         {
-            return {
-                mv_size{7, 4, 4},
-                {ind{id, one},     // cos(t/2)
-                 ind{id + 1, one}, // z * sin(t/2)
-                 ind{id + 4, one},
-                 ind{id + 1, one}, // -y * sin(t/2)
-                 ind{id + 3, one},
-                 ind{id + 1, one}, // x * sin(t/2)
-                 ind{id + 2, one}},
-                {mon{one, one, 1, 0}, mon{minus_one, rat{2}, 2, 1}, mon{one, rat{2}, 2, 3}, mon{minus_one, rat{2}, 2, 5}},
-                {term{1, 0, 0}, term{1, 1, 0b11}, term{1, 2, 0b101}, term{1, 3, 0b110}}};
+            return {mv_size{7, 4, 4},
+                    {ind{id, one},     // cos(t/2)
+                     ind{id + 1, one}, // z * sin(t/2)
+                     ind{id + 4, one},
+                     ind{id + 1, one}, // -y * sin(t/2)
+                     ind{id + 3, one},
+                     ind{id + 1, one}, // x * sin(t/2)
+                     ind{id + 2, one}},
+                    {mon{one, one, 1, 0},
+                     mon{minus_one, rat{2}, 2, 1},
+                     mon{one, rat{2}, 2, 3},
+                     mon{minus_one, rat{2}, 2, 5}},
+                    {term{1, 0, 0}, term{1, 1, 0b11}, term{1, 2, 0b101}, term{1, 3, 0b110}}};
         }
 
         [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept

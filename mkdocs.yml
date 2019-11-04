@@ -24,6 +24,7 @@ nav:
   - 'Optimizations': 'optimizations.md'
   - 'Benchmarks': 'benchmarks.md'
   - 'Coding Conventions': 'coding-conventions.md'
+  - 'Upcoming': 'draft-evaluation-v2.md'
   - 'About': 'about.md'
 
 edit_uri: ''
@@ -35,15 +36,17 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-AMS-MML_HTMLorMML
 
 markdown_extensions:
+  - abbr
   - admonition
   - attr_list
-  - mdx_math
-  - footnotes
-  - abbr
   - codehilite
+  - def_list
+  - footnotes
+  - mdx_math
   - pymdownx.superfences
   - pymdownx.mark
   - pymdownx.extrarawhtml
+  - sane_lists
 
 extra:
   disqus: 'jeremyong'

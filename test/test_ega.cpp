@@ -21,12 +21,11 @@ TEST_CASE("rotors")
         vector<float> v1{1, 1, 0};
         vector<float> v2{1, 0, 0};
 
-        auto ie1 = vector<float>::ie(0);
-        auto ie2 = vector<float>::ie(3);
-        auto result = gal::detail::product(ega_algebra::geometric{}, ie1, ie2);
+        auto ie1     = vector<float>::ie(0);
+        auto ie2     = vector<float>::ie(3);
+        auto result  = gal::detail::product(ega_algebra::geometric{}, ie1, ie2);
         auto reverse = gal::detail::reverse(ie1);
 
-        auto r       = gal::evaluate<vector<>, vector<>>{}.debug([](auto v1, auto v2) { return v1 % v2; });
         auto reflect = compute([](auto v1, auto v2) { return v1 % v2; }, v1, v2);
         CHECK_EQ(reflect[0], doctest::Approx(1));
         CHECK_EQ(reflect[1], doctest::Approx(-1));
@@ -94,12 +93,26 @@ TEST_CASE("rotors")
         CHECK_EQ(rvrr.terms[1].element, 0b10);
     }
 
+    SUBCASE("reversion")
+    {
+        rotor<float> r{1, 2, 3, 4};
+
+        auto rpn = evaluate<rotor<float>>::rpnf([](auto r) { return ~1_e01; });
+        printf("reversion: %s\n", gal::to_string(rpn).c_str());
+
+        auto ie = evaluate<rotor<float>>::ie([](auto r) { return ~1_e01; });
+
+        auto result = compute([](auto r) { return ~1_e01; }, r);
+        CHECK_EQ(decltype(result)::size(), 1);
+        CHECK_EQ(result[0], -1);
+    }
+
     SUBCASE("rotate-vector")
     {
         rotor<float> r1{M_PI / 2, 0, 0, 1};
         vector<float> v1{1, 0, 0};
 
-        vector<float> rotated = compute([](auto r1, auto v1) { return v1 % r1; }, r1, v1);
+        vector<float> rotated = compute([](auto r1, auto v1) { return r1 * v1 * ~r1; }, r1, v1);
         CHECK_EQ(rotated.x, doctest::Approx(0.0));
         CHECK_EQ(rotated.y, doctest::Approx(1.0));
         CHECK_EQ(rotated.z, doctest::Approx(0.0));
@@ -120,10 +133,6 @@ TEST_CASE("rotors")
             r1,
             r2,
             v1);
-        auto r = gal::evaluate<rotor<float>, rotor<float>, vector<float>>{}.debug([](auto r1, auto r2, auto v1) {
-            auto r = r1 * r2;
-            return v1 % r;
-        });
         CHECK_EQ(rotated.x, doctest::Approx(0.0));
         CHECK_EQ(rotated.y, doctest::Approx(1.0));
         CHECK_EQ(rotated.z, doctest::Approx(0.0));

@@ -47,9 +47,6 @@ TEST_CASE("multivector-arithmetic")
 
         auto diff2 = compute([](auto s1, auto s2) { return s2 - s1 + s1; }, s1, s2);
         CHECK_EQ(diff2[0], doctest::Approx(2.0));
-        auto d = evaluate<S, S>{}.debug([](auto s1, auto s2) {
-            return s2 - s1 + s1;
-            });
     }
 
     SUBCASE("independent-term-sum")
@@ -65,7 +62,7 @@ TEST_CASE("multivector-arithmetic")
     SUBCASE("coincident-term-sum")
     {
         using e1_t = entity<algebra_t, float, 0b0, 0b1>;
-        auto sum   = evaluate<e1_t, e1_t>{}.debug([](auto v1, auto v2) { return v1 + v2; });
+        auto sum   = evaluate<e1_t, e1_t>::ie([](auto v1, auto v2) { return v1 + v2; });
         CHECK_EQ(sum.inds[0].id, 0);
         CHECK_EQ(sum.inds[1].id, 2);
         CHECK_EQ(sum.inds[2].id, 1);
@@ -85,7 +82,7 @@ TEST_CASE("multivector-arithmetic")
     SUBCASE("coincident-term-sum-with-scalar")
     {
         using e1_t = entity<algebra_t, float, 0b0, 0b1>;
-        auto sum   = evaluate<e1_t, e1_t>{}.debug([](auto v1, auto v2) { return frac<1> + v1 + v2; });
+        auto sum   = evaluate<e1_t, e1_t>::ie([](auto v1, auto v2) { return 1 + v1 + v2; });
         CHECK_EQ(sum.inds[0].id, 0);
         CHECK_EQ(sum.inds[1].id, 2);
         CHECK_EQ(sum.inds[2].id, 1);
@@ -109,7 +106,7 @@ TEST_CASE("multivector-arithmetic")
     SUBCASE("noncoincident-term-sum-with-scalar")
     {
         using e1_t = entity<algebra_t, float, 0b1, 0b10>;
-        auto sum   = evaluate<e1_t>{}([](auto v) { return frac<2> + v; });
+        auto sum   = evaluate<e1_t>::ie([](auto v) { return 2 + v; });
         CHECK_EQ(sum.inds[0].id, 0);
         CHECK_EQ(sum.inds[1].id, 1);
         CHECK_EQ(sum.mons[0].q.num, 2);
@@ -133,7 +130,7 @@ TEST_CASE("multivector-arithmetic")
 
 struct sm
 {
-    constexpr static uint8_t dimension = 1;
+    constexpr static elem_t dimension = 1;
 };
 
 // Simple algebra that operates only on scalar quantities
@@ -141,7 +138,7 @@ struct sa
 {
     using metric_t = sm;
 
-    [[nodiscard]] constexpr static std::pair<uint8_t, int> product(uint8_t g1, uint8_t g2)
+    [[nodiscard]] constexpr static std::pair<elem_t, int> product(elem_t g1, elem_t g2)
     {
         return {0, 1};
     }
@@ -153,18 +150,14 @@ TEST_CASE("polynomial-expansion")
 {
     SUBCASE("binomial-expansion")
     {
-        mv<sa, 2, 2, 1> b1{
-            mv_size{2, 2, 1},
-            {ind{0, 1}, ind{1, 2}},
-            {mon{one, one, 1, 0}, mon{one, rat{2}, 1, 1}},
-            {term{2, 0, 0}}
-        };
-        mv<sa, 2, 2, 1> b2{
-            mv_size{2, 2, 1},
-            {ind{2, 1}, ind{3, 1}},
-            {mon{one, one, 1, 0}, mon{one, one, 1, 1}},
-            {term{2, 0, 0}}
-        };
+        mv<sa, 2, 2, 1> b1{mv_size{2, 2, 1},
+                           {ind{0, 1}, ind{1, 2}},
+                           {mon{one, one, 1, 0}, mon{one, rat{2}, 1, 1}},
+                           {term{2, 0, 0}}};
+        mv<sa, 2, 2, 1> b2{mv_size{2, 2, 1},
+                           {ind{2, 1}, ind{3, 1}},
+                           {mon{one, one, 1, 0}, mon{one, one, 1, 1}},
+                           {term{2, 0, 0}}};
         auto b12 = product(sa{}, b1, b2);
         CHECK_EQ(b12.size.term, 1);
         CHECK_EQ(b12.size.mon, 4);
@@ -191,18 +184,14 @@ TEST_CASE("polynomial-expansion")
 
     SUBCASE("difference-of-squares")
     {
-        mv<sa, 2, 2, 1> b1{
-            mv_size{2, 2, 1},
-            {ind{0, 1}, ind{1, 1}},
-            {mon{one, one, 1, 0}, mon{one, one, 1, 1}},
-            {term{2, 0, 0}}
-        };
-        mv<sa, 2, 2, 1> b2{
-            mv_size{2, 2, 1},
-            {ind{0, 1}, ind{1, 1}},
-            {mon{one, one, 1, 0}, mon{minus_one, one, 1, 1}},
-            {term{2, 0, 0}}
-        };
+        mv<sa, 2, 2, 1> b1{mv_size{2, 2, 1},
+                           {ind{0, 1}, ind{1, 1}},
+                           {mon{one, one, 1, 0}, mon{one, one, 1, 1}},
+                           {term{2, 0, 0}}};
+        mv<sa, 2, 2, 1> b2{mv_size{2, 2, 1},
+                           {ind{0, 1}, ind{1, 1}},
+                           {mon{one, one, 1, 0}, mon{minus_one, one, 1, 1}},
+                           {term{2, 0, 0}}};
         auto b12 = product(sa{}, b1, b2);
         CHECK_EQ(b12.size.term, 1);
         CHECK_EQ(b12.size.mon, 2);
@@ -221,18 +210,9 @@ TEST_CASE("polynomial-expansion")
 
     SUBCASE("monomial-term-cancellation")
     {
-        mv<sa, 1, 1, 1> m1{
-            mv_size{1, 1, 1},
-            {ind{0, 1}},
-            {mon{one, one, 1, 0}},
-            {term{1, 0, 0}}
-        };
+        mv<sa, 1, 1, 1> m1{mv_size{1, 1, 1}, {ind{0, 1}}, {mon{one, one, 1, 0}}, {term{1, 0, 0}}};
         mv<sa, 1, 1, 1> m2{
-            mv_size{1, 1, 1},
-            {ind{0, -1}},
-            {mon{one, minus_one, 1, 0}},
-            {term{1, 0, 0}}
-        };
+            mv_size{1, 1, 1}, {ind{0, -1}}, {mon{one, minus_one, 1, 0}}, {term{1, 0, 0}}};
         auto m12 = product(sa{}, m1, m2);
         CHECK_EQ(m12.size.term, 1);
         CHECK_EQ(m12.size.mon, 1);
@@ -247,18 +227,8 @@ TEST_CASE("polynomial-expansion")
 
     SUBCASE("monomial-term-multiplication")
     {
-        mv<sa, 1, 1, 1> m1{
-            mv_size{1, 1, 1},
-            {ind{1, 1}},
-            {mon{one, one, 1, 0}},
-            {term{1, 0, 0}}
-        };
-        mv<sa, 1, 1, 1> m2{
-            mv_size{1, 1, 1},
-            {ind{1, 2}},
-            {mon{one, rat{2}, 1, 0}},
-            {term{1, 0, 0}}
-        };
+        mv<sa, 1, 1, 1> m1{mv_size{1, 1, 1}, {ind{1, 1}}, {mon{one, one, 1, 0}}, {term{1, 0, 0}}};
+        mv<sa, 1, 1, 1> m2{mv_size{1, 1, 1}, {ind{1, 2}}, {mon{one, rat{2}, 1, 0}}, {term{1, 0, 0}}};
         auto m12 = product(sa{}, m1, m2);
         CHECK_EQ(m12.size.term, 1);
         CHECK_EQ(m12.size.mon, 1);
@@ -272,6 +242,13 @@ TEST_CASE("polynomial-expansion")
         CHECK_EQ(m12.terms[0].count, 1);
         CHECK_EQ(m12.terms[0].mon_offset, 0);
     }
+}
+
+TEST_CASE("scalar-division")
+{
+    mv<sa, 1, 1, 1> m1{mv_size{1, 1, 1}, {ind{1, 1}}, {mon{one, one, 1, 0}}, {term{1, 0, 0}}};
+    mv<sa, 1, 1, 1> m2{mv_size{1, 1, 1}, {ind{1, 2}}, {mon{one, rat{2}, 1, 0}}, {term{1, 0, 0}}};
+    auto m12 = gal::detail::divide(m1, m2, one);
 }
 
 TEST_SUITE_END();

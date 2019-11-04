@@ -143,7 +143,7 @@ The binary operations supported in the compute lambda are as follows:
 `|` | \(a \cdot b\) | The symmetric inner product
 `%` | \(ba \tilde b\) | The sandwich operator
 `+` | \(a + b\) | Multivector sum
-`-` | \(a + b\) | Multivector difference
+`-` | \(a - b\) | Multivector difference
 `scalar_product` | \(\langle ab\rangle_0\) | Scalar product
 
 !!! bug "Be mindful of operator precedence!"
@@ -155,7 +155,7 @@ And the following table describes the unary operations
 --- | --- | ---
 `~` | \(\tilde a\) | Reversion
 `!` | \(a^*\) | The Poincare dual map
-`-` | \(a + b\) | Multivector negation
+`-` | \(-a\) | Multivector negation
 `extract<uint8_t... E>(a)` | \(\Sigma_{\{i \in E\}} a_i\) | Extract a specified set of components into a new multivector
 
 Generally, the operations above work with multivectors, The main exception is the use of `+`, `-`, `*`, and `/` in order to shift or scale a multivector by a compile-time constant. For this, one (and at most one) of the operands must be of type `frac<int, int>`. For example `frac<1, 2> * a` would divide the multivector `a` by 2. Equivalently, this could be done with `a / frac<2>` as you would expect (the denominator defaults to 1).

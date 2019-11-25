@@ -137,30 +137,7 @@ namespace detail
         width_t refs        = 0;
         width_t final_index = 0;
         bool required       = false;
-        bool written        = false;
     };
-
-    template <typename A, width_t C>
-    constexpr bool compare_se(rpne<A, C> const& exp, cse const& lhs, cse const& rhs) noexcept
-    {
-        if (lhs.crc != rhs.crc || lhs.count != rhs.count)
-        {
-            return false;
-        }
-
-        for (width_t i = 0; i != lhs.count; ++i)
-        {
-            auto const& lhs_n = exp.nodes[lhs.offset + i];
-            auto const& rhs_n = exp.nodes[rhs.offset + i];
-
-            if (lhs_n != rhs_n)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
     template <width_t C>
     struct cses
@@ -168,6 +145,62 @@ namespace detail
         cse ses[C];
         width_t count = 0;
     };
+
+    template <typename A, width_t C>
+    constexpr bool
+    compare_se(cses<C> const& known, rpne<A, C> const& exp, cse const& lhs, cse const& rhs) noexcept
+    {
+        if (lhs.crc != rhs.crc || lhs.count != rhs.count)
+        {
+            return false;
+        }
+
+        for (width_t i = 0; i != lhs.count;)
+        {
+            node const* lhs_n = &exp.nodes[lhs.offset + i];
+            node const* rhs_n = &exp.nodes[rhs.offset + i];
+
+            if (lhs_n->o == op_cse && rhs_n->o == op_cse)
+            {
+                if (lhs_n->ex == rhs_n->ex)
+                {
+                    i = lhs_n->checksum - lhs.offset;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (lhs_n->o == op_cse)
+                {
+                    while (lhs_n->o == op_cse)
+                    {
+                        width_t offset = known.ses[lhs_n->ex].offset;
+                        lhs_n          = &exp.nodes[offset];
+                    }
+                }
+
+                if (rhs_n->o == op_cse)
+                {
+                    while (rhs_n->o == op_cse)
+                    {
+                        width_t offset = known.ses[rhs_n->ex].offset;
+                        rhs_n          = &exp.nodes[offset];
+                    }
+                }
+
+                if (*lhs_n != *rhs_n)
+                {
+                    return false;
+                }
+                ++i;
+            }
+        }
+
+        return true;
+    }
 
     // Given a subexpression, increment its counter if it was registered previously. Otherwise,
     // append it.
@@ -179,11 +212,11 @@ namespace detail
                                   width_t count,
                                   bool required) noexcept
     {
-        cse next{crc, offset, count, 1, 0, required, false};
+        cse next{crc, offset, count, 1, 0, required};
         for (width_t i = 0; i != known.count; ++i)
         {
             auto& known_se = known.ses[i];
-            if (compare_se(exp, known_se, next))
+            if (compare_se(known, exp, known_se, next))
             {
                 ++known_se.refs;
                 known_se.required = required || known_se.required;
@@ -235,7 +268,7 @@ namespace detail
                 width_t se_i = register_se(expr, known, n.checksum, offset, i - offset + 1, false);
                 if (se_i > 0)
                 {
-                    node const& prev = expr.nodes[i - 1];
+                    node const& prev = expr.nodes[offset];
                     if (prev.o == op_cse)
                     {
                         --known.ses[prev.ex].refs;
@@ -256,18 +289,23 @@ namespace detail
             }
             case op_div: {
                 // Division requires its second operand to be extracted.
-                node const& prev = expr.nodes[i - 1];
-                if (prev.o == op_comp)
+
+                // Mark the last known se as required IF
+                // 1. The prior se is not a constant AND
+                // 2. The prior se is not a cse
+
+                if (i > 2)
                 {
-                    node const& pprev = expr.nodes[i - 2];
-                    if (pprev.o > op_cse && pprev.o < c_zero)
+                    width_t last_offset = offsets.peek();
+                    node const& prev    = expr.nodes[last_offset];
+                    if (last_offset == i - 2 && expr.nodes[i - 1].o != op_comp)
                     {
                         known.ses[known.count - 1].required = true;
                     }
-                }
-                else if (prev.o > op_cse && prev.o < c_zero)
-                {
-                    known.ses[known.count - 1].required = true;
+                    else if (last_offset < i - 2 && prev.o != op_cse && prev.checksum != i)
+                    {
+                        known.ses[known.count - 1].required = true;
+                    }
                 }
 
                 offsets.pop();
@@ -295,23 +333,23 @@ namespace detail
             case op_exp:
                 // fallthrough
             case op_log: {
+                width_t offset = offsets.peek();
+
                 // Check if the argument has been extracted. If not, mark it as required.
-                node const& prev = expr.nodes[i - 1];
-                if (prev.o == op_comp)
+                if (i > 2)
                 {
-                    node const& pprev = expr.nodes[i - 2];
-                    if (pprev.o > op_cse && pprev.o < c_zero)
+                    node const& prev = expr.nodes[offset];
+                    if (offset == i - 2 && expr.nodes[i - 1].o != op_comp)
+                    {
+                        known.ses[known.count - 1].required = true;
+                    }
+                    else if (offset < i - 2 && !(prev.o == op_cse && prev.checksum == i))
                     {
                         known.ses[known.count - 1].required = true;
                     }
                 }
-                else if (prev.o > op_cse && prev.o < c_zero)
-                {
-                    known.ses[known.count - 1].required = true;
-                }
 
-                width_t offset = offsets.peek();
-                width_t se_i   = register_se(expr, known, n.checksum, offset, i - offset + 1, true);
+                width_t se_i = register_se(expr, known, n.checksum, offset, i - offset + 1, true);
                 if (se_i > 0)
                 {
                     // Unlike the unary and polyadic ops, we don't decrement the ref count of a
@@ -332,31 +370,22 @@ namespace detail
             case op_lc:
                 // fallthrough
             case op_sip: {
-                offsets.pop();
-                width_t offset = offsets.peek();
+                width_t last_offset = offsets.pop();
+                width_t offset      = offsets.peek();
                 width_t se_i = register_se(expr, known, n.checksum, offset, i - offset + 1, false);
                 if (se_i > 0)
                 {
                     // If this binary op produces a common subexpression, decrement the ref count of
                     // its argument subexpressions
-                    node& second = expr.nodes[i - 1];
-                    if (second.o == op_sum || second.o == op_ep)
-                    {
-                        // Node just before the first op_se constituent
-                        node& first = expr.nodes[i - 1 - second.q.den];
-                        if (first.o == op_cse)
-                        {
-                            --known.ses[first.ex].refs;
-                        }
-                    }
-                    else if (second.o == op_cse)
+                    node& second = expr.nodes[last_offset];
+                    if (second.o == op_cse)
                     {
                         --known.ses[second.ex].refs;
-                        node& first = expr.nodes[i - 2];
-                        if (first.o == op_cse)
-                        {
-                            --known.ses[first.ex].refs;
-                        }
+                    }
+                    node& first = expr.nodes[offset];
+                    if (first.o == op_cse)
+                    {
+                        --known.ses[first.ex].refs;
                     }
 
                     node& ref    = expr.nodes[offset];

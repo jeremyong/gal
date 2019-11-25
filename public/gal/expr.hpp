@@ -1143,6 +1143,10 @@ std::string to_string(detail::rpne<A, S> const& in, bool show_checksums = false,
     std::stringstream str;
 
     str << in.count << " node(s): " << in.q.num << '/' << in.q.den << '*';
+    if (index)
+    {
+        str << '\n';
+    }
     for (width_t i = 0; i != in.count; ++i)
     {
         if (index)

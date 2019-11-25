@@ -50,7 +50,7 @@ constexpr auto circle(T t, T r, Line l)
 template <typename T, typename Line>
 constexpr auto torus(T s, T t, T r1, Line l1, T r2, Line l2)
 {
-    return circle(s, r2, l2) * circle(t, r1, l1);
+    return circle(s, r1, l1) * circle(t, r2, l2);
 }
 
 using sc = scalar<pga_algebra, float>;
@@ -121,6 +121,9 @@ TEST_CASE("point-rotation")
         },
         p1,
         a);
+    CHECK_EQ(p2.x, doctest::Approx(0));
+    CHECK_EQ(p2.y, doctest::Approx(-1));
+    CHECK_EQ(p2.z, doctest::Approx(0));
 }
 
 TEST_CASE("torus-construction")
@@ -134,7 +137,7 @@ TEST_CASE("torus-construction")
         auto to = torus(s, t, r1, 1_e12, r2, 1_e13);
         return to * 1_e123 * ~to;
     });
-    printf("torus exp: %s\n", to_string(rpn).c_str());
+    printf("torus exp: %s\n", to_string(rpn, true, true).c_str());
 
     point<> p = compute(
         [](auto s, auto t, auto r1, auto r2) {
@@ -145,6 +148,7 @@ TEST_CASE("torus-construction")
         t,
         r1,
         r2);
+    printf("torus point: (%f, %f, %f)\n", p.x, p.y, p.z);
 }
 
 TEST_CASE("incidence")

@@ -339,7 +339,7 @@ namespace detail
         rat q = one;
 
         template <typename A>
-        constexpr operator rpne<A, 1>() const noexcept
+        constexpr rpne<A, 1> convert() const noexcept
         {
             return {{node{c_pi, c_pi}}, 1, q};
         }
@@ -753,13 +753,13 @@ constexpr auto operator/(detail::rpne<A, S1> const& lhs, detail::rpne<A, S2> con
 template <typename A, width_t S>
 constexpr auto operator/(detail::rpne_constant const& lhs, detail::rpne<A, S> const& rhs)
 {
-    return static_cast<detail::rpne<A, 1>>(lhs) / rhs;
+    return lhs.template convert<A>() / rhs;
 }
 
 template <typename A, width_t S>
 constexpr auto operator/(detail::rpne<A, S> const& lhs, detail::rpne_constant const& rhs)
 {
-    return lhs / static_cast<detail::rpne<A, 1>>(rhs);
+    return lhs / rhs.template convert<A>();
 }
 
 template <typename A, width_t S>
@@ -921,13 +921,13 @@ constexpr auto operator*(detail::rpne<A, S1> const& lhs, detail::rpne<A, S2> con
 template <typename A, width_t S>
 constexpr auto operator*(detail::rpne<A, S> const& lhs, detail::rpne_constant const& rhs)
 {
-    return lhs * static_cast<detail::rpne<A, 1>>(rhs);
+    return lhs * rhs.template convert<A>();
 }
 
 template <typename A, width_t S>
 constexpr auto operator*(detail::rpne_constant const& lhs, detail::rpne<A, S> const& rhs)
 {
-    return rhs * static_cast<detail::rpne<A, 1>>(lhs);
+    return rhs * lhs.template convert<A>();
 }
 
 template <typename A, width_t S1, width_t S2>

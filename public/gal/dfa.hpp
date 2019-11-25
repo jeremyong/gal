@@ -839,7 +839,7 @@ namespace detail
             {
                 mv<algebra_t, 1, 1, 1> c{mv_size{1, 1, 1},
                                          {ind{n.o - c_const_start + ind_constant_start, one}},
-                                         {mon{one, one, 0, 0}},
+                                         {mon{one, one, 1, 0}},
                                          {term{1, 0, 0}}};
                 return rpn_state{State.inputs,
                                  State.temps,

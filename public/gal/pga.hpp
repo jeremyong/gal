@@ -88,13 +88,13 @@ namespace pga
 
     constexpr detail::rpne<pga_algebra, 1> operator"" _e013(unsigned long long n)
     {
-        uint32_t op = detail::c_scalar + 0b1101;
+        uint32_t op = detail::c_scalar + 0b1011;
         return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
     }
 
     constexpr detail::rpne<pga_algebra, 1> operator"" _e023(unsigned long long n)
     {
-        uint32_t op = detail::c_scalar + 0b1011;
+        uint32_t op = detail::c_scalar + 0b1101;
         return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
     }
 
@@ -400,18 +400,18 @@ namespace pga
         {
             return {mv_size{3, 4, 4},
                     {
-                        ind{id + 2, one}, // z
-                        ind{id + 1, one}, // -y
-                        ind{id, one}      // x
+                        ind{id + 2, one}, // -z
+                        ind{id + 1, one}, // y
+                        ind{id, one}      // -x
                     },
-                    {mon{one, one, 1, 0},       // z
-                     mon{minus_one, one, 1, 1}, // -y
-                     mon{one, one, 1, 2},       // x
+                    {mon{minus_one, one, 1, 0}, // -z
+                     mon{one, one, 1, 1},       // y
+                     mon{minus_one, one, 1, 2}, // -x
                      mon{one, zero, 0, 0}},
                     {
-                        term{1, 0, 0b111},  // z * e012
-                        term{1, 1, 0b1011}, // -y * e013
-                        term{1, 2, 0b1101}, // x * e023
+                        term{1, 0, 0b111},  // -z * e012
+                        term{1, 1, 0b1011}, // y * e013
+                        term{1, 2, 0b1101}, // -x * e023
                         term{1, 3, 0b1110}  // e123
                     }};
         }
@@ -432,9 +432,9 @@ namespace pga
             : data{in.template select<0b1101, 0b1011, 0b111>()}
         {
             auto w_inv = T{1} / in.template select<0b1110>();
-            z *= w_inv;
-            y *= -w_inv;
-            x *= w_inv;
+            z *= -w_inv;
+            y *= w_inv;
+            x *= -w_inv;
         }
 
         [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept

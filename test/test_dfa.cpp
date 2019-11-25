@@ -376,4 +376,23 @@ TEST_CASE("scalar-division")
     }
 }
 
+TEST_CASE("special-constant-evaluation")
+{
+    using sc = gal::scalar<gal::pga::pga_algebra, float>;
+    sc s{2.0f};
+    auto rpn = evaluate<sc>::rpnf_reshaped([](auto s) { return s * gal::PI; });
+    std::printf("2 * pi: %s\n", gal::to_string(rpn).c_str());
+
+    auto ie = evaluate<sc>::ie_reshaped([](auto s) { return s * gal::PI; });
+
+    auto two_pi = compute([](auto s) { return gal::PI * s; }, s);
+    CHECK_EQ(two_pi[0], doctest::Approx(2.0 * M_PI));
+
+    auto sin_34_pi = compute([](auto s) { return sin(3 * gal::PI * s / 4); }, s);
+    CHECK_EQ(sin_34_pi[0], doctest::Approx(-1));
+
+    auto foo = compute([](auto s) { return cos(3 * gal::PI * s / 4) + sin(3 * gal::PI * s / 4); }, s);
+    CHECK_EQ(foo[0], doctest::Approx(-1));
+}
+
 TEST_SUITE_END();

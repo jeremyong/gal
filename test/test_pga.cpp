@@ -62,7 +62,7 @@ TEST_CASE("point-translation")
     point<> p1{0, 0, 0};
     point<> p2 = compute(
         [](auto p, auto d) {
-            auto t = ::translator(d, 1_e01);
+            auto t = ::translator(d, -1_e01);
             return t * p * ~t;
         },
         p1,
@@ -106,6 +106,7 @@ TEST_CASE("point-rotation")
             return r;
         },
         a);
+    printf("rotor: %s\n", to_string(r).c_str());
     auto r1 = compute(
         [](auto a) {
             auto r = ::rotor(a, 1_e12);
@@ -126,10 +127,84 @@ TEST_CASE("point-rotation")
     CHECK_EQ(p2.z, doctest::Approx(0));
 }
 
+TEST_CASE("line-rotation")
+{
+    sc a{M_PI / 2.0};
+    auto l1 = compute([](auto a) { return 1_e123 & 1_e023; }, a);
+    printf("line: %s\n", to_string(l1).c_str());
+    auto l = compute(
+        [](auto a) {
+            auto r    = ::rotor(a, 1_e12);
+            auto orig = 1_e123;
+            auto line = orig & (1_e123 - 1_e023);
+            return r * line * ~r;
+        },
+        a);
+    printf("rotated-line: %s\n", to_string(l).c_str());
+    CHECK_EQ(l[0], doctest::Approx(1.0));
+    CHECK_EQ(l[1], doctest::Approx(0.0));
+}
+
+TEST_CASE("plane-rotation")
+{
+    sc a{M_PI / 2.0};
+    plane<> p{-3, 2, 0, 1};
+    auto p1 = compute(
+        [](auto a, auto p) {
+            auto r = ::rotor(a, 1_e12);
+            return r * p * ~r;
+        },
+        a,
+        p);
+    printf("rotated-plane: %s\n", to_string(p1).c_str());
+    CHECK_EQ(p1[0], doctest::Approx(-3));
+    CHECK_EQ(p1[1], doctest::Approx(0));
+    CHECK_EQ(p1[2], doctest::Approx(-2));
+    CHECK_EQ(p1[3], doctest::Approx(1));
+}
+
+TEST_CASE("circle-construction")
+{
+    sc radius{1.0f};
+    sc z{0.0f};
+    auto rpn = evaluate<sc, sc>::rpnf_reshaped([](auto a, auto r) {
+        auto rr = cos(2 * PI * a / 2) + sin(2 * PI * a / 2) * normalized_line(1_e12);
+        return rr * (1 + r * 1_e12 / 2);
+    });
+    printf("circle rpn: %s\n", to_string(rpn).c_str());
+    auto ie = evaluate<sc, sc>::ie_reshaped([](auto a, auto r) {
+        auto rr = cos(2 * PI * a / 2) + sin(2 * PI * a / 2) * normalized_line(1_e12);
+        return rr * (1 + r * 1_e12 / 2);
+    });
+    printf("\nCircle:\n");
+    for (int i = 0; i != 10; ++i)
+    {
+        sc a{static_cast<float>(i) * 0.1f};
+        auto p = compute(
+            [](auto a, auto r) {
+                auto rr = cos(2 * PI * a / 2) + sin(2 * PI * a / 2) * normalized_line(1_e12);
+                // auto tt = 1 + r / 2 * 1_e12;
+                // auto c  = rr * tt;
+                // auto c  = circle(a, r, 1_e12);
+                // return c * 1_e123;
+                // return c;
+                // return rr * (1 + r * 1_e12);
+                // return (cos(2 * PI * a / 2) + sin(2 * PI * a / 2) * 1_e12) * (1 + r * 1_e12);
+                return rr * (1 + r * 1_e12 / 2);
+            },
+            a,
+            radius);
+        printf("c-point: %s\n", to_string(p).c_str());
+    }
+    printf("\n");
+}
+
 TEST_CASE("torus-construction")
 {
-    sc s{.2};
-    sc t{.3};
+    // sc s{.2};
+    // sc t{.3};
+    sc ss{0};
+    sc tt{0};
     sc r1{0.25};
     sc r2{0.6};
 
@@ -137,18 +212,18 @@ TEST_CASE("torus-construction")
         auto to = torus(s, t, r1, 1_e12, r2, 1_e13);
         return to * 1_e123 * ~to;
     });
-    printf("torus exp: %s\n", to_string(rpn, true, true).c_str());
+    printf("torus exp: %s\n", to_string(rpn, false, false).c_str());
 
-    point<> p = compute(
+    auto p = compute(
         [](auto s, auto t, auto r1, auto r2) {
             auto to = torus(s, t, r1, 1_e12, r2, 1_e13);
             return to * 1_e123 * ~to;
         },
-        s,
-        t,
+        ss,
+        tt,
         r1,
         r2);
-    printf("torus point: (%f, %f, %f)\n", p.x, p.y, p.z);
+    printf("torus point: %s\n", to_string(p).c_str());
 }
 
 TEST_CASE("incidence")

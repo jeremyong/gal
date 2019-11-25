@@ -378,7 +378,7 @@ struct evaluate
         constexpr static auto id_count   = detail::rpn_id_count(rpn);
         constexpr static auto reshaped   = detail::rpn_reshape(rpn);
         constexpr static auto flattened
-            = detail::rpn_ids(rpn, std::integral_constant<width_t, id_count>{});
+            = detail::rpn_ids(reshaped, std::integral_constant<width_t, id_count>{});
         constexpr static auto ids     = flattened.first;
         constexpr static auto indices = flattened.second;
         constexpr static auto inputs
@@ -407,17 +407,17 @@ static inline auto compute(L lambda, Data const&... input) noexcept
     constexpr static auto expression = std::apply(lambda, entities.first);
     constexpr static auto rpn        = detail::rpne_concat<expression>();
 
-    constexpr static auto id_count = detail::rpn_id_count(rpn);
+    // Extract common subexpressions and dependent args.
+    constexpr static auto reshaped  = detail::rpn_reshape(rpn);
+    constexpr static V scale_factor = static_cast<V>(reshaped.q);
+
+    constexpr static auto id_count = detail::rpn_id_count(reshaped);
     constexpr static auto flattened
-        = detail::rpn_ids(rpn, std::integral_constant<width_t, id_count>{});
+        = detail::rpn_ids(reshaped, std::integral_constant<width_t, id_count>{});
     constexpr static auto ids     = flattened.first;
     constexpr static auto indices = flattened.second;
     constexpr static auto inputs
         = detail::rpn_inputs<A, ids, indices, Data...>{}(std::make_index_sequence<ids.size()>{});
-
-    // Extract common subexpressions and dependent args.
-    constexpr static auto reshaped  = detail::rpn_reshape(rpn);
-    constexpr static V scale_factor = static_cast<V>(reshaped.q);
 
     // The inputs are now multivector ies.
     constexpr static detail::rpn_state input_state{

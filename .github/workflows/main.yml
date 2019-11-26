@@ -1,0 +1,17 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build-windows:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: configure
+      run: cmake . -DGAL_SAMPLES_ENABLED=off -DGAL_TEST_IK_ENABLED=off
+    - name: build
+      run: cmake --build .
+    - name: test
+      run: ctest

@@ -9,19 +9,19 @@ using namespace gal;
 
 TEST_CASE("shift")
 {
-    auto rpn = gal::evaluate<plane<>>::rpnf([](auto p) { return 1 + p; });
+    auto rpn = evaluate<plane<>>::rpnf([](auto p) { return 1 + p; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
     CHECK_EQ(rpn.count, 5);
     CHECK_EQ(rpn.nodes[3].o, detail::c_scalar);
     CHECK_EQ(rpn.nodes[2].q.num, 1);
     CHECK_EQ(rpn.nodes[2].q.den, 1);
 
-    auto rpn2 = gal::evaluate<plane<>>::rpnf([](auto p) { return 1 + p + 2; });
+    auto rpn2 = evaluate<plane<>>::rpnf([](auto p) { return 1 + p + 2; });
     printf("%s\n", ::gal::to_string(rpn2).c_str());
     CHECK_EQ(rpn2.nodes[3].o, detail::c_scalar);
     CHECK_EQ(rpn2.nodes[2].q.num, 3);
     CHECK_EQ(rpn2.nodes[2].q.den, 1);
-    auto rpn3 = gal::evaluate<plane<>>::rpnf([](auto p) { return 1 + 2 * p - 1; });
+    auto rpn3 = evaluate<plane<>>::rpnf([](auto p) { return 1 + 2 * p - 1; });
     printf("%s\n", ::gal::to_string(rpn3).c_str());
     CHECK_EQ(rpn3.count, 1);
     CHECK_EQ(rpn3.q.num, 2);
@@ -29,7 +29,7 @@ TEST_CASE("shift")
 
 TEST_CASE("scale")
 {
-    auto rpn = gal::evaluate<plane<>>::rpnf([](auto p) { return 2 * p / 3; });
+    auto rpn = evaluate<plane<>>::rpnf([](auto p) { return 2 * p / 3; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
     CHECK_EQ(rpn.q.num, 2);
     CHECK_EQ(rpn.q.den, 3);
@@ -37,7 +37,7 @@ TEST_CASE("scale")
 
 TEST_CASE("sum-dependent")
 {
-    auto rpn = gal::evaluate<plane<>>::rpnf([](auto p) { return p / 3 + 2 * p / 3; });
+    auto rpn = evaluate<plane<>>::rpnf([](auto p) { return p / 3 + 2 * p / 3; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
     CHECK_EQ(rpn.count, 1);
     CHECK_EQ(rpn.q.num, 1);
@@ -48,9 +48,9 @@ TEST_CASE("sum-dependent")
 
 TEST_CASE("sum-independent")
 {
-    auto rpn = gal::evaluate<plane<>, plane<>>::rpnf([](auto p1, auto p2) { return p1 / 3 + p2; });
+    auto rpn = evaluate<plane<>, plane<>>::rpnf([](auto p1, auto p2) { return p1 / 3 + p2; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
-    auto rpn2 = gal::evaluate<plane<>, plane<>, plane<>, plane<>>{}.rpnf(
+    auto rpn2 = evaluate<plane<>, plane<>, plane<>, plane<>>{}.rpnf(
         [](auto p1, auto p2, auto p3, auto p4) { return p1 + p2 + p3 + p4; });
     printf("%s\n", ::gal::to_string(rpn2).c_str());
     CHECK_EQ(rpn2.count, 9);
@@ -58,26 +58,26 @@ TEST_CASE("sum-independent")
 
 TEST_CASE("sum-cancellation")
 {
-    auto rpn = gal::evaluate<plane<>>::rpnf([](auto p) { return p - p; });
+    auto rpn = evaluate<plane<>>::rpnf([](auto p) { return p - p; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
 }
 
 TEST_CASE("unary-ops")
 {
-    auto rpn = gal::evaluate<plane<>>::rpnf([](auto p) { return !p; });
+    auto rpn = evaluate<plane<>>::rpnf([](auto p) { return !p; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
     CHECK_EQ(rpn.count, 2);
-    rpn = gal::evaluate<plane<>>::rpnf([](auto p) { return ~p; });
+    rpn = evaluate<plane<>>::rpnf([](auto p) { return ~p; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
-    auto rpn2 = gal::evaluate<plane<>>::rpnf([](auto p) { return ~~p; });
+    auto rpn2 = evaluate<plane<>>::rpnf([](auto p) { return ~~p; });
     printf("%s\n", ::gal::to_string(rpn2).c_str());
     CHECK_EQ(rpn2.count, 1);
 }
 
 TEST_CASE("geometric-product")
 {
-    auto rpn  = gal::evaluate<plane<>, plane<>>::rpnf([](auto p1, auto p2) { return p1 * p2; });
-    auto rpn1 = gal::evaluate<plane<>, plane<>>::rpnf([](auto p1, auto p2) { return p2 * p1; });
+    auto rpn  = evaluate<plane<>, plane<>>::rpnf([](auto p1, auto p2) { return p1 * p2; });
+    auto rpn1 = evaluate<plane<>, plane<>>::rpnf([](auto p1, auto p2) { return p2 * p1; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
     printf("%s\n", ::gal::to_string(rpn1).c_str());
     // // The geometric product does not commute in general
@@ -86,26 +86,26 @@ TEST_CASE("geometric-product")
 
 TEST_CASE("exterior-product")
 {
-    auto rpn = gal::evaluate<plane<>>::rpnf([](auto p) { return p ^ p; });
+    auto rpn = evaluate<plane<>>::rpnf([](auto p) { return p ^ p; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
-    auto rpn1 = gal::evaluate<plane<>, line<>>::rpnf([](auto p, auto l) { return p ^ l; });
+    auto rpn1 = evaluate<plane<>, line<>>::rpnf([](auto p, auto l) { return p ^ l; });
     printf("%s\n", ::gal::to_string(rpn1).c_str());
 }
 
 TEST_CASE("regressive-product")
 {
-    auto rpn = gal::evaluate<gal::pga::point<>, gal::pga::line<>>::rpnf(
-        [](auto p, auto l) { return p & l; });
+    auto rpn
+        = evaluate<gal::pga::point<>, gal::pga::line<>>::rpnf([](auto p, auto l) { return p & l; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
 }
 
 TEST_CASE("left-contraction")
 {
-    auto rpn = gal::evaluate<gal::pga::point<>, gal::pga::line<>>::rpnf(
-        [](auto p, auto l) { return p >> l; });
+    auto rpn
+        = evaluate<gal::pga::point<>, gal::pga::line<>>::rpnf([](auto p, auto l) { return p >> l; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
-    auto rpn1 = gal::evaluate<gal::pga::point<>, gal::pga::line<>>::rpnf(
-        [](auto p, auto l) { return l >> p; });
+    auto rpn1
+        = evaluate<gal::pga::point<>, gal::pga::line<>>::rpnf([](auto p, auto l) { return l >> p; });
     printf("%s\n", ::gal::to_string(rpn1).c_str());
     // // The left contraction doesn't commute
     CHECK_NE(rpn.back().checksum, rpn1.back().checksum);
@@ -113,7 +113,7 @@ TEST_CASE("left-contraction")
 
 TEST_CASE("various-cancellations")
 {
-    auto rpn = gal::evaluate<gal::pga::point<>, gal::pga::plane<>>::rpnf([](auto point, auto plane) {
+    auto rpn = evaluate<gal::pga::point<>, gal::pga::plane<>>::rpnf([](auto point, auto plane) {
         return (-1 + 2 * point + 1)
                ^ (2 * plane + 3 * plane * point + point + 2 * plane - plane
                   - 3 * (plane * point + plane));
@@ -123,10 +123,10 @@ TEST_CASE("various-cancellations")
 
 TEST_CASE("multivector-construction")
 {
-    auto rpn = gal::evaluate<gal::pga::point<>>::rpnf([](auto p) { return 1 + 2_e1; });
+    auto rpn = evaluate<gal::pga::point<>>::rpnf([](auto p) { return 1 + 2_e1; });
     printf("%s\n", ::gal::to_string(rpn).c_str());
 
-    auto mv = gal::evaluate<gal::pga::point<>>::ie([](auto p) { return 1 + 2_e1; });
+    auto mv = evaluate<gal::pga::point<>>::ie([](auto p) { return 1 + 2_e1; });
     CHECK_EQ(mv.size.ind, 0);
     CHECK_EQ(mv.size.mon, 2);
     CHECK_EQ(mv.size.term, 2);
@@ -135,11 +135,11 @@ TEST_CASE("multivector-construction")
     CHECK_EQ(mv.mons[0].q.num, 1);
     CHECK_EQ(mv.mons[1].q.num, 2);
 
-    auto mv2 = gal::evaluate<gal::pga::point<>>::ie([](auto p) { return 2_e1; });
+    auto mv2 = evaluate<gal::pga::point<>>::ie([](auto p) { return 2_e1; });
     // The scaling factor here is left on the outer RPN
     CHECK_EQ(mv2.mons[0].q.num, 1);
 
-    auto mv3 = gal::evaluate<gal::pga::point<>>::ie([](auto p) { return 2_e1 + 3_e0; });
+    auto mv3 = evaluate<gal::pga::point<>>::ie([](auto p) { return 2_e1 + 3_e0; });
     CHECK_EQ(mv3.mons[0].q.num, 3);
     CHECK_EQ(mv3.mons[1].q.num, 2);
 }
@@ -147,14 +147,14 @@ TEST_CASE("multivector-construction")
 TEST_CASE("compound-sum")
 {
     auto mv
-        = gal::evaluate<gal::pga::point<>, gal::pga::point<>, gal::pga::point<>, gal::pga::point<>>::ie(
+        = evaluate<gal::pga::point<>, gal::pga::point<>, gal::pga::point<>, gal::pga::point<>>::ie(
             [](auto p1, auto p2, auto p3, auto p4) { return p1 + p2 * p3 * p4; });
 }
 
 TEST_CASE("compute-simple-expression")
 {
     gal::pga::plane<> p{1, 2, 3, 4};
-    gal::pga::plane<> p1 = gal::compute([](auto p) { return 2 * p; }, p);
+    gal::pga::plane<> p1 = compute([](auto p) { return 2 * p; }, p);
 
     CHECK_EQ(2 * p.d, p1.d);
     CHECK_EQ(2 * p.x, p1.x);
@@ -166,7 +166,7 @@ TEST_CASE("compute-simple-expression")
 TEST_CASE("compute-with-temporary")
 {
     gal::pga::line<> l{1, 2, 3, 4, 5, 6};
-    gal::pga::motor<> m = gal::compute([](auto l) { return gal::exp(l); }, l);
+    gal::pga::motor<> m = compute([](auto l) { return gal::exp(l); }, l);
 
     auto l2 = compute([](auto l) { return ((l | l) + (l ^ l)); }, l);
     auto s  = l2.template select<0>();
@@ -212,7 +212,7 @@ TEST_CASE("rpne-literals")
 TEST_CASE("extract-elements")
 {
     auto rpn = evaluate<gal::pga::line<>>::rpnf([](auto l) { return l[0b1100]; });
-    printf("%s\n", ::gal::to_string(rpn).c_str());
+    printf("extract 0b1100: %s\n", ::gal::to_string(rpn).c_str());
     auto ie = evaluate<gal::pga::line<>>::ie([](auto l) { return l[0b1100]; });
 
     gal::pga::motor<> m{1, 2, 3, 4, 5, 6, 7, 8};
@@ -393,6 +393,26 @@ TEST_CASE("special-constant-evaluation")
 
     auto foo = compute([](auto s) { return cos(3 * gal::PI * s / 4) + sin(3 * gal::PI * s / 4); }, s);
     CHECK_EQ(foo[0], doctest::Approx(-1));
+}
+
+TEST_CASE("grade-selection")
+{
+    using sc = gal::scalar<gal::pga::pga_algebra, float>;
+    sc s{2.0f};
+    auto rpn = evaluate<sc>::rpnf_debug([](auto s) {
+        auto v = 1 + s * 1_e12 + s * 1_e23 + 2_e0123;
+        return v.select_grade(2);
+    });
+    std::printf("grade_select: %s\n", gal::to_string(rpn).c_str());
+    auto result = compute(
+        [](auto s) {
+            auto v = 1 + s * 1_e12 + 3_e03 + 2_e0123;
+            return v.select_grade(2);
+        },
+        s);
+    CHECK_EQ(decltype(result)::size(), 2);
+    CHECK_EQ(result[0], 2.0f);
+    CHECK_EQ(result[1], 3.0f);
 }
 
 TEST_SUITE_END();

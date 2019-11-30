@@ -39,21 +39,20 @@ namespace detail
         // Algebraic ops
         op_rev,  // (04) Reversion
         op_pd,   // (05) Poincare dual
-        op_exp,  // (06) Exponential map
-        op_log,  // (07) Logarithmic map
-        op_sum,  // (08) Sum
-        op_gp,   // (09) Geometric product
-        op_ep,   // (10) Exterior product
-        op_lc,   // (11) Left contraction
-        op_sip,  // (12) Symmetric inner product
-        op_comp, // (13) Extract an individual component as a scalar
-        op_div,  // (14) Division by scalar indeterminant
+        op_sum,  // (06) Sum
+        op_gp,   // (07) Geometric product
+        op_ep,   // (08) Exterior product
+        op_lc,   // (09) Left contraction
+        op_sip,  // (10) Symmetric inner product
+        op_comp, // (11) Extract an individual component as a scalar
+        op_div,  // (12) Division by scalar indeterminant
+        op_grd,  // (13) Select all components that match a particular grade
 
         // Scalar ops (these ops are applied term by term)
-        op_sqrt, // (15) Square root
-        op_sin,  // (16) Sine
-        op_cos,  // (17) Cosine
-        op_tan,  // (18) Tangent
+        op_sqrt, // (14) Square root
+        op_sin,  // (15) Sine
+        op_cos,  // (16) Cosine
+        op_tan,  // (17) Tangent
 
         // Constants
         c_zero = 1 << 16, // multivector that is exactly zero
@@ -65,6 +64,19 @@ namespace detail
                   // c_scalar + E corresponds to the unit constant element E
                   // For example, c_scalar + (1 << (dim - 1)) represents the pseudoscalar
     };
+
+    constexpr bool is_read_op(uint32_t o) noexcept
+    {
+        switch (static_cast<op>(o))
+        {
+        case op_comp:
+        case op_grd:
+            return true;
+        default:
+            break;
+        }
+        return false;
+    }
 
     // RPN node
     struct node
@@ -133,9 +145,17 @@ namespace detail
             out.append(*this);
             // Using operator[] successfully is not expected behavior, so we don't bother computing
             // the checksum in a fancy manner.
-            out.nodes[S] = node{op_comp, back().checksum + e, e};
-            out.count    = S + 1;
-            out.q        = q;
+            out.nodes[out.count++] = node{op_comp, back().checksum + e, e};
+            out.q                  = q;
+            return out;
+        }
+
+        constexpr auto select_grade(elem_t g) noexcept
+        {
+            rpne<A, S + 1> out;
+            out.append(*this);
+            out.nodes[out.count++] = node{op_grd, back().checksum + ~g, g};
+            out.q                  = q;
             return out;
         }
 
@@ -290,6 +310,13 @@ namespace detail
         std::array<rpne<A, 1>, sizeof...(D)> out;
         auto next = rpne_entities<A, sizeof...(D), D...>(out, 0, 0);
         return ::gal::make_pair(out, next);
+    }
+
+    template <typename A>
+    constexpr rpne<A, 1> rpne_pseudoscalar(int n) noexcept
+    {
+        uint32_t op = detail::c_scalar + (1 << A::metric_t::dimension) - 1;
+        return {{detail::node{op, op}}, 1, rat{static_cast<num_t>(n), 1}};
     }
 
     template <typename A>
@@ -520,9 +547,8 @@ constexpr detail::rpne<A, S1 + S2 + 3> operator+(detail::rpne<A, S1> lhs, detail
                     ++summand_count;
                     for (width_t i = 0; i != non_sum_count; ++i)
                     {
-                        out.nodes[out.count + i] = non_sum_nodes[i];
+                        out.nodes[out.count++] = non_sum_nodes[i];
                     }
-                    out.count += non_sum_count;
                 }
                 break;
             }
@@ -558,9 +584,8 @@ constexpr detail::rpne<A, S1 + S2 + 3> operator+(detail::rpne<A, S1> lhs, detail
                         ++summand_count;
                         for (width_t i = 0; i != non_sum_count; ++i)
                         {
-                            out.nodes[out.count + i] = non_sum_nodes[i];
+                            out.nodes[out.count++] = non_sum_nodes[i];
                         }
-                        out.count += non_sum_count;
                         sum_index += 1 + summand.ex;
                     }
                     continue;
@@ -575,9 +600,8 @@ constexpr detail::rpne<A, S1 + S2 + 3> operator+(detail::rpne<A, S1> lhs, detail
                     = detail::node{detail::op_se, non_sum_final.checksum, non_sum_count, non_sum_q};
                 for (width_t i = 0; i != non_sum_count; ++i)
                 {
-                    out.nodes[out.count + i] = non_sum_nodes[i];
+                    out.nodes[out.count++] = non_sum_nodes[i];
                 }
-                out.count += non_sum_count;
             }
             else
             {
@@ -585,10 +609,9 @@ constexpr detail::rpne<A, S1 + S2 + 3> operator+(detail::rpne<A, S1> lhs, detail
                 out.nodes[out.count++].q *= sum_q;
                 for (width_t i = 0; i != summand.ex; ++i)
                 {
-                    out.nodes[out.count + i] = sum_nodes[sum_index + 1 + i];
+                    out.nodes[out.count++] = sum_nodes[sum_index + 1 + i];
                 }
                 sum_index += summand.ex + 1;
-                out.count += summand.ex;
             }
             ++summand_count;
         }
@@ -738,6 +761,18 @@ constexpr auto operator/(detail::rpne<A, S> lhs, int d)
     return lhs;
 }
 
+template <typename A, width_t S>
+constexpr auto operator/(int lhs, detail::rpne<A, S> const& rhs)
+{
+    detail::rpne<A, S + 2> out;
+    out.append(detail::rpne_from_constant<A>(lhs, 1));
+    out.append(rhs);
+    out.append(detail::op_div);
+    out.back().q = rhs.q.reciprocal();
+    out.q        = one;
+    return out;
+}
+
 template <typename A, width_t S1, width_t S2>
 constexpr auto operator/(detail::rpne<A, S1> const& lhs, detail::rpne<A, S2> const& rhs)
 {
@@ -871,22 +906,28 @@ constexpr auto tan(detail::rpne<A, S> const& in)
 template <typename A, width_t S>
 constexpr auto exp(detail::rpne<A, S> const& in)
 {
-    detail::rpne<A, S + 1> out;
-    out.append(in);
-    out.append(detail::op_exp);
-    return out;
+    auto s        = (in | in)[0];
+    auto p        = (in ^ in)[(1 << A::metric_t::dimension) - 1];
+    auto u        = sqrt(-s);
+    auto v        = -p / (2 * u);
+    auto inv_norm = 1 / u + v / s * ::gal::detail::rpne_pseudoscalar<A>(1);
+    auto cosu     = cos(u);
+    auto sinu     = sin(u);
+    auto real     = cosu - v * sinu * ::gal::detail::rpne_pseudoscalar<A>(1);
+    auto ideal    = sinu + v * cosu * ::gal::detail::rpne_pseudoscalar<A>(1);
+    return real + ideal * inv_norm * in;
 }
 
 // Closed-form logarithmic function
 // NOTE: results are *undefined* when the arg is not a member of the even subalgebra
-template <typename A, width_t S>
-constexpr auto log(detail::rpne<A, S> const& in)
-{
-    detail::rpne<A, S + 1> out;
-    out.append(in);
-    out.append(detail::op_log);
-    return out;
-}
+// template <typename A, width_t S>
+// constexpr auto log(detail::rpne<A, S> const& in)
+// {
+//     detail::rpne<A, S + 1> out;
+//     out.append(in);
+//     out.append(detail::op_log);
+//     return out;
+// }
 
 template <typename A, width_t S1, width_t S2>
 constexpr auto operator*(detail::rpne<A, S1> const& lhs, detail::rpne<A, S2> const& rhs)
@@ -1239,28 +1280,11 @@ std::string to_string(detail::rpne<A, S> const& in, bool show_checksums = false,
                 str << "| ";
             }
             break;
-        case op_exp:
-            if (show_checksums)
-            {
-                str << "exp(" << n.checksum << ") ";
-            }
-            else
-            {
-                str << "exp ";
-            }
-            break;
-        case op_log:
-            if (show_checksums)
-            {
-                str << "log(" << n.checksum << ") ";
-            }
-            else
-            {
-                str << "log ";
-            }
-            break;
         case op_comp:
             str << "[" << n.ex << "] ";
+            break;
+        case op_grd:
+            str << '<' << n.ex << "> ";
             break;
         case op_div:
             if (show_checksums)

@@ -14,7 +14,7 @@ add_executable(gal_test
     test_algebra.cpp
     test_algorithm.cpp
     test_cga.cpp
-    test_ega.cpp
+    test_vga.cpp
     test_dfa.cpp
     test_pga.cpp)
 

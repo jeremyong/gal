@@ -257,5 +257,14 @@ namespace pga2
             return data[index];
         }
     };
+
+    template <typename L, typename... Data>
+    auto compute(L lambda, Data const&... input)
+    {
+        return ::gal::detail::compute<::gal::pga2::pga2_algebra>(lambda, input...);
+    }
+
+    template <typename... Data>
+    using evaluate = ::gal::detail::evaluate<gal::pga2::pga2_algebra, Data...>;
 } // namespace pga2
 } // namespace gal

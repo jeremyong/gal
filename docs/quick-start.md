@@ -45,7 +45,7 @@ To use GAL, you need to minimally include a single header corresponding to the m
 
 | Header | Space | Namespace | Description
 --- | --- | --- | ---
-`gal/ega.hpp` | \(\mathbb{R}_{3, 0, 0}\) | `gal::ega` | Canonical 3D Euclidean space
+`gal/vga.hpp` | \(\mathbb{R}_{3, 0, 0}\) | `gal::vga` | 3D Euclidean vector space
 `gal/pga2.hpp` | \(\mathbf{P}(\mathbb{R}^*_{2, 0, 1})\) | `gal::pga2` | Projectivized 2D Euclidean plane
 `gal/pga.hpp` | \(\mathbf{P}(\mathbb{R}^*_{3, 0, 1})\) | `gal::pga` | Projectivized 3D Euclidean space
 `gal/cga2.hpp` | \(\mathbf{C}(\mathbb{R}_{3, 1, 0})\) | `gal::cga2` | Conformalized 2D Euclidean plane
@@ -74,7 +74,7 @@ All entities support initialization the way you'd expect. For example `point<dou
 
 Where appropriate, entities may support the `normalize` method, which mutates the entity as appropriate for its type. A divide-by-zero check is not performed. In all cases in fact, the library adopts the philosophy that the user should not pay for what the user does not use.
 
-Entities are stored sparsely regardless of the model they are in with *no additional overhead* for multivector basis-index bookkeeping. For example, `sizeof(point<float>)` is 12 (3 floats) regardless of whether you are working with CGA (where the point is represented as \(\mathbf{o} + p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z} + \frac{1}{2}p^2\boldsymbol\infty\)) or in EGA (where the point is simply \(p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z}\)).
+Entities are stored sparsely regardless of the model they are in with *no additional overhead* for multivector basis-index bookkeeping. For example, `sizeof(point<float>)` is 12 (3 floats) regardless of whether you are working with CGA (where the point is represented as \(\mathbf{o} + p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z} + \frac{1}{2}p^2\boldsymbol\infty\)) or in VGA (where the point is simply \(p_x\mathbf{e_x} + p_y\mathbf{e_y} + p_z\mathbf{e_z}\)).
 
 ### Evaluating expressions
 
@@ -229,7 +229,7 @@ This creates the quantity \(3.2e_{01} + 1.2e_{02}\) and can be used in a compute
             algorithm.hpp       # Compile-time routines (i.e. sorting, rearrangement)
             cga.hpp             # Provides conformal geometric algebra
             cga2.hpp            # Provides 2D conformal geometric algebra (aka compass ruler algebra)
-            ega.hpp             # Provides 3D geometric algebra
+            vga.hpp             # Provides 3D vector space geometric algebra
             engine.hpp          # Defines various mechanisms for evaluating expressions at runtime
             entity.hpp          # Describes the statically-typed representation of runtime multivectors
             expression_debug.hpp    # Debug facilities
@@ -248,7 +248,7 @@ This creates the quantity \(3.2e_{01} + 1.2e_{02}\) and can be used in a compute
 *[GA]: Geometric Algebra
 *[MSVC]: Microsoft Visual C++
 *[GCC]: GNU C Compiler
-*[EGA]: Euclidean Geometric Algebra
+*[VGA]: "Common" Euclidean Vector Space Geometric Algebra
 *[PGA]: Projective Geometric Algebra
 *[CGA]: Conformal Geometric Algebra
 *[PR]: Pull Request

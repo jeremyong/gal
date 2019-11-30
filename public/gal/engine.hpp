@@ -125,12 +125,48 @@ namespace detail
             }
             else
             {
-                return apply_mv_op<F, ie.o>(
-                    static_cast<F>(m.q)
-                    * (::gal::pow(data_value(data.data(), ie.inds[m.ind_offset + I].id),
-                                  std::integral_constant<int, ie.inds[m.ind_offset + I].degree.num>{},
-                                  std::integral_constant<int, ie.inds[m.ind_offset + I].degree.den>{})
-                       * ...));
+                if constexpr (abs(m.q.den) > 1)
+                {
+                    if constexpr (abs(m.q.num) > 1 || m.q.num == -1)
+                    {
+                        return apply_mv_op<F, ie.o>(
+                            static_cast<F>(m.q)
+                            * (::gal::pow(
+                                   data_value(data.data(), ie.inds[m.ind_offset + I].id),
+                                   std::integral_constant<int, ie.inds[m.ind_offset + I].degree.num>{},
+                                   std::integral_constant<int, ie.inds[m.ind_offset + I].degree.den>{})
+                               * ...));
+                    }
+                    else
+                    {
+                        return apply_mv_op<F, ie.o>(
+                            (::gal::pow(
+                                 data_value(data.data(), ie.inds[m.ind_offset + I].id),
+                                 std::integral_constant<int, ie.inds[m.ind_offset + I].degree.num>{},
+                                 std::integral_constant<int, ie.inds[m.ind_offset + I].degree.den>{})
+                             * ...)
+                            / static_cast<F>(m.q.den));
+                    }
+                }
+                else if constexpr (abs(m.q.num) > 1 || m.q.num == -1)
+                {
+                    return apply_mv_op<F, ie.o>(
+                        static_cast<F>(m.q.num)
+                        * (::gal::pow(
+                               data_value(data.data(), ie.inds[m.ind_offset + I].id),
+                               std::integral_constant<int, ie.inds[m.ind_offset + I].degree.num>{},
+                               std::integral_constant<int, ie.inds[m.ind_offset + I].degree.den>{})
+                           * ...));
+                }
+                else
+                {
+                    return apply_mv_op<F, ie.o>(
+                        (::gal::pow(
+                             data_value(data.data(), ie.inds[m.ind_offset + I].id),
+                             std::integral_constant<int, ie.inds[m.ind_offset + I].degree.num>{},
+                             std::integral_constant<int, ie.inds[m.ind_offset + I].degree.den>{})
+                         * ...));
+                }
             }
         }
     };
@@ -151,9 +187,11 @@ namespace detail
         }
     };
 
-    template <auto const& ie, typename F, typename A, size_t N, size_t... I>
-    GAL_FORCE_INLINE constexpr static inline auto
-    compute_entity(std::array<ind_value<F>, N> const& data, F q, std::index_sequence<I...>) noexcept
+    template <auto const& ie, typename F, typename A, size_t N, num_t Num, den_t Den, size_t... I>
+    GAL_FORCE_INLINE constexpr static auto compute_entity(std::array<ind_value<F>, N> const& data,
+                                                          std::integral_constant<num_t, Num>,
+                                                          std::integral_constant<den_t, Den>,
+                                                          std::index_sequence<I...>) noexcept
     {
         if constexpr (sizeof...(I) == 0)
         {
@@ -162,15 +200,44 @@ namespace detail
         else
         {
             using entity_t = entity<A, F, ie.terms[I].element...>;
-            return entity_t{(
-                q
-                * cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(
-                    data))...};
+            if constexpr (abs(Den) > 1)
+            {
+                if constexpr (abs(Num) > 1 || Num == -1)
+                {
+                    return entity_t{(
+                        static_cast<F>(Num) / static_cast<F>(Den)
+                        * cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(
+                            data))...};
+                }
+                else
+                {
+                    return entity_t{(
+                        cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(
+                            data)
+                        / static_cast<F>(Den))...};
+                }
+            }
+            else
+            {
+                if constexpr (abs(Num) > 1 || Num == -1)
+                {
+                    return entity_t{(
+                        static_cast<F>(Num)
+                        * cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(
+                            data))...};
+                }
+                else
+                {
+                    return entity_t{(
+                        cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(
+                            data))...};
+                }
+            }
         }
     }
 
     template <auto const& ie, auto o, typename F, typename A, size_t N, size_t... I>
-    GAL_FORCE_INLINE constexpr static inline void
+    GAL_FORCE_INLINE constexpr static void
     compute_temp(std::array<ind_value<F>, N>& data, std::index_sequence<I...>, size_t offset) noexcept
     {
         if constexpr (sizeof...(I) == 0)
@@ -179,42 +246,15 @@ namespace detail
         }
         else
         {
-            if constexpr (o == op_exp)
-            {
-                using entity_t = entity<A, F, ie.terms[I].element...>;
-                typename special_entities<A, F>::line_t line{entity_t{
-                    cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(
-                        data)...}};
-                auto motor = line.exp();
-                for (size_t i = 0; i != decltype(motor)::size(); ++i)
-                {
-                    data[offset + i] = motor[i];
-                }
-            }
-            else if constexpr (o == op_log)
-            {
-                using entity_t = entity<A, F, ie.terms[I].element...>;
-                typename special_entities<A, F>::motor_t motor{entity_t{
-                    cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(
-                        data)...}};
-                auto line = static_cast<decltype(motor)>(motor.log()).bivector();
-                for (size_t i = 0; i != decltype(line)::size(); ++i)
-                {
-                    data[offset + i] = line[i];
-                }
-            }
-            else
-            {
-                ((data[offset + I]
-                  = cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(
-                      data)),
-                 ...);
-            }
+            ((data[offset + I]
+              = cterm<F, ie, ie.terms[I].mon_offset, std::make_index_sequence<ie.terms[I].count>>::value(
+                  data)),
+             ...);
         }
     }
 
     template <typename A, typename V, auto const& temps, typename D, size_t I>
-    GAL_FORCE_INLINE static inline void finalize_temps(D& data, std::integral_constant<size_t, I>)
+    GAL_FORCE_INLINE static void finalize_temps(D& data, std::integral_constant<size_t, I>)
     {
         if constexpr (I == std::decay_t<decltype(temps)>::size())
         {
@@ -243,19 +283,21 @@ namespace detail
         }
     }
 
-    template <typename A, typename V, auto const& result, typename D>
-    GAL_FORCE_INLINE static inline auto finalize_entity(D const& data, V q)
+    template <typename A, typename V, auto const& result, typename D, num_t Num, den_t Den>
+    GAL_FORCE_INLINE static auto finalize_entity(D const& data,
+                                                 std::integral_constant<num_t, Num> n,
+                                                 std::integral_constant<den_t, Den> d)
     {
         if constexpr (detail::uses_null_basis<A>)
         {
             constexpr static auto null_conversion = detail::to_null_basis(result);
             return compute_entity<null_conversion, V, A>(
-                data, q, std::make_index_sequence<null_conversion.size.term>());
+                data, n, d, std::make_index_sequence<null_conversion.size.term>());
         }
         else
         {
             return compute_entity<result, V, A>(
-                data, q, std::make_index_sequence<result.size.term>());
+                data, n, d, std::make_index_sequence<result.size.term>());
         }
     }
 
@@ -264,10 +306,12 @@ namespace detail
     {
         constexpr static auto ie = results.template get<I>().second;
 
-        template <typename D>
-        GAL_FORCE_INLINE constexpr static auto compute(D const& data, V q) noexcept
+        template <typename D, num_t Num, den_t Den>
+        GAL_FORCE_INLINE constexpr static auto compute(D const& data,
+                                                       std::integral_constant<num_t, Num> n,
+                                                       std::integral_constant<den_t, Den> d) noexcept
         {
-            return finalize_entity<A, V, ie>(data, q);
+            return finalize_entity<A, V, ie>(data, n, d);
         }
     };
 
@@ -275,25 +319,40 @@ namespace detail
     struct finalize_entities
     {
         constexpr static size_t size = std::decay_t<decltype(results)>::size();
-        template <typename D>
-        GAL_FORCE_INLINE constexpr static auto execute(D const& data, V q) noexcept
+        template <typename D, num_t Num, den_t Den>
+        GAL_FORCE_INLINE constexpr static auto execute(D const& data,
+                                                       std::integral_constant<num_t, Num> n,
+                                                       std::integral_constant<den_t, Den> d) noexcept
         {
-            return execute_impl(data, q, std::decay_t<decltype(results)>::indices);
+            return execute_impl(data, n, d, std::decay_t<decltype(results)>::indices);
         }
 
-        template <typename D, size_t... I>
-        GAL_FORCE_INLINE constexpr static auto
-        execute_impl(D const& data, V q, std::index_sequence<I...>) noexcept
+        template <typename D, num_t Num, den_t Den, size_t... I>
+        GAL_FORCE_INLINE constexpr static auto execute_impl(D const& data,
+                                                            std::integral_constant<num_t, Num> n,
+                                                            std::integral_constant<den_t, Den> d,
+                                                            std::index_sequence<I...>) noexcept
         {
-            return std::make_tuple(result_finalizer<A, V, results, size - I - 1>::compute(data, q)...);
+            return std::make_tuple(
+                result_finalizer<A, V, results, size - I - 1>::compute(data, n, d)...);
         }
     };
 
+    template <typename... Ds>
+    struct infer_field
+    {};
+
     template <typename D, typename... Ds>
-    struct category
+    struct infer_field<D, Ds...>
     {
-        using value_t   = typename D::value_t;
-        using algebra_t = typename D::algebra_t;
+        using value_t = typename D::value_t;
+    };
+
+    template <>
+    struct infer_field<>
+    {
+        // Fallback to float precision if no inputs are available for inference.
+        using value_t = float;
     };
 
     template <typename D>
@@ -308,147 +367,154 @@ namespace detail
             return D::size();
         }
     }
-} // namespace detail
 
-template <typename... Data>
-struct evaluate
-{
+    template <typename A, typename... Data>
+    struct evaluate
+    {
 #ifdef GAL_DEBUG
-    // Produce the RPN expression
-    template <typename L>
-    [[nodiscard]] static auto rpnf(L lambda) noexcept
-    {
-        using A                          = typename detail::category<Data...>::algebra_t;
-        constexpr static auto entities   = detail::rpne_entities<A, Data...>();
-        constexpr static auto expression = std::apply(lambda, entities.first);
-        return detail::rpne_concat<expression>();
-    }
+        // Produce the RPN expression
+        template <typename L>
+        [[nodiscard]] static auto rpnf(L lambda) noexcept
+        {
+            constexpr static auto entities   = detail::rpne_entities<A, Data...>();
+            constexpr static auto expression = std::apply(lambda, entities.first);
+            return detail::rpne_concat<expression>();
+        }
 
-    // Produce an RPN expression with CSEs factored out
-    template <typename L>
-    [[nodiscard]] static auto rpnf_reshaped(L lambda) noexcept
-    {
-        using A                          = typename detail::category<Data...>::algebra_t;
-        constexpr static auto entities   = detail::rpne_entities<A, Data...>();
-        constexpr static auto expression = std::apply(lambda, entities.first);
-        return detail::rpn_reshape(detail::rpne_concat<expression>());
-    }
+        template <typename L>
+        [[nodiscard]] static auto rpnf_debug(L lambda) noexcept
+        {
+            constexpr static auto entities = detail::rpne_entities<A, Data...>();
+            return std::apply(lambda, entities.first);
+        }
 
-    template <typename L>
-    static auto input_map(L lambda) noexcept
+        // Produce an RPN expression with CSEs factored out
+        template <typename L>
+        [[nodiscard]] static auto rpnf_reshaped(L lambda) noexcept
+        {
+            constexpr static auto entities   = detail::rpne_entities<A, Data...>();
+            constexpr static auto expression = std::apply(lambda, entities.first);
+            return detail::rpn_reshape(detail::rpne_concat<expression>());
+        }
+
+        template <typename L>
+        static auto input_map(L lambda) noexcept
+        {
+            constexpr static auto entities   = detail::rpne_entities<A, Data...>();
+            constexpr static auto expression = std::apply(lambda, entities.first);
+            constexpr static auto rpn        = detail::rpne_concat<expression>();
+            constexpr static auto id_count   = detail::rpn_id_count(rpn);
+            return detail::rpn_ids(rpn, std::integral_constant<width_t, id_count>{});
+        }
+
+        // Produce a multivector
+        template <typename L>
+        [[nodiscard]] static auto ie(L lambda) noexcept
+        {
+            constexpr static auto entities   = detail::rpne_entities<A, Data...>();
+            constexpr static auto expression = std::apply(lambda, entities.first);
+            constexpr static auto rpn        = detail::rpne_concat<expression>();
+            constexpr static auto id_count   = detail::rpn_id_count(rpn);
+            constexpr static auto reshaped   = detail::rpn_reshape(rpn);
+            constexpr static auto flattened
+                = detail::rpn_ids(reshaped, std::integral_constant<width_t, id_count>{});
+            constexpr static auto ids     = flattened.first;
+            constexpr static auto indices = flattened.second;
+            constexpr static auto inputs  = detail::rpn_inputs<A, ids, indices, Data...>{}(
+                std::make_index_sequence<ids.size()>{});
+            // The inputs are now multivector ies.
+            constexpr static detail::rpn_state input_state{
+                inputs, tuple<>{}, tuple<>{}, entities.second.first};
+            auto result = detail::rpn_ctx<reshaped, 0, reshaped.count, input_state>::state;
+            return result.args.template get<0>().second;
+        }
+
+        template <typename L>
+        [[nodiscard]] static auto ie_reshaped(L lambda) noexcept
+        {
+            constexpr static auto entities   = detail::rpne_entities<A, Data...>();
+            constexpr static auto expression = std::apply(lambda, entities.first);
+            constexpr static auto rpn        = detail::rpne_concat<expression>();
+            constexpr static auto id_count   = detail::rpn_id_count(rpn);
+            constexpr static auto reshaped   = detail::rpn_reshape(rpn);
+            constexpr static auto flattened
+                = detail::rpn_ids(reshaped, std::integral_constant<width_t, id_count>{});
+            constexpr static auto ids     = flattened.first;
+            constexpr static auto indices = flattened.second;
+            constexpr static auto inputs  = detail::rpn_inputs<A, ids, indices, Data...>{}(
+                std::make_index_sequence<ids.size()>{});
+            // The inputs are now multivector ies.
+            constexpr static detail::rpn_state input_state{
+                inputs, tuple<>{}, tuple<>{}, entities.second.first};
+            auto result = detail::rpn_ctx<reshaped, 0, reshaped.count, input_state>::state;
+            return result.args.template get<0>().second;
+        }
+#endif
+    };
+
+    template <typename A, typename L, typename... Data>
+    GAL_FORCE_INLINE static auto compute(L lambda, Data const&... input) noexcept
     {
-        using A                          = typename detail::category<Data...>::algebra_t;
+        // At least one input is needed to infer the metric and value type
+        static_assert(sizeof...(Data) > 0, "Compute contexts without any inputs are not permitted");
+
+        using V = typename detail::infer_field<Data...>::value_t;
+
+        // See expr.hpp
+        // Governs compiling an expression from a user-supplied lambda in RPN form.
         constexpr static auto entities   = detail::rpne_entities<A, Data...>();
         constexpr static auto expression = std::apply(lambda, entities.first);
         constexpr static auto rpn        = detail::rpne_concat<expression>();
-        constexpr static auto id_count   = detail::rpn_id_count(rpn);
-        return detail::rpn_ids(rpn, std::integral_constant<width_t, id_count>{});
-    }
 
-    // Produce a multivector
-    template <typename L>
-    [[nodiscard]] static auto ie(L lambda) noexcept
-    {
-        using A                          = typename detail::category<Data...>::algebra_t;
-        constexpr static auto entities   = detail::rpne_entities<A, Data...>();
-        constexpr static auto expression = std::apply(lambda, entities.first);
-        constexpr static auto rpn        = detail::rpne_concat<expression>();
-        constexpr static auto id_count   = detail::rpn_id_count(rpn);
-        constexpr static auto reshaped   = detail::rpn_reshape(rpn);
-        constexpr static auto flattened
-            = detail::rpn_ids(rpn, std::integral_constant<width_t, id_count>{});
-        constexpr static auto ids     = flattened.first;
-        constexpr static auto indices = flattened.second;
-        constexpr static auto inputs
-            = detail::rpn_inputs<A, ids, indices, Data...>{}(std::make_index_sequence<ids.size()>{});
-        // The inputs are now multivector ies.
-        constexpr static detail::rpn_state input_state{
-            inputs, tuple<>{}, tuple<>{}, entities.second.first};
-        auto result = detail::rpn_ctx<reshaped, 0, reshaped.count, input_state>::state;
-        return result.args.template get<0>().second;
-    }
+        // Extract common subexpressions and dependent args.
+        constexpr static auto reshaped    = detail::rpn_reshape(rpn);
+        constexpr static rat scale_factor = reshaped.q;
 
-    template <typename L>
-    [[nodiscard]] static auto ie_reshaped(L lambda) noexcept
-    {
-        using A                          = typename detail::category<Data...>::algebra_t;
-        constexpr static auto entities   = detail::rpne_entities<A, Data...>();
-        constexpr static auto expression = std::apply(lambda, entities.first);
-        constexpr static auto rpn        = detail::rpne_concat<expression>();
-        constexpr static auto id_count   = detail::rpn_id_count(rpn);
-        constexpr static auto reshaped   = detail::rpn_reshape(rpn);
+        constexpr static auto id_count = detail::rpn_id_count(reshaped);
         constexpr static auto flattened
             = detail::rpn_ids(reshaped, std::integral_constant<width_t, id_count>{});
         constexpr static auto ids     = flattened.first;
         constexpr static auto indices = flattened.second;
         constexpr static auto inputs
             = detail::rpn_inputs<A, ids, indices, Data...>{}(std::make_index_sequence<ids.size()>{});
+
         // The inputs are now multivector ies.
         constexpr static detail::rpn_state input_state{
             inputs, tuple<>{}, tuple<>{}, entities.second.first};
-        auto result = detail::rpn_ctx<reshaped, 0, reshaped.count, input_state>::state;
-        return result.args.template get<0>().second;
+        constexpr static auto const& processed
+            = detail::rpn_ctx<reshaped, 0, reshaped.count, input_state>::state;
+        constexpr static auto temps = processed.temps;
+
+        // All temporaries need to be evaluated in order
+        std::array<detail::ind_value<V>,
+                   ((detail::data_size<Data>() + ...) + processed.id_count - entities.second.first)>
+            data{};
+        detail::fill(data.data(), input...);
+        // Evaluate temporaries which will be appended to the data array as value types
+        detail::finalize_temps<A, V, temps>(data, std::integral_constant<size_t, 0>{});
+
+        if constexpr (decltype(processed.args)::size() == 0)
+        {
+            return entity<A, V>{};
+        }
+        else if constexpr (decltype(processed.args)::size() == 1)
+        {
+            constexpr static auto result_ie = processed.args.template get<0>().second;
+
+            return detail::finalize_entity<A, V, result_ie>(
+                data,
+                std::integral_constant<num_t, scale_factor.num>{},
+                std::integral_constant<den_t, scale_factor.den>{});
+        }
+        else
+        {
+            // Pack each returned entity into a tuple
+            constexpr static auto args = processed.args;
+            return detail::finalize_entities<A, V, args>::execute(
+                data,
+                std::integral_constant<num_t, scale_factor.num>{},
+                std::integral_constant<den_t, scale_factor.den>{});
+        }
     }
-#endif
-};
-
-template <typename L, typename... Data>
-static inline auto compute(L lambda, Data const&... input) noexcept
-{
-    // At least one input is needed to infer the metric and value type
-    static_assert(sizeof...(Data) > 0, "Compute contexts without any inputs are not permitted");
-
-    using A = typename detail::category<Data...>::algebra_t;
-    using V = typename detail::category<Data...>::value_t;
-
-    // See expr.hpp
-    // Governs compiling an expression from a user-supplied lambda in RPN form.
-    constexpr static auto entities   = detail::rpne_entities<A, Data...>();
-    constexpr static auto expression = std::apply(lambda, entities.first);
-    constexpr static auto rpn        = detail::rpne_concat<expression>();
-
-    // Extract common subexpressions and dependent args.
-    constexpr static auto reshaped  = detail::rpn_reshape(rpn);
-    constexpr static V scale_factor = static_cast<V>(reshaped.q);
-
-    constexpr static auto id_count = detail::rpn_id_count(reshaped);
-    constexpr static auto flattened
-        = detail::rpn_ids(reshaped, std::integral_constant<width_t, id_count>{});
-    constexpr static auto ids     = flattened.first;
-    constexpr static auto indices = flattened.second;
-    constexpr static auto inputs
-        = detail::rpn_inputs<A, ids, indices, Data...>{}(std::make_index_sequence<ids.size()>{});
-
-    // The inputs are now multivector ies.
-    constexpr static detail::rpn_state input_state{
-        inputs, tuple<>{}, tuple<>{}, entities.second.first};
-    constexpr static auto const& processed
-        = detail::rpn_ctx<reshaped, 0, reshaped.count, input_state>::state;
-    constexpr static auto temps = processed.temps;
-
-    // All temporaries need to be evaluated in order
-    std::array<detail::ind_value<V>,
-               ((detail::data_size<Data>() + ...) + processed.id_count - entities.second.first)>
-        data{};
-    detail::fill(data.data(), input...);
-    // Evaluate temporaries which will be appended to the data array as value types
-    detail::finalize_temps<A, V, temps>(data, std::integral_constant<size_t, 0>{});
-
-    if constexpr (decltype(processed.args)::size() == 0)
-    {
-        return entity<A, V>{};
-    }
-    else if constexpr (decltype(processed.args)::size() == 1)
-    {
-        constexpr static auto result_ie = processed.args.template get<0>().second;
-
-        return detail::finalize_entity<A, V, result_ie>(data, scale_factor);
-    }
-    else
-    {
-        // Pack each returned entity into a tuple
-        constexpr static auto args = processed.args;
-        return detail::finalize_entities<A, V, args>::execute(data, scale_factor);
-    }
-}
+} // namespace detail
 } // namespace gal

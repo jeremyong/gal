@@ -130,6 +130,65 @@ struct entity
     }
 };
 
+// Specialization provided for an entity that is exactly zero.
+template <typename A, typename T>
+struct entity<A, T>
+{
+    using algebra_t = A;
+    using value_t   = T;
+
+    GAL_NODISCARD constexpr static auto ie(uint32_t id) noexcept
+    {
+        return mv<A, 0, 0, 0>{};
+    }
+
+    GAL_NODISCARD constexpr static size_t size() noexcept
+    {
+        return 0;
+    }
+
+    template <elem_t... S>
+    GAL_NODISCARD constexpr T select() const noexcept
+    {
+        return {0};
+    }
+
+    GAL_NODISCARD constexpr T select(elem_t e) const noexcept
+    {
+        return {0};
+    }
+
+    GAL_NODISCARD constexpr T* select(elem_t e) noexcept
+    {
+        return nullptr;
+    }
+
+    GAL_NODISCARD constexpr T const* data() const noexcept
+    {
+        return nullptr;
+    }
+
+    GAL_NODISCARD constexpr auto begin() noexcept
+    {
+        return nullptr;
+    }
+
+    GAL_NODISCARD constexpr auto end() noexcept
+    {
+        return nullptr;
+    }
+
+    GAL_NODISCARD constexpr T operator[](size_t index) const noexcept
+    {
+        return {0};
+    }
+
+    GAL_NODISCARD constexpr T& operator[](size_t index) noexcept
+    {
+        return {0};
+    }
+};
+
 template <typename A, typename T>
 struct scalar
 {

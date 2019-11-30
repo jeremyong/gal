@@ -567,6 +567,48 @@ struct mv
         return out;
     }
 
+    constexpr auto select_grade(elem_t grade) const noexcept
+    {
+        mv<A, I, M, T> out{};
+        auto out_terms_it = out.terms.begin();
+        auto out_mons_it  = out.mons.begin();
+        auto out_inds_it  = out.inds.begin();
+
+        for (auto it = cbegin(); it != cend(); ++it)
+        {
+            auto g = pop_count(it->element);
+            if (g > grade)
+            {
+                break;
+            }
+            else if (g < grade)
+            {
+                continue;
+            }
+            else
+            {
+                *out_terms_it            = *it;
+                out_terms_it->mon_offset = out_mons_it - out.mons.begin();
+                ++out_terms_it;
+                for (auto mon_it = it.cbegin(); mon_it != it.cend(); ++mon_it)
+                {
+                    *out_mons_it            = *mon_it;
+                    out_mons_it->ind_offset = out_inds_it - out.inds.begin();
+                    ++out_mons_it;
+                    for (auto ind_it = mon_it.cbegin(); ind_it != mon_it.cend(); ++ind_it)
+                    {
+                        *out_inds_it++ = *ind_it;
+                    }
+                }
+            }
+        }
+
+        out.size.term = out_terms_it - out.terms.begin();
+        out.size.mon  = out_mons_it - out.mons.begin();
+        out.size.ind  = out_inds_it - out.inds.begin();
+        return out;
+    }
+
     // Push a term onto this multivector with a scaling factor and change of element
     constexpr void push(const_term_it it, rat scale, elem_t e) noexcept
     {

@@ -86,6 +86,10 @@ namespace detail
                 return mv<A, 1, 1, 1>{
                     mv_size{1, 1, 1}, {ind{id, one}}, {mon{one, one, 1, 0}}, {term{1, 0, 0}}};
             }
+            else if constexpr (!std::is_same_v<typename I::algebra_t, A>)
+            {
+                return I::ie(A{}, id);
+            }
             else
             {
                 return I::ie(id);
@@ -259,7 +263,8 @@ namespace detail
             switch (n.o)
             {
             case op_comp:
-                // Component selection does not constitute a CSE candidate
+            case op_grd:
+                // Component and grade selection does not constitute a CSE candidate
                 break;
             case op_rev:
                 // fallthrough
@@ -298,7 +303,7 @@ namespace detail
                 {
                     width_t last_offset = offsets.peek();
                     node const& prev    = expr.nodes[last_offset];
-                    if (last_offset == i - 2 && expr.nodes[i - 1].o != op_comp)
+                    if (last_offset == i - 2 && !is_read_op(expr.nodes[i - 1].o))
                     {
                         known.ses[known.count - 1].required = true;
                     }
@@ -329,17 +334,15 @@ namespace detail
             case op_sqrt:
             case op_sin:
             case op_cos:
-            case op_tan:
-            case op_exp:
                 // fallthrough
-            case op_log: {
+            case op_tan: {
                 width_t offset = offsets.peek();
 
                 // Check if the argument has been extracted. If not, mark it as required.
                 if (i > 2)
                 {
                     node const& prev = expr.nodes[offset];
-                    if (offset == i - 2 && expr.nodes[i - 1].o != op_comp)
+                    if (offset == i - 2 && !is_read_op(expr.nodes[i - 1].o))
                     {
                         known.ses[known.count - 1].required = true;
                     }
@@ -787,34 +790,6 @@ namespace detail
                 args.template get<0>().second.tan(n.q);
                 return rpn_state{State.inputs, State.temps, args, State.id_count};
             }
-            else if constexpr (n.o == op_exp)
-            {
-                // Transcendental functions require operations performed on reified results
-                auto pop = State.args.pop();
-
-                // The result of the exp function is an element of the even subalgebra
-                auto exp_result = algebra_t::even_mv(State.id_count);
-
-                return rpn_state{State.inputs,
-                                 State.temps.append(rpn_temp{
-                                     pop.first.second, op_exp, n.checksum, State.id_count}),
-                                 pop.second.push(make_pair(n.checksum, exp_result)),
-                                 State.id_count + decltype(exp_result)::ind_capacity()};
-            }
-            else if constexpr (n.o == op_log)
-            {
-                // Transcendental functions require operations performed on reified results
-                auto pop = State.args.pop();
-
-                // The result of the log function is a bivector
-                auto log_result = algebra_t::bivector_mv(State.id_count);
-
-                return rpn_state{State.inputs,
-                                 State.temps.append(rpn_temp{
-                                     pop.first.second, op_log, n.checksum, State.id_count}),
-                                 pop.second.push(make_pair(n.checksum, log_result)),
-                                 State.id_count + decltype(log_result)::ind_capacity()};
-            }
             else if constexpr (n.o == op_comp)
             {
                 constexpr auto pop  = State.args.pop();
@@ -825,6 +800,17 @@ namespace detail
                     pop.second.push(make_pair(
                         pop.first.first,
                         comp.template resize<comp.size.ind, comp.size.mon, comp.size.term>())),
+                    State.id_count};
+            }
+            else if constexpr (n.o == op_grd)
+            {
+                constexpr auto pop = State.args.pop();
+                constexpr auto s   = pop.first.second.select_grade(n.ex);
+                return rpn_state{
+                    State.inputs,
+                    State.temps,
+                    pop.second.push(make_pair(
+                        pop.first.first, s.template resize<s.size.ind, s.size.mon, s.size.term>())),
                     State.id_count};
             }
             else if constexpr (n.o == c_zero)

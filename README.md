@@ -16,12 +16,12 @@ For the most complete and up-to-date documentation, please refer to the project 
 
 ## Runtime and Compile-time performance
 
-Early results are showing that GAL is >2x faster than versor but with slower compile times which depend on
-the expression complexity.
+GAL is slowly converging to hand-optimized code for computing with geometric entities in the various algebras.
+The goal is, of course, perfect convergence (up to auto-vectorization at least).
 
 Runtime and compile time performance is achieved by using the following approach to expression evaluation.
 
-1. Expressions are encoded using standard expression tree templates.
+1. Expressions are encoded using flattened arrays of Reverse-Polish Notation nodes.
 2. Expression inputs are entities that are encoded with flat representations (e.g. an R3 point is just 3 floats and not tied to a multivector representation).
 3. Prior to evaluation, expression inputs are expressed in indeterminate multivector form (parameters of each input are expressed via integral tags, not floating-point values). This is encoded using 3 flat compile-time arrays per multivector (storing intederminates, monomials, and polynomials) for fast simplification and evaluation.
 4. Expressions are expanded in indeterminate form using polynomial coefficients so that term arithmetic can happen exactly over the field of rationals. A number of techniques are used to put strict upper bounds on compile time memory and CPU usage whever possible.
@@ -52,7 +52,8 @@ Please adjust the snippet above per recommendations from the journal you wish to
 
 Being a template-library, GAL is header-only and can be installed by either linking the `gal` interface target via cmake or by copying the files in `src` to a known include path.
 
-To build the tests, you need a C++ compiler (currently untested via MSVC) that supports C++17 or greater.
+To build the tests, you need a C++ compiler that supports C++17 or greater.
+Older compilers that purport to support C++17 *may not work* due to invalid conformance.
 
 ```sh
 # From the root directory of this project
@@ -75,6 +76,11 @@ A secondary recommendation is that usage should comfortably enable both `-ffast-
 is usually not used to retain finer control over numerical stability. However, using GA improves stability
 considerably over traditional linear algebra approaches. The second flag enables fused-multiply-add
 instructions which both improves precision and is available on most hardware.
+
+## MSVC
+
+MSVC is not yet supported because this library relies on several techniques that break under MSVC due to a
+lack of standards conformance. Help is appreciated in this regard (especially if you're a VC++ dev!).
 
 ## Motivation
 
@@ -151,20 +157,24 @@ For more complete documentation, please refer to the [project page](https://jere
 Example usage:
 
 ```c++
+#include <gal/vga.hpp>
 #include <gal/pga.hpp>
 
 // Let's work with the projectivized dual space of R3
-using point = gal::pga::point<float>;
+using gal::pga::compute;
+
+// We'll specify our points in R^3
+using point = gal::vga::point<float>;
 
 // Let's construct a few random points.
-// Each of these points occupies no more than 12 bytes (+ alignment padding) but
-// carry with them compile time representations of the PGA
+// Each of these points occupies no more than 12 bytes (+ alignment padding).
 point p1{2.4f, 3.6f, 1.3f};
 point p2{-1.1f, 2.7f, 5.0f};
 point p3{-1.8f, -2.7f, -4.3f};
 
-// We issue a computation using the `compute` method which accepts a lambda
-plane<float> p = compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3)
+// We issue a computation using the `compute` method which accepts a lambda.
+// Note that when we supply VGA points, the points become automatically dualized.
+plane<float> p = gal::pga::compute<gal::pga::plane<float>>([](auto p1, auto p2, auto p3)
 {
     // The p1, p2, and p3 variables here are shadow types of the points residing
     // "in the engine" and we operate with them using any of the operations:

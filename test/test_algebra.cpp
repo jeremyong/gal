@@ -5,6 +5,7 @@
 #include <gal/pga.hpp>
 
 using namespace gal;
+using namespace gal::pga;
 using algebra_t = gal::pga::pga_algebra;
 
 TEST_SUITE_BEGIN("finite-algebra");

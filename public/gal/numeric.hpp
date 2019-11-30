@@ -16,7 +16,7 @@ namespace gal
 {
 // right-to-left binary exponentiation
 template <typename T, int N, int D>
-[[nodiscard]] GAL_FORCE_INLINE constexpr inline T
+[[nodiscard]] GAL_FORCE_INLINE constexpr T
 pow(T s, std::integral_constant<int, N>, std::integral_constant<int, D>) noexcept
 {
     if constexpr (D > 1)
@@ -139,7 +139,7 @@ template <typename T>
 #if defined(__clang) || defined(__GNUG__)
     return 31 - __builtin_clz(input);
 #elif defined(_MSC_VER)
-    DWORD leading_zero = 0;
+    uint32_t leading_zero = 0;
     if (_BitScanReverse(&leading_zero, input))
     {
         return 31 - leading_zero;
@@ -260,6 +260,11 @@ constexpr inline rat zero{0, 1};
 
 namespace detail
 {
+    [[nodiscard]] constexpr num_t abs(num_t in) noexcept
+    {
+        return in < 0 ? -in : in;
+    }
+
     [[nodiscard]] constexpr double abs(double in) noexcept
     {
         return in < 0.0 ? -in : in;

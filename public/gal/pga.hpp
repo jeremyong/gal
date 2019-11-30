@@ -124,7 +124,7 @@ namespace pga
         using algebra_t = pga_algebra;
         using value_t   = T;
 
-        [[nodiscard]] constexpr static size_t size() noexcept
+        GAL_NODISCARD constexpr static size_t size() noexcept
         {
             return 5;
         }
@@ -164,7 +164,7 @@ namespace pga
         // z := ID 4
         // A rotation t around a line is given by the expression cos(t/2) + sin(t/2)(l_x + l_y +
         // l_z)
-        [[nodiscard]] constexpr static mv<pga_algebra, 8, 4, 4> ie(uint32_t id) noexcept
+        GAL_NODISCARD constexpr static mv<pga_algebra, 8, 4, 4> ie(uint32_t id) noexcept
         {
             return {mv_size{7, 4, 4},
                     {ind{id, one},     // cos(t/2)
@@ -181,12 +181,12 @@ namespace pga
                     {term{1, 0, 0b0}, term{1, 1, 0b110}, term{1, 2, 0b1010}, term{1, 3, 0b1100}}};
         }
 
-        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        GAL_NODISCARD constexpr T const& operator[](size_t index) const noexcept
         {
             return data[index];
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        GAL_NODISCARD constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
         }
@@ -198,7 +198,7 @@ namespace pga
         using algebra_t = pga_algebra;
         using value_t   = T;
 
-        [[nodiscard]] constexpr static size_t size() noexcept
+        GAL_NODISCARD constexpr static size_t size() noexcept
         {
             return 4;
         }
@@ -230,7 +230,7 @@ namespace pga
         }
 
         // A translation along a line with distance d is given by the expression 1 + d/2(P_inf)
-        [[nodiscard]] constexpr static mv<pga_algebra, 6, 4, 4> ie(uint32_t id) noexcept
+        GAL_NODISCARD constexpr static mv<pga_algebra, 6, 4, 4> ie(uint32_t id) noexcept
         {
             return {mv_size{6, 4, 4},
                     {ind{id, one}, // d * l_x
@@ -248,12 +248,12 @@ namespace pga
                     {term{1, 0, 0b0}, term{1, 1, 0b11}, term{1, 2, 0b101}, term{1, 3, 0b1001}}};
         }
 
-        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        GAL_NODISCARD constexpr T const& operator[](size_t index) const noexcept
         {
             return data[index];
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        GAL_NODISCARD constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
         }
@@ -271,7 +271,7 @@ namespace pga
 
         std::array<T, 8> data;
 
-        [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
+        GAL_NODISCARD constexpr static auto ie(uint32_t id) noexcept
         {
             return ::gal::detail::construct_ie<algebra_t>(
                 id,
@@ -279,7 +279,7 @@ namespace pga
                 std::integer_sequence<elem_t, 0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111>{});
         }
 
-        [[nodiscard]] constexpr static size_t size() noexcept
+        GAL_NODISCARD constexpr static size_t size() noexcept
         {
             return 8;
         }
@@ -297,7 +297,7 @@ namespace pga
             : data{in.template select<0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111>()}
         {}
 
-        [[nodiscard]] constexpr entity<pga_algebra, T, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100>
+        GAL_NODISCARD constexpr entity<pga_algebra, T, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100>
         bivector() const noexcept
         {
             return {data[1], data[2], data[3], data[4], data[5], data[6]};
@@ -314,18 +314,18 @@ namespace pga
             *this       = compute([](auto m, auto inv_norm) { return m * inv_norm; }, *this, m2);
         }
 
-        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        GAL_NODISCARD constexpr T const& operator[](size_t index) const noexcept
         {
             return data[index];
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        GAL_NODISCARD constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
         }
 
         // A closed-form solution of the logarithm of an element of the even subalgebra also exists
-        [[nodiscard]] constexpr auto log() const noexcept;
+        GAL_NODISCARD constexpr auto log() const noexcept;
     };
 
     template <typename T = float>
@@ -344,7 +344,7 @@ namespace pga
             T z;
         };
 
-        [[nodiscard]] constexpr static auto ie(uint32_t id) noexcept
+        GAL_NODISCARD constexpr static auto ie(uint32_t id) noexcept
         {
             return ::gal::detail::construct_ie<algebra_t>(
                 id,
@@ -352,7 +352,7 @@ namespace pga
                 std::integer_sequence<elem_t, 0b1, 0b10, 0b100, 0b1000>{});
         }
 
-        [[nodiscard]] constexpr static size_t size() noexcept
+        GAL_NODISCARD constexpr static size_t size() noexcept
         {
             return 4;
         }
@@ -369,84 +369,21 @@ namespace pga
             : data{in.template select<0b1, 0b10, 0b100, 0b1000>()}
         {}
 
-        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        GAL_NODISCARD constexpr T const& operator[](size_t index) const noexcept
         {
             return data[index];
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        GAL_NODISCARD constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
         }
     };
 
     template <typename T = float>
-    union point
-    {
-        using algebra_t               = pga_algebra;
-        using value_t                 = T;
-        constexpr static bool is_dual = true;
+    using point = entity<pga_algebra, T, 0b111, 0b1011, 0b1101, 0b1110>;
 
-        std::array<T, 3> data;
-        struct
-        {
-            T x;
-            T y;
-            T z;
-        };
-
-        // Like planes, points are represented dually as the intersection of three planes
-        [[nodiscard]] constexpr static mv<algebra_t, 3, 4, 4> ie(uint32_t id) noexcept
-        {
-            return {mv_size{3, 4, 4},
-                    {
-                        ind{id + 2, one}, // -z
-                        ind{id + 1, one}, // y
-                        ind{id, one}      // -x
-                    },
-                    {mon{minus_one, one, 1, 0}, // -z
-                     mon{one, one, 1, 1},       // y
-                     mon{minus_one, one, 1, 2}, // -x
-                     mon{one, zero, 0, 0}},
-                    {
-                        term{1, 0, 0b111},  // -z * e012
-                        term{1, 1, 0b1011}, // y * e013
-                        term{1, 2, 0b1101}, // -x * e023
-                        term{1, 3, 0b1110}  // e123
-                    }};
-        }
-
-        [[nodiscard]] constexpr static size_t size() noexcept
-        {
-            return 3;
-        }
-
-        constexpr point(T x, T y, T z) noexcept
-            : x{x}
-            , y{y}
-            , z{z}
-        {}
-
-        template <elem_t... E>
-        constexpr point(entity<pga_algebra, T, E...> in) noexcept
-            : data{in.template select<0b1101, 0b1011, 0b111>()}
-        {
-            auto w_inv = T{1} / in.template select<0b1110>();
-            z *= -w_inv;
-            y *= w_inv;
-            x *= -w_inv;
-        }
-
-        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
-        {
-            return data[index];
-        }
-
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
-        {
-            return data[index];
-        }
-    };
+    // TODO: Cleanup entities below so they remain in projectivized form
 
     template <typename T = float>
     union vector
@@ -464,7 +401,7 @@ namespace pga
         };
 
         // Like planes, points are represented dually as the intersection of three planes
-        [[nodiscard]] constexpr static mv<algebra_t, 3, 3, 3> ie(uint32_t id) noexcept
+        GAL_NODISCARD constexpr static mv<algebra_t, 3, 3, 3> ie(uint32_t id) noexcept
         {
             return {mv_size{3, 4, 4},
                     {
@@ -484,7 +421,7 @@ namespace pga
                     }};
         }
 
-        [[nodiscard]] constexpr static size_t size() noexcept
+        GAL_NODISCARD constexpr static size_t size() noexcept
         {
             return 3;
         }
@@ -503,12 +440,12 @@ namespace pga
             x = -x;
         }
 
-        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        GAL_NODISCARD constexpr T const& operator[](size_t index) const noexcept
         {
             return data[index];
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        GAL_NODISCARD constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
         }
@@ -537,7 +474,7 @@ namespace pga
             T mz;
         };
 
-        [[nodiscard]] constexpr static mv<algebra_t, 6, 6, 6> ie(uint32_t id) noexcept
+        GAL_NODISCARD constexpr static mv<algebra_t, 6, 6, 6> ie(uint32_t id) noexcept
         {
             return {mv_size{6, 6, 6},
                     {
@@ -566,7 +503,7 @@ namespace pga
                     }};
         }
 
-        [[nodiscard]] constexpr static size_t size() noexcept
+        GAL_NODISCARD constexpr static size_t size() noexcept
         {
             return 6;
         }
@@ -594,72 +531,20 @@ namespace pga
             : data{in}
         {}
 
-        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        GAL_NODISCARD constexpr T const& operator[](size_t index) const noexcept
         {
             return data[index];
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        GAL_NODISCARD constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
-        }
-
-        // A bivector has a closed-form exponential solution which can be used to produce a motor
-        [[nodiscard]] constexpr auto exp() const noexcept
-        {
-            // We need to decompose the line l into two parts which scale the normalized euclidean
-            // and ideal components of the line L. L being a bivector squares to produce a quantity
-            // of the form L^2 = s + p * I. norm = sqrt(-L^2) = sqrt(-s - p * I) = sqrt(-s) - p / (2
-            // * sqrt(-s)) * I The inverse of the norm is given by norm_inv = 1/sqrt(-s) - p / 2 / s
-            // / sqrt(-s) * I So L_norm can be written as norm_inv * L
-            auto l2 = compute([](auto l) { return (l | l) + (l ^ l); }, *this);
-            auto s  = l2.template select<0>();
-            auto p  = l2.template select<0b1111>();
-            auto u  = std::sqrt(-s);
-            auto v  = -p / (2 * u);
-
-            entity<pga_algebra, T, 0, 0b1111> inv_norm{T{1} / u, v / s};
-            // inv_norm * l is the normalized bivector and the original bivector can be written as
-            // (u + vI) * inv_norm * l
-            auto cos_u = std::cos(u);
-            auto sin_u = std::sin(u);
-            decltype(inv_norm) real{cos_u, -v * sin_u};
-            decltype(inv_norm) ideal{sin_u, v * cos_u};
-            return compute(
-                [](auto real, auto ideal, auto inv_norm, auto l) {
-                    return real + ideal * inv_norm * l;
-                },
-                real,
-                ideal,
-                inv_norm,
-                *this);
         }
     };
 
     template <typename T>
     constexpr auto motor<T>::log() const noexcept
     {
-        // When normalized, the motor has the form <m>_0 + <m>_2 + <m>_4
-        // m := s1 + L + p1 * I
-        // Decompose L into L = (s2 + p2 * I) * L_norm => m = s1 + p1 * I + (s2 + p2 * I) * L_norm
-        //
-        // The norm is computed as above with norm = sqrt(-s2) - p2/(2 * sqrt(-s2)) * I
-        // so norm_inv is 1/sqrt(-s2) - p2 / (2 * s2 * sqrt(-s2)) * I
-        //
-        // The exponential has the form:
-        //
-        // (cosu - vsinu * I) + (sinu + vcosu * I) * L_norm = e^((u + v*I) * L_norm)
-        //
-        // Comparing the two equations leads to:
-        //
-        // s1 = cosu
-        // p2 = vcosu
-        // s2 = sinu
-        // p1 = -vsinu
-        //
-        // If s1 isn't 0, we can solve for u as arctan(s2/s1) and v = p2/s1 using the first 2
-        // equations If s1 is 0, we take instead the second and fourth equation so u =
-        // arctan(-p2/p1) and v = -p1/s2
         auto s1 = data[0]; // <m>_0
         auto p1 = data[7]; // <m>_4
 
@@ -684,6 +569,52 @@ namespace pga
             inv_norm);
     }
 
+    // Given a motor, compute the closed form logarithm
+
+    /* TODO: This function requires two argument transcendentals and conditional branching
+    template <typename T>
+    constexpr auto log(T m) noexcept
+    {
+        // When normalized, the motor has the form <m>_0 + <m>_2 + <m>_4
+        // m := s1 + L + p1 * I
+        // Decompose L into L = (s2 + p2 * I) * L_norm => m = s1 + p1 * I + (s2 + p2 * I) * L_norm
+        //
+        // The norm is computed as above with norm = sqrt(-s2) - p2/(2 * sqrt(-s2)) * I
+        // so norm_inv is 1/sqrt(-s2) - p2 / (2 * s2 * sqrt(-s2)) * I
+        //
+        // The exponential has the form:
+        //
+        // (cosu - vsinu * I) + (sinu + vcosu * I) * L_norm = e^((u + v*I) * L_norm)
+        //
+        // Comparing the two equations leads to:
+        //
+        // s1 = cosu
+        // p2 = vcosu
+        // s2 = sinu
+        // p1 = -vsinu
+        //
+        // If s1 isn't 0, we can solve for u as arctan(s2/s1) and v = p2/s1 using the first 2
+        // equations If s1 is 0, we take instead the second and fourth equation so u =
+        // arctan(-p2/p1) and v = -p1/s2
+        auto s1 = m[0];
+        auto p1 = m[0b1111];
+        auto l = m.select_grade(2);
+        auto l2_0 = l | l;
+        auto s2 = sqrt(-l2_0);
+        auto p2 = -((l ^ l)[0b1111]) / (2 * s2);
+
+        auto inv_norm = 1 / s2 + p2 / l2_0 * 1_e0123;
+    }
+    */
+
+    template <typename L, typename... Data>
+    auto compute(L lambda, Data const&... input)
+    {
+        return ::gal::detail::compute<::gal::pga::pga_algebra>(lambda, input...);
+    }
+
+    template <typename... Data>
+    using evaluate = ::gal::detail::evaluate<gal::pga::pga_algebra, Data...>;
 } // namespace pga
 
 namespace detail

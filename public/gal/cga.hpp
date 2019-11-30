@@ -165,5 +165,14 @@ namespace cga
         }
     };
     // TODO: provide representations for planes, spheres, flats, etc.
+
+    template <typename L, typename... Data>
+    auto compute(L lambda, Data const&... input)
+    {
+        return ::gal::detail::compute<::gal::cga::cga_algebra>(lambda, input...);
+    }
+
+    template <typename... Data>
+    using evaluate = ::gal::detail::evaluate<gal::cga::cga_algebra, Data...>;
 } // namespace cga
 } // namespace gal

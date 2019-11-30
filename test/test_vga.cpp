@@ -1,16 +1,15 @@
 #include "test_util.hpp"
 
 #include <doctest/doctest.h>
-#include <gal/ega.hpp>
 #include <gal/format.hpp>
+#include <gal/vga.hpp>
 
 #include <cstdio>
 
 using namespace gal;
-using namespace gal::ega;
-using gal::compute;
+using namespace gal::vga;
 
-constexpr inline ega_algebra::geometric gp{};
+constexpr inline vga_algebra::geometric gp{};
 
 TEST_SUITE_BEGIN("euclidean-geometric-algebra");
 
@@ -23,7 +22,7 @@ TEST_CASE("rotors")
 
         auto ie1     = vector<float>::ie(0);
         auto ie2     = vector<float>::ie(3);
-        auto result  = gal::detail::product(ega_algebra::geometric{}, ie1, ie2);
+        auto result  = gal::detail::product(vga_algebra::geometric{}, ie1, ie2);
         auto reverse = gal::detail::reverse(ie1);
 
         auto reflect = compute([](auto v1, auto v2) { return v1 % v2; }, v1, v2);

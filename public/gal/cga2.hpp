@@ -12,8 +12,8 @@ namespace cga2
 {
     // The "Compass Ruler Algebra"
 
-    // The metric is defined here as the standard Minkowski spacetime. To extract the conformal representations,
-    // a change of basis is required where o = 1/2 * (e + e-) and inf = e- - e.
+    // The metric is defined here as the standard Minkowski spacetime. To extract the conformal
+    // representations, a change of basis is required where o = 1/2 * (e + e-) and inf = e- - e.
     using cga2_metric = gal::metric<3, 1, 0>;
 
     // The CRA is a graded algebra with 16 basis elements
@@ -23,7 +23,8 @@ namespace cga2
     // 0b1000 => e- extension
     namespace detail
     {
-        // These tags are needed to provide unique specializations for the expressions for n_o and n_i
+        // These tags are needed to provide unique specializations for the expressions for n_o and
+        // n_i
         template <typename T>
         struct n_o_tag
         {};
@@ -54,7 +55,10 @@ struct expr<expr_op::identity, mv<cga2::cga2_algebra, 0, 1, 1>, cga2::detail::n_
     using value_t               = T;
     using algebra_t             = cga2::cga2_algebra;
     constexpr static expr_op op = expr_op::identity;
-    constexpr static mv<cga2::cga2_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 0, 0b1000}}};
+    constexpr static mv<cga2::cga2_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1},
+                                                         {},
+                                                         {mon{one, zero, 0, 0}},
+                                                         {term{1, 0, 0b1000}}};
 };
 
 template <typename T>
@@ -63,7 +67,10 @@ struct expr<expr_op::identity, mv<cga2::cga2_algebra, 0, 1, 1>, cga2::detail::n_
     using value_t               = T;
     using algebra_t             = cga2::cga2_algebra;
     constexpr static expr_op op = expr_op::identity;
-    constexpr static mv<cga2::cga2_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1}, {}, {mon{one, zero, 0, 0}}, {term{1, 1, 0b1000}}};
+    constexpr static mv<cga2::cga2_algebra, 0, 1, 1> lhs{mv_size{0, 1, 1},
+                                                         {},
+                                                         {mon{one, zero, 0, 0}},
+                                                         {term{1, 1, 0b1000}}};
 };
 
 template <typename T>
@@ -130,7 +137,7 @@ namespace cga2
             : data{in.template select<0b1, 0b10>()}
         {}
 
-        [[nodiscard]] constexpr static mv<algebra_t, 4, 5, 4> ie(uint32_t id) noexcept
+        GAL_NODISCARD constexpr static mv<algebra_t, 4, 5, 4> ie(uint32_t id) noexcept
         {
             return {mv_size{4, 5, 4},
                     {
@@ -154,21 +161,30 @@ namespace cga2
                     }};
         }
 
-        [[nodiscard]] constexpr static size_t size() noexcept
+        GAL_NODISCARD constexpr static size_t size() noexcept
         {
             return 2;
         }
 
-        [[nodiscard]] constexpr T const& operator[](size_t index) const noexcept
+        GAL_NODISCARD constexpr T const& operator[](size_t index) const noexcept
         {
             return data[index];
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index) noexcept
+        GAL_NODISCARD constexpr T& operator[](size_t index) noexcept
         {
             return data[index];
         }
     };
     // TODO: provide representations for planes, spheres, flats, etc.
+
+    template <typename L, typename... Data>
+    auto compute(L lambda, Data const&... input)
+    {
+        return ::gal::detail::compute<::gal::cga2::cga2_algebra>(lambda, input...);
+    }
+
+    template <typename... Data>
+    using evaluate = ::gal::detail::evaluate<gal::cga2::cga2_algebra, Data...>;
 } // namespace cga2
 } // namespace gal
